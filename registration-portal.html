@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IDY 2027 — Registration Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;600;700&family=Noto+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy:    #002D6E;
+      --saffron: #FF9933;
+      --green:   #138808;
+      --white:   #FFFFFF;
+      --bg:      #F4F6FB;
+      --border:  #DDE2EE;
+      --text:    #1A1A2E;
+      --muted:   #6B7280;
+      --error:   #DC2626;
+      --ok:      #16A34A;
+      --card-shadow: 0 2px 8px rgba(0,45,110,0.08);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans', 'Noto Sans Thai', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Tricolor ── */
+    .tricolor {
+      display: flex;
+      height: 5px;
+    }
+    .tricolor div { flex: 1; }
+    .tc-s { background: var(--saffron); }
+    .tc-w { background: var(--white); border-top: 1px solid #E8E0D0; border-bottom: 1px solid #E8E0D0; }
+    .tc-g { background: var(--green); }
+
+    /* ── Header ── */
+    header {
+      background: var(--navy);
+      padding: 18px 20px;
+    }
+    .header-inner {
+      max-width: 660px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .chakra-svg { width: 44px; height: 44px; flex-shrink: 0; }
+    .header-text h1 {
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+    .header-text p {
+      color: rgba(255,255,255,0.65);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+    .lang-btn {
+      flex-shrink: 0;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.28);
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background .2s;
+      white-space: nowrap;
+    }
+    .lang-btn:hover { background: rgba(255,255,255,0.22); }
+
+    /* ── Container ── */
+    .container {
+      max-width: 660px;
+      margin: 0 auto;
+      padding: 24px 16px 60px;
+    }
+
+    /* ── Step indicator ── */
+    .steps {
+      display: flex;
+      align-items: center;
+      margin-bottom: 28px;
+    }
+    .step-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+    .step-circle {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      border: 2px solid var(--border);
+      background: var(--white);
+      color: var(--muted);
+      transition: all .25s;
+    }
+    .step-circle.active  { background: var(--saffron); border-color: var(--saffron); color: #fff; }
+    .step-circle.done    { background: var(--navy);    border-color: var(--navy);    color: #fff; }
+    .step-lbl {
+      font-size: 10px;
+      color: var(--muted);
+      text-align: center;
+      max-width: 62px;
+      line-height: 1.3;
+    }
+    .step-lbl.active { color: var(--saffron); font-weight: 700; }
+    .step-lbl.done   { color: var(--navy); }
+    .step-line {
+      flex: 1;
+      height: 2px;
+      background: var(--border);
+      margin: 0 4px 18px;
+      min-width: 16px;
+      transition: background .25s;
+    }
+    .step-line.done { background: var(--navy); }
+
+    /* ── Card ── */
+    .card {
+      background: var(--white);
+      border-radius: 14px;
+      padding: 26px 22px;
+      box-shadow: var(--card-shadow);
+      margin-bottom: 14px;
+    }
+    .card-title    { font-size: 18px; font-weight: 700; color: var(--navy); margin-bottom: 5px; }
+    .card-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 22px; line-height: 1.55; }
+
+    /* ── Form ── */
+    .form-group { margin-bottom: 18px; }
+    .form-group:last-child { margin-bottom: 0; }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 6px;
+    }
+    .req { color: var(--error); margin-left: 1px; }
+    input[type="email"],
+    input[type="text"],
+    select {
+      width: 100%;
+      padding: 11px 13px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--white);
+      transition: border-color .18s, box-shadow .18s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--navy);
+      box-shadow: 0 0 0 3px rgba(0,45,110,0.09);
+    }
+    input.err  { border-color: var(--error); }
+    input.good { border-color: var(--ok); }
+    .field-err {
+      color: var(--error);
+      font-size: 12px;
+      margin-top: 4px;
+      display: none;
+    }
+    .field-err.show { display: block; }
+
+    /* ── Count selector ── */
+    .count-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+    .count-btn {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      font-size: 22px;
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--white);
+      color: var(--text);
+      transition: all .18s;
+      user-select: none;
+    }
+    .count-btn:hover    { border-color: var(--navy); color: var(--navy); }
+    .count-btn.selected { background: var(--navy); border-color: var(--navy); color: #fff; }
+
+    /* ── Participant block ── */
+    .p-block {
+      background: #F4F6FB;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+    .p-block-hdr {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 14px;
+    }
+    .btn-remove {
+      margin-left: auto;
+      background: none;
+      border: 1.5px solid #FECACA;
+      color: var(--error);
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: inherit;
+      padding: 3px 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: background .15s;
+    }
+    .btn-remove:hover { background: #FEF2F2; }
+    .p-num {
+      width: 24px; height: 24px;
+      background: var(--navy);
+      color: #fff;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* ── Declaration ── */
+    .decl-box {
+      background: #FFF8F0;
+      border: 1.5px solid #FFDAA8;
+      border-radius: 9px;
+      padding: 16px;
+      font-size: 13.5px;
+      line-height: 1.7;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+    .check-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+    .check-row input[type="checkbox"] {
+      width: 20px; height: 20px; min-width: 20px;
+      margin-top: 1px;
+      cursor: pointer;
+      accent-color: var(--navy);
+    }
+    .check-lbl { font-size: 13.5px; font-weight: 600; color: var(--navy); cursor: pointer; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 12px 26px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      transition: all .18s;
+      text-decoration: none;
+    }
+    .btn-full  { width: 100%; }
+    .btn-navy  { background: var(--navy);    color: #fff; }
+    .btn-navy:hover:not(:disabled) { background: #003a8c; }
+    .btn-navy:disabled { opacity: .38; cursor: not-allowed; }
+    .btn-saf   { background: var(--saffron); color: #fff; }
+    .btn-saf:hover { background: #e8851c; }
+    .btn-out   { background: transparent; color: var(--navy); border: 2px solid var(--navy); }
+    .btn-out:hover { background: var(--navy); color: #fff; }
+    .btn-sm    { padding: 7px 14px; font-size: 12px; }
+    .btn-back  {
+      background: none; border: none;
+      color: var(--muted); font-size: 13.5px;
+      cursor: pointer; font-family: inherit;
+      display: flex; align-items: center; gap: 5px;
+      margin-bottom: 18px; padding: 0;
+    }
+    .btn-back:hover { color: var(--navy); }
+
+    /* ── Action row ── */
+    .act-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .act-row .btn { flex: 1; min-width: 140px; }
+
+    /* ── Summary confirm ── */
+    .summary-box {
+      background: #EEF2FF;
+      border: 1px solid #C7D2F0;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 18px;
+    }
+    .summary-box-title { font-size: 12px; font-weight: 700; color: var(--navy); margin-bottom: 10px; text-transform: uppercase; letter-spacing: .5px; }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fff;
+      border-radius: 7px;
+      padding: 9px 13px;
+      margin-bottom: 7px;
+    }
+    .summary-row:last-child { margin-bottom: 0; }
+    .s-name { font-size: 14px; font-weight: 600; }
+    .size-badge {
+      display: inline-block;
+      background: var(--saffron);
+      color: #fff;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 3px 12px;
+      border-radius: 20px;
+    }
+
+    /* ── Success ── */
+    .success-hdr {
+      text-align: center;
+      padding: 22px 0 18px;
+    }
+    .success-icon {
+      width: 62px; height: 62px;
+      background: #DCFCE7;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 14px;
+    }
+    .success-hdr h2 { font-size: 22px; font-weight: 700; color: var(--navy); margin-bottom: 5px; }
+    .success-hdr p  { font-size: 13.5px; color: var(--muted); }
+
+    .alert-warn {
+      background: #FFFBEB;
+      border: 1px solid #FCD34D;
+      border-radius: 9px;
+      padding: 13px 15px;
+      font-size: 13px;
+      color: #7B5900;
+      line-height: 1.6;
+      margin-bottom: 18px;
+    }
+
+    /* ── Pass card ── */
+    .pass-card {
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      page-break-inside: avoid;
+    }
+    .pass-hdr {
+      background: var(--navy);
+      color: #fff;
+      padding: 13px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .pass-regnum { font-size: 22px; font-weight: 700; font-family: 'Courier New', monospace; }
+    .pass-regnum-lbl { font-size: 11px; opacity: .6; margin-bottom: 1px; }
+    .pass-pname  { font-size: 15px; font-weight: 700; text-align: right; }
+    .pass-event  { font-size: 11px; opacity: .65; text-align: right; margin-top: 2px; }
+    .pass-body {
+      display: flex;
+      padding: 16px;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .pass-info { flex: 1; }
+    .info-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 9px;
+      font-size: 13.5px;
+    }
+    .info-lbl { color: var(--muted); min-width: 95px; flex-shrink: 0; }
+    .info-val { font-weight: 600; }
+    .qr-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 7px;
+      flex-shrink: 0;
+    }
+    .qr-wrap { width: 100px; height: 100px; }
+    .qr-wrap canvas, .qr-wrap img { width: 100px !important; height: 100px !important; }
+    .qr-regnum { font-size: 11px; color: var(--muted); font-family: monospace; text-align: center; }
+
+    /* ── Share row ── */
+    .share-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      background: #FAFBFF;
+    }
+    .share-lbl {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      margin-right: 2px;
+      white-space: nowrap;
+    }
+    .share-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      color: #fff;
+      transition: opacity .15s;
+    }
+    .share-btn:hover { opacity: .85; }
+    .share-btn.wa   { background: #25D366; }
+    .share-btn.line { background: #00B900; }
+    .share-btn.tg   { background: #0088CC; }
+    .share-btn.more { background: #6B7280; }
+    .dl-jpeg-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      background: transparent;
+      border: 1.5px solid var(--navy);
+      color: var(--navy);
+      transition: all .15s;
+    }
+    .dl-jpeg-btn:hover { background: var(--navy); color: #fff; }
+
+    /* ── Loading spinner ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    /* ── Divider ── */
+    hr { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+
+    /* ── Hidden ── */
+    .hidden { display: none !important; }
+
+    /* ── Print ── */
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #fff; }
+      header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .pass-hdr { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .card { box-shadow: none; }
+      .tricolor div { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      .header-text h1 { font-size: 14px; }
+      .card { padding: 18px 15px; }
+      .pass-body { flex-direction: column; align-items: center; }
+      .pass-info { width: 100%; }
+      .act-row .btn { min-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Tricolor -->
+<div class="tricolor">
+  <div class="tc-s"></div>
+  <div class="tc-w"></div>
+  <div class="tc-g"></div>
+</div>
+
+<!-- Header -->
+<header>
+  <div class="header-inner">
+    <div class="header-left">
+      <!-- Ashoka Chakra (simplified) -->
+      <svg class="chakra-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="44" stroke="rgba(255,255,255,0.55)" stroke-width="2.5"/>
+        <circle cx="50" cy="50" r="7"  fill="rgba(255,255,255,0.75)"/>
+        <circle cx="50" cy="50" r="2.5" fill="#FF9933"/>
+        <!-- 24 spokes generated programmatically -->
+        <g id="spokes" stroke="rgba(255,255,255,0.55)" stroke-width="1.2"></g>
+      </svg>
+      <div class="header-text">
+        <h1 id="hTitle">13th International Day of Yoga 2027</h1>
+        <p  id="hSub">Embassy of India, Bangkok · Registration Portal</p>
+      </div>
+    </div>
+    <button class="lang-btn no-print" id="langBtn" onclick="toggleLang()">ภาษาไทย</button>
+  </div>
+</header>
+
+<!-- Main -->
+<div class="container">
+
+  <!-- Step Indicator -->
+  <div class="steps no-print" id="stepsBar">
+    <div class="step-item">
+      <div class="step-circle active" id="sc1">1</div>
+      <div class="step-lbl active"   id="sl1">Email</div>
+    </div>
+    <div class="step-line" id="ln1"></div>
+    <div class="step-item">
+      <div class="step-circle" id="sc2">2</div>
+      <div class="step-lbl"    id="sl2">Participants</div>
+    </div>
+    <div class="step-line" id="ln2"></div>
+    <div class="step-item">
+      <div class="step-circle" id="sc3">3</div>
+      <div class="step-lbl"    id="sl3">Details</div>
+    </div>
+    <div class="step-line" id="ln3"></div>
+    <div class="step-item">
+      <div class="step-circle" id="sc4">4</div>
+      <div class="step-lbl"    id="sl4">Confirm</div>
+    </div>
+  </div>
+
+  <!-- ════ STEP 1 : Email ════ -->
+  <div id="step1">
+    <div class="card">
+      <div class="card-title"    id="s1Title">Email Address</div>
+      <div class="card-subtitle" id="s1Sub">Enter your email address. Up to 5 participants can be registered per email.</div>
+      <div class="form-group">
+        <label for="email"><span id="lEmail">Email Address</span> <span class="req">*</span></label>
+        <input type="email" id="email" oninput="chkEmail()">
+        <div class="field-err" id="emailErr"></div>
+      </div>
+      <div class="form-group">
+        <label for="emailC"><span id="lEmailC">Confirm Email Address</span> <span class="req">*</span></label>
+        <input type="email" id="emailC" oninput="chkEmail()">
+        <div class="field-err" id="emailCErr"></div>
+      </div>
+      <button class="btn btn-navy btn-full" id="btnS1" onclick="go(2)" disabled>
+        <span id="bS1">Continue</span> →
+      </button>
+    </div>
+  </div>
+
+  <!-- ════ STEP 2 : Count ════ -->
+  <div id="step2" class="hidden">
+    <button class="btn-back no-print" onclick="go(1)">← <span id="bk2">Back</span></button>
+    <div class="card">
+      <div class="card-title"    id="s2Title">Number of Participants</div>
+      <div class="card-subtitle" id="s2Sub">How many people are you registering? (Maximum 5 per email)</div>
+      <div class="count-grid">
+        <div class="count-btn" onclick="pick(1)">1</div>
+        <div class="count-btn" onclick="pick(2)">2</div>
+        <div class="count-btn" onclick="pick(3)">3</div>
+        <div class="count-btn" onclick="pick(4)">4</div>
+        <div class="count-btn" onclick="pick(5)">5</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ STEP 3 : Details ════ -->
+  <div id="step3" class="hidden">
+    <button class="btn-back no-print" onclick="go(2)">← <span id="bk3">Back</span></button>
+    <div class="card">
+      <div class="card-title"    id="s3Title">Participant Details</div>
+      <div class="card-subtitle" id="s3Sub">Enter the full name and T-shirt size for each participant.</div>
+      <div id="pForms"></div>
+      <button class="btn btn-navy btn-full" id="btnS3" onclick="go(4)" disabled>
+        <span id="bS3">Continue</span> →
+      </button>
+    </div>
+  </div>
+
+  <!-- ════ STEP 4 : Declaration ════ -->
+  <div id="step4" class="hidden">
+    <button class="btn-back no-print" onclick="go(3)">← <span id="bk4">Back</span></button>
+    <div class="card">
+      <div class="card-title"    id="s4Title">Declaration & Confirmation</div>
+      <div class="card-subtitle" id="s4Sub">Review your registration and accept the declaration to proceed.</div>
+      <div id="confSummary"></div>
+      <div class="decl-box" id="declBox"></div>
+      <label class="check-row">
+        <input type="checkbox" id="declChk" onchange="chkDecl()">
+        <span class="check-lbl" id="lDeclAccept">I understand and accept the above declaration.</span>
+      </label>
+      <button class="btn btn-saf btn-full" id="btnSubmit" onclick="submit()" disabled>
+        <span id="bSubmit">Complete Registration</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ════ SUCCESS ════ -->
+  <div id="stepOK" class="hidden">
+    <div class="success-hdr">
+      <div class="success-icon">
+        <svg width="30" height="30" fill="none" viewBox="0 0 24 24" stroke="#16A34A" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+      </div>
+      <h2 id="okTitle">Registration Successful!</h2>
+      <p  id="okSub">Your registration pass is ready. Download or print it now.</p>
+    </div>
+
+    <div class="alert-warn no-print" id="okAlert"></div>
+
+    <div id="passCards"></div>
+
+    <div class="card no-print">
+      <div class="card-title" id="actTitle" style="margin-bottom:16px;">Download & Print</div>
+      <div class="act-row">
+        <button class="btn btn-navy" onclick="dlAllJPEG()">⬇ <span id="bJPEG">Download All Passes (JPEG)</span></button>
+        <button class="btn btn-out"  onclick="window.print()">🖨 <span id="bPrint">Print Pass</span></button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<!-- Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   LANGUAGE STRINGS
+═══════════════════════════════════════════════════════ */
+const STR = {
+  en: {
+    hTitle:      '13th International Day of Yoga 2027',
+    hSub:        'Embassy of India, Bangkok · Registration Portal',
+    langBtn:     'ภาษาไทย',
+    s1Title:     'Email Address',
+    s1Sub:       'Enter your email address. Up to 5 participants can be registered per email.',
+    lEmail:      'Email Address',
+    lEmailC:     'Confirm Email Address',
+    emailPH:     'your@email.com',
+    errInvalid:  'Please enter a valid email address.',
+    errMismatch: 'Email addresses do not match.',
+    bS1:         'Continue',
+    bk2: 'Back', bk3: 'Back', bk4: 'Back',
+    s2Title:     'Number of Participants',
+    s2Sub:       'How many people are you registering? (Maximum 5 per email)',
+    s3Title:     'Participant Details',
+    s3Sub:       'Enter the full name and T-shirt size for each participant.',
+    pLabel:      'Participant',
+    lFullName:   'Full Name',
+    lTshirt:     'T-Shirt Size',
+    namePH:      'Enter full name',
+    selSize:     'Select size',
+    bS3:         'Continue',
+    s4Title:     'Declaration & Confirmation',
+    s4Sub:       'Review your registration and accept the declaration to proceed.',
+    decl:        'I understand that every participant must be physically present for check-in. T-shirts will only be issued after successful individual check-in. T-shirts cannot be collected on behalf of absent participants.',
+    lDeclAccept: 'I understand and accept the above declaration.',
+    bSubmit:     'Complete Registration',
+    okTitle:     'Registration Successful!',
+    okSub:       'Your registration pass is ready. Download or print it now.',
+    okAlert:     '⚠  Important: No email confirmation will be sent. Save or print this pass now. You will need this QR code on event day for entry and T-shirt collection.',
+    actTitle:    'Download & Share',
+    bJPEG:       'Download All Passes (JPEG)',
+    bPrint:      'Print Pass',
+    saveQR:      'Save QR',
+    dlJPEG:      '⬇ Save as Image',
+    shareVia:    'Share via',
+    bWA:         'WhatsApp',
+    bLine:       'Line',
+    bTG:         'Telegram',
+    bMore:       'More…',
+    shareMsg:    (name, rn, size, date, venue) =>
+      `*IDY 2027 – Registration Pass* 🧘\n` +
+      `━━━━━━━━━━━━━━━━━\n` +
+      `Name: ${name}\nReg #: ${rn}\nT-Shirt: ${size}\n` +
+      `Date: ${date}\nVenue: ${venue}\n` +
+      `━━━━━━━━━━━━━━━━━\n` +
+      `⚠ Save your QR code — required for entry & T-shirt collection.`,
+    lRegNo:      'Reg. No.',
+    lName:       'Name',
+    lSize:       'T-Shirt',
+    lEvent:      'Event',
+    lDate:       'Date',
+    lVenue:      'Venue',
+    lTime:       'Reporting Time',
+    evtName:     '13th International Day of Yoga 2027',
+    evtDate:     '[Event Date — To Be Confirmed]',
+    evtVenue:    '[Venue — To Be Confirmed]',
+    evtTime:     '[Reporting Time — To Be Confirmed]',
+    forEmail:    'Registered Email',
+    forCount:    'Registered For',
+    sl1:'Email', sl2:'Participants', sl3:'Details', sl4:'Confirm',
+    summTitle:   'Your Registration',
+    instrHdr:    'Instructions',
+    instr: [
+      'Bring this pass on your phone or as a printout.',
+      'Each participant must present their own QR code.',
+      'T-shirt is issued only after individual check-in.',
+      'T-shirts cannot be collected by others on your behalf.'
+    ]
+  },
+  th: {
+    hTitle:      'วันโยคะสากลครั้งที่ 13 ปี 2027',
+    hSub:        'สถานเอกอัครราชทูตอินเดีย กรุงเทพฯ · ลงทะเบียน',
+    langBtn:     'English',
+    s1Title:     'ที่อยู่อีเมล',
+    s1Sub:       'กรอกที่อยู่อีเมลสำหรับการลงทะเบียน สามารถลงทะเบียนได้สูงสุด 5 คนต่ออีเมล',
+    lEmail:      'ที่อยู่อีเมล',
+    lEmailC:     'ยืนยันที่อยู่อีเมล',
+    emailPH:     'อีเมลของท่าน@example.com',
+    errInvalid:  'กรุณากรอกที่อยู่อีเมลที่ถูกต้อง',
+    errMismatch: 'ที่อยู่อีเมลไม่ตรงกัน',
+    bS1:         'ถัดไป',
+    bk2: 'กลับ', bk3: 'กลับ', bk4: 'กลับ',
+    s2Title:     'จำนวนผู้เข้าร่วม',
+    s2Sub:       'ท่านต้องการลงทะเบียนสำหรับกี่คน? (สูงสุด 5 คนต่ออีเมล)',
+    s3Title:     'ข้อมูลผู้เข้าร่วม',
+    s3Sub:       'กรอกชื่อ-นามสกุลและขนาดเสื้อสำหรับผู้เข้าร่วมแต่ละคน',
+    pLabel:      'ผู้เข้าร่วมคนที่',
+    lFullName:   'ชื่อ-นามสกุล',
+    lTshirt:     'ขนาดเสื้อ',
+    namePH:      'กรอกชื่อ-นามสกุล',
+    selSize:     'เลือกขนาด',
+    bS3:         'ถัดไป',
+    s4Title:     'การรับรองและยืนยัน',
+    s4Sub:       'ตรวจสอบข้อมูลและยอมรับเงื่อนไขก่อนดำเนินการ',
+    decl:        'ข้าพเจ้าเข้าใจว่าผู้เข้าร่วมทุกคนต้องมาแสดงตัวด้วยตนเองในวันงาน เสื้อยืดจะแจกจ่ายหลังจากการเช็คอินของแต่ละบุคคลเท่านั้น ไม่สามารถรับเสื้อยืดแทนผู้ที่ไม่ได้มาได้',
+    lDeclAccept: 'ข้าพเจ้าเข้าใจและยอมรับการรับรองข้างต้น',
+    bSubmit:     'ยืนยันการลงทะเบียน',
+    okTitle:     'ลงทะเบียนสำเร็จ!',
+    okSub:       'บัตรลงทะเบียนพร้อมแล้ว กรุณาดาวน์โหลดหรือพิมพ์ทันที',
+    okAlert:     '⚠  สำคัญ: ไม่มีการส่งอีเมลยืนยัน กรุณาบันทึกหรือพิมพ์บัตรนี้ไว้ทันที ท่านจะต้องใช้ QR Code นี้เพื่อเข้างานและรับเสื้อยืด',
+    actTitle:    'ดาวน์โหลดและแชร์',
+    bJPEG:       'ดาวน์โหลดบัตรทั้งหมด (JPEG)',
+    bPrint:      'พิมพ์บัตร',
+    saveQR:      'บันทึก QR',
+    dlJPEG:      '⬇ บันทึกเป็นรูปภาพ',
+    shareVia:    'แชร์ผ่าน',
+    bWA:         'WhatsApp',
+    bLine:       'Line',
+    bTG:         'Telegram',
+    bMore:       'อื่นๆ…',
+    shareMsg:    (name, rn, size, date, venue) =>
+      `*IDY 2027 – บัตรลงทะเบียน* 🧘\n` +
+      `━━━━━━━━━━━━━━━━━\n` +
+      `ชื่อ: ${name}\nเลขที่: ${rn}\nขนาดเสื้อ: ${size}\n` +
+      `วันที่: ${date}\nสถานที่: ${venue}\n` +
+      `━━━━━━━━━━━━━━━━━\n` +
+      `⚠ บันทึก QR Code ไว้ — จำเป็นสำหรับการเข้างานและรับเสื้อยืด`,
+    lRegNo:      'เลขที่ลงทะเบียน',
+    lName:       'ชื่อ',
+    lSize:       'ขนาดเสื้อ',
+    lEvent:      'งาน',
+    lDate:       'วันที่',
+    lVenue:      'สถานที่',
+    lTime:       'เวลารายงานตัว',
+    evtName:     'วันโยคะสากลครั้งที่ 13 ปี 2027',
+    evtDate:     '[วันที่ — รอยืนยัน]',
+    evtVenue:    '[สถานที่ — รอยืนยัน]',
+    evtTime:     '[เวลารายงานตัว — รอยืนยัน]',
+    forEmail:    'อีเมลที่ลงทะเบียน',
+    forCount:    'จำนวนที่ลงทะเบียน',
+    sl1:'อีเมล', sl2:'ผู้เข้าร่วม', sl3:'รายละเอียด', sl4:'ยืนยัน',
+    summTitle:   'สรุปการลงทะเบียน',
+    instrHdr:    'คำแนะนำ',
+    instr: [
+      'นำบัตรนี้มาในวันงาน (ในโทรศัพท์หรือพิมพ์)',
+      'ผู้เข้าร่วมแต่ละคนต้องแสดง QR Code ของตนเอง',
+      'เสื้อยืดจะแจกหลังจากเช็คอินของแต่ละบุคคลเท่านั้น',
+      'ไม่สามารถรับเสื้อยืดแทนผู้อื่นได้'
+    ]
+  }
+};
+
+/* ═══════════════════════════════════════════════════════
+   FIREBASE CONFIG
+   Replace every YOUR_* value with your project's details.
+   Find them: Firebase Console → Project Settings → Your apps → SDK setup
+═══════════════════════════════════════════════════════ */
+const firebaseConfig = {
+  apiKey:            "AIzaSyCJ31EusilYxaGWaorwYjqffVgV5crSecM",
+  authDomain:        "idy2027-dba28.firebaseapp.com",
+  databaseURL:       "https://idy2027-dba28-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "idy2027-dba28",
+  storageBucket:     "idy2027-dba28.firebasestorage.app",
+  messagingSenderId: "29018221908",
+  appId:             "1:29018221908:web:9d2871f91ed3f441e82cc1"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* ═══════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════ */
+let lang   = 'en';
+let pCount = 0;
+let result = null;
+
+/* ═══════════════════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════════════════ */
+const s  = key => STR[lang][key] ?? STR.en[key] ?? key;
+const el = id  => document.getElementById(id);
+
+function setText(id, val) { const e = el(id); if (e) e.textContent = val; }
+function setAttr(id, attr, val) { const e = el(id); if (e) e[attr] = val; }
+
+function token() {
+  return Array.from({length: 10}, () => '0123456789ABCDEF'[Math.floor(Math.random()*16)]).join('');
+}
+
+/* ═══════════════════════════════════════════════════════
+   LANGUAGE
+═══════════════════════════════════════════════════════ */
+function toggleLang() {
+  lang = lang === 'en' ? 'th' : 'en';
+  applyLang();
+}
+
+function applyLang() {
+  const ids = [
+    'hTitle','hSub','langBtn',
+    's1Title','s1Sub','lEmail','lEmailC','bS1',
+    'bk2','bk3','bk4',
+    's2Title','s2Sub',
+    's3Title','s3Sub','bS3',
+    's4Title','s4Sub','lDeclAccept','bSubmit',
+    'okTitle','okSub','actTitle','bJPEG','bPrint',
+    'sl1','sl2','sl3','sl4'
+  ];
+  ids.forEach(id => setText(id, s(id)));
+  setAttr('email',  'placeholder', s('emailPH'));
+  setAttr('emailC', 'placeholder', s('emailPH'));
+  el('declBox').textContent = s('decl');
+  if (el('okAlert').textContent) el('okAlert').textContent = s('okAlert');
+  if (pCount > 0) buildPForms(pCount);
+  if (result) renderPasses();
+}
+
+/* ═══════════════════════════════════════════════════════
+   STEP INDICATOR
+═══════════════════════════════════════════════════════ */
+function setStep(n) {
+  for (let i = 1; i <= 4; i++) {
+    const c = el('sc'+i), l = el('sl'+i);
+    c.className = 'step-circle';
+    l.className = 'step-lbl';
+    if (i < n)      { c.classList.add('done');   l.classList.add('done');   c.textContent = '✓'; }
+    else if (i===n) { c.classList.add('active'); l.classList.add('active'); c.textContent = i;  }
+    else            { c.textContent = i; }
+    l.textContent = s('sl'+i);
+  }
+  for (let i = 1; i <= 3; i++) {
+    el('ln'+i).className = 'step-line' + (i < n ? ' done' : '');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════════════ */
+function go(n) {
+  if (n === 3 && pCount === 0) return;
+  if (n === 4) {
+    if (!validateParts()) return;
+    buildConfirm();
+    el('declBox').textContent = s('decl');
+    el('declChk').checked = false;
+    el('btnSubmit').disabled = true;
+  }
+  ['step1','step2','step3','step4','stepOK'].forEach(id =>
+    el(id).classList.add('hidden'));
+  el('step'+n).classList.remove('hidden');
+  setStep(n);
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+/* ═══════════════════════════════════════════════════════
+   STEP 1 — EMAIL VALIDATION
+═══════════════════════════════════════════════════════ */
+const RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function chkEmail() {
+  const ev = el('email').value.trim();
+  const cv = el('emailC').value.trim();
+  let ok = true;
+
+  el('emailErr').classList.remove('show');
+  el('emailCErr').classList.remove('show');
+  el('email').classList.remove('err','good');
+  el('emailC').classList.remove('err','good');
+
+  if (ev) {
+    if (!RE.test(ev)) {
+      el('emailErr').textContent = s('errInvalid');
+      el('emailErr').classList.add('show');
+      el('email').classList.add('err');
+      ok = false;
+    } else {
+      el('email').classList.add('good');
+    }
+  }
+  if (cv) {
+    if (ev !== cv) {
+      el('emailCErr').textContent = s('errMismatch');
+      el('emailCErr').classList.add('show');
+      el('emailC').classList.add('err');
+      ok = false;
+    } else if (RE.test(ev)) {
+      el('emailC').classList.add('good');
+    }
+  }
+  el('btnS1').disabled = !(ev && cv && RE.test(ev) && ev === cv);
+}
+
+/* ═══════════════════════════════════════════════════════
+   STEP 2 — COUNT
+═══════════════════════════════════════════════════════ */
+function pick(n) {
+  pCount = n;
+  buildPForms(n);
+  setTimeout(() => go(3), 220);
+}
+
+/* ═══════════════════════════════════════════════════════
+   STEP 3 — PARTICIPANT FORMS
+═══════════════════════════════════════════════════════ */
+function buildPForms(count, saved) {
+  const sizes = ['S','M','L','XL','XXL'];
+  let html = '';
+  for (let i = 1; i <= count; i++) {
+    // Use saved array if provided, otherwise read from DOM (language switch / back nav)
+    const prev_name = saved ? (saved[i-1]?.name || '') : (el('pn_'+i) ? el('pn_'+i).value : '');
+    const prev_size = saved ? (saved[i-1]?.size || '') : (el('ps_'+i) ? el('ps_'+i).value : '');
+    const showRemove = count > 1;
+    html += `
+    <div class="p-block">
+      <div class="p-block-hdr">
+        <div class="p-num">${i}</div>
+        ${s('pLabel')} ${i}
+        ${showRemove ? `<button class="btn-remove" onclick="removeParticipant(${i})" type="button">✕ Remove</button>` : ''}
+      </div>
+      <div class="form-group">
+        <label for="pn_${i}">${s('lFullName')} <span class="req">*</span></label>
+        <input type="text" id="pn_${i}" placeholder="${s('namePH')}"
+               value="${prev_name}" oninput="chkParts()">
+      </div>
+      <div class="form-group">
+        <label for="ps_${i}">${s('lTshirt')} <span class="req">*</span></label>
+        <select id="ps_${i}" onchange="chkParts()">
+          <option value="">${s('selSize')}</option>
+          ${sizes.map(sz => `<option value="${sz}"${prev_size===sz?' selected':''}>${sz}</option>`).join('')}
+        </select>
+      </div>
+    </div>`;
+  }
+  el('pForms').innerHTML = html;
+  syncCountButtons();
+  chkParts();
+}
+
+function removeParticipant(idx) {
+  // Snapshot current values before re-render
+  const saved = [];
+  for (let i = 1; i <= pCount; i++) {
+    saved.push({ name: el('pn_'+i)?.value || '', size: el('ps_'+i)?.value || '' });
+  }
+  saved.splice(idx - 1, 1); // remove the chosen slot
+  pCount--;
+  buildPForms(pCount, saved);
+}
+
+function syncCountButtons() {
+  document.querySelectorAll('.count-btn').forEach((b, i) =>
+    b.classList.toggle('selected', i + 1 === pCount));
+}
+
+function chkParts() {
+  let ok = true;
+  for (let i = 1; i <= pCount; i++) {
+    const n = el('pn_'+i), z = el('ps_'+i);
+    if (!n?.value.trim() || !z?.value) { ok = false; break; }
+  }
+  el('btnS3').disabled = !ok;
+}
+
+function validateParts() {
+  for (let i = 1; i <= pCount; i++) {
+    if (!el('pn_'+i)?.value.trim() || !el('ps_'+i)?.value) return false;
+  }
+  return true;
+}
+
+/* ═══════════════════════════════════════════════════════
+   STEP 4 — CONFIRM SUMMARY
+═══════════════════════════════════════════════════════ */
+function buildConfirm() {
+  const email = el('email').value.trim();
+  let rows = '';
+  for (let i = 1; i <= pCount; i++) {
+    rows += `<div class="summary-row">
+      <span class="s-name">${el('pn_'+i).value.trim()}</span>
+      <span class="size-badge">${el('ps_'+i).value}</span>
+    </div>`;
+  }
+  el('confSummary').innerHTML = `
+    <div class="summary-box">
+      <div class="summary-box-title">${s('summTitle')}</div>
+      <div style="font-size:12.5px;color:var(--muted);margin-bottom:8px;">
+        ${s('forEmail')}: <strong style="color:var(--text)">${email}</strong>
+        &nbsp;·&nbsp; ${s('forCount')}: <strong style="color:var(--text)">${pCount}</strong>
+      </div>
+      ${rows}
+    </div>`;
+}
+
+function chkDecl() {
+  el('btnSubmit').disabled = !el('declChk').checked;
+}
+
+/* ═══════════════════════════════════════════════════════
+   FIREBASE HELPERS
+═══════════════════════════════════════════════════════ */
+// Firebase keys cannot contain . # $ [ ]
+// Replace . → , and @ → _at_
+function emailToKey(email) {
+  return email.toLowerCase().replace(/\./g, ',').replace(/@/g, '_at_');
+}
+
+// Atomically claim the next registration number
+async function claimRegNumber() {
+  const ref = db.ref('counters/lastRegistrationNumber');
+  const txResult = await ref.transaction(n => (n || 1000) + 1);
+  return txResult.snapshot.val();
+}
+
+/* ═══════════════════════════════════════════════════════
+   SUBMIT — Firebase backed
+═══════════════════════════════════════════════════════ */
+async function submit() {
+  const email    = el('email').value.trim();
+  const emailKey = emailToKey(email);
+  const btn      = el('btnSubmit');
+  const btnLabel = el('bSubmit');
+
+  // Loading state
+  btn.disabled   = true;
+  btnLabel.innerHTML = '<span class="spinner"></span>Registering…';
+
+  try {
+    // ── 1. Check existing registrations for this email ──────────────
+    const existingSnap = await db.ref('registrations/' + emailKey).once('value');
+    const existingData = existingSnap.exists() ? existingSnap.val() : null;
+    const existingCount = existingData ? (existingData.participantCount || 0) : 0;
+
+    if (existingCount + pCount > 5) {
+      alert(
+        lang === 'th'
+          ? `อีเมลนี้มีผู้ลงทะเบียนแล้ว ${existingCount} คน ไม่สามารถเพิ่มได้อีก ${pCount} คน (สูงสุด 5 คน)`
+          : `This email already has ${existingCount} registered participant(s). Cannot add ${pCount} more (maximum is 5).`
+      );
+      btn.disabled = false;
+      btnLabel.textContent = s('bSubmit');
+      return;
+    }
+
+    // ── 2. Claim sequential registration numbers (atomic) ──────────
+    const participants = [];
+    for (let i = 1; i <= pCount; i++) {
+      const rn = await claimRegNumber();
+      const tk = token();
+      participants.push({
+        idx:    i,
+        regNum: rn,
+        name:   el('pn_'+i).value.trim(),
+        size:   el('ps_'+i).value,
+        qrData: `${rn}|${tk}`,
+        token:  tk
+      });
+    }
+
+    // ── 3. Build multi-path write ──────────────────────────────────
+    const writes = {};
+    const now    = firebase.database.ServerValue.TIMESTAMP;
+
+    participants.forEach(p => {
+      writes[`participants/${p.regNum}`] = {
+        regNum:       p.regNum,
+        email,
+        name:         p.name,
+        tshirtSize:   p.size,
+        qrToken:      p.token,
+        status:       'registered',
+        registeredAt: now,
+        checkIn:  { done: false, timestamp: null, volunteerId: null, counter: null },
+        tshirt:   { done: false, timestamp: null, volunteerId: null, counter: null }
+      };
+    });
+
+    // Update registration index
+    const existingIds = existingData ? (existingData.participantIds || []) : [];
+    writes[`registrations/${emailKey}`] = {
+      email,
+      registeredAt:   existingData ? existingData.registeredAt : now,
+      participantCount: existingCount + pCount,
+      participantIds: [...existingIds, ...participants.map(p => p.regNum)]
+    };
+
+    // Update dashboard size tallies
+    participants.forEach(p => {
+      const sizePath = `dashboard/summary/sizes/${p.size}/registered`;
+      // We'll increment via transaction after the main write
+    });
+
+    // ── 4. Atomic write all participants + registration record ─────
+    await db.ref().update(writes);
+
+    // ── 5. Increment dashboard counters (non-blocking) ─────────────
+    db.ref('dashboard/summary/totalParticipants')
+      .transaction(n => (n || 0) + pCount);
+    if (!existingData) {
+      db.ref('dashboard/summary/totalRegistrations')
+        .transaction(n => (n || 0) + 1);
+    }
+    participants.forEach(p => {
+      db.ref(`dashboard/summary/sizes/${p.size}/registered`)
+        .transaction(n => (n || 0) + 1);
+    });
+
+    // ── 6. Show success page ───────────────────────────────────────
+    result = { email, participants };
+    ['step1','step2','step3','step4'].forEach(id => el(id).classList.add('hidden'));
+    el('stepsBar').classList.add('hidden');
+    el('stepOK').classList.remove('hidden');
+    el('okAlert').textContent = s('okAlert');
+    renderPasses();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  } catch (err) {
+    console.error('Registration error:', err);
+    alert(
+      lang === 'th'
+        ? 'การลงทะเบียนล้มเหลว กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตและลองใหม่อีกครั้ง'
+        : 'Registration failed. Please check your internet connection and try again.'
+    );
+    btn.disabled = false;
+    btnLabel.textContent = s('bSubmit');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   RENDER PASS CARDS + QR
+═══════════════════════════════════════════════════════ */
+function renderPasses() {
+  el('okTitle').textContent = s('okTitle');
+  el('okSub').textContent   = s('okSub');
+
+  const wrap = el('passCards');
+  wrap.innerHTML = '';
+
+  result.participants.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'pass-card';
+    div.id = 'pc_' + p.regNum;
+    div.innerHTML = `
+      <div class="pass-hdr">
+        <div>
+          <div class="pass-regnum-lbl">${s('lRegNo')}</div>
+          <div class="pass-regnum">#${p.regNum}</div>
+        </div>
+        <div>
+          <div class="pass-pname">${p.name}</div>
+          <div class="pass-event">${s('evtName')}</div>
+        </div>
+      </div>
+      <div class="pass-body">
+        <div class="pass-info">
+          <div class="info-row"><span class="info-lbl">${s('lName')}</span>  <span class="info-val">${p.name}</span></div>
+          <div class="info-row"><span class="info-lbl">${s('lRegNo')}</span> <span class="info-val" style="font-family:monospace;font-size:15px;">${p.regNum}</span></div>
+          <div class="info-row"><span class="info-lbl">${s('lSize')}</span>  <span class="size-badge">${p.size}</span></div>
+          <div class="info-row"><span class="info-lbl">${s('lDate')}</span>  <span class="info-val" style="font-size:12.5px;">${s('evtDate')}</span></div>
+          <div class="info-row"><span class="info-lbl">${s('lVenue')}</span> <span class="info-val" style="font-size:12.5px;">${s('evtVenue')}</span></div>
+          <div class="info-row"><span class="info-lbl">${s('lTime')}</span>  <span class="info-val" style="font-size:12.5px;">${s('evtTime')}</span></div>
+        </div>
+        <div class="qr-col">
+          <div class="qr-wrap" id="qr_${p.regNum}"></div>
+          <div class="qr-regnum">${p.regNum}</div>
+          <button class="btn btn-out btn-sm no-print" onclick="saveQR(${p.regNum})">${s('saveQR')}</button>
+        </div>
+      </div>
+      <div class="share-row no-print">
+        <span class="share-lbl">${s('shareVia')}</span>
+        <button class="share-btn wa"   onclick="sharePass(${p.regNum},'wa')">📱 ${s('bWA')}</button>
+        <button class="share-btn line" onclick="sharePass(${p.regNum},'line')">💬 ${s('bLine')}</button>
+        <button class="share-btn tg"   onclick="sharePass(${p.regNum},'tg')">✈ ${s('bTG')}</button>
+        <button class="share-btn more" id="nativeBtn_${p.regNum}" onclick="sharePass(${p.regNum},'native')" style="display:none;">⊕ ${s('bMore')}</button>
+        <button class="dl-jpeg-btn"    onclick="dlJPEG(${p.regNum})">${s('dlJPEG')}</button>
+      </div>`;
+    wrap.appendChild(div);
+
+    // Generate QR
+    new QRCode(el('qr_' + p.regNum), {
+      text:         p.qrData,
+      width:        100,
+      height:       100,
+      colorDark:    '#002D6E',
+      colorLight:   '#FFFFFF',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+
+    // Show native share button if Web Share API available
+    if (navigator.share) {
+      const nb = el('nativeBtn_' + p.regNum);
+      if (nb) nb.style.display = 'inline-flex';
+    }
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   SAVE INDIVIDUAL QR
+═══════════════════════════════════════════════════════ */
+function saveQR(regNum) {
+  const canvas = el('qr_'+regNum)?.querySelector('canvas');
+  if (!canvas) return;
+  const a = document.createElement('a');
+  a.download = `IDY2027_QR_${regNum}.png`;
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+}
+
+/* ═══════════════════════════════════════════════════════
+   JPEG DOWNLOAD — single pass
+═══════════════════════════════════════════════════════ */
+async function dlJPEG(regNum) {
+  const card = el('pc_' + regNum);
+  if (!card) return;
+
+  // Temporarily hide interactive-only elements inside the card
+  const noPrint = card.querySelectorAll('.no-print');
+  noPrint.forEach(e => e.style.visibility = 'hidden');
+
+  try {
+    const canvas = await html2canvas(card, {
+      scale: 2.5,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false
+    });
+    const link = document.createElement('a');
+    link.download = `IDY2027_Pass_${regNum}.jpg`;
+    link.href = canvas.toDataURL('image/jpeg', 0.93);
+    link.click();
+  } finally {
+    noPrint.forEach(e => e.style.visibility = '');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   JPEG DOWNLOAD — all passes sequentially
+═══════════════════════════════════════════════════════ */
+async function dlAllJPEG() {
+  for (const p of result.participants) {
+    await dlJPEG(p.regNum);
+    await new Promise(r => setTimeout(r, 400)); // small gap between downloads
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   SHARE
+═══════════════════════════════════════════════════════ */
+function sharePass(regNum, method) {
+  const p = result.participants.find(x => x.regNum === regNum);
+  if (!p) return;
+  const msg = s('shareMsg')(p.name, p.regNum, p.size, s('evtDate'), s('evtVenue'));
+
+  if (method === 'wa') {
+    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+
+  } else if (method === 'line') {
+    window.open('https://line.me/R/msg/text/?' + encodeURIComponent(msg), '_blank');
+
+  } else if (method === 'tg') {
+    window.open('https://t.me/share/url?url=&text=' + encodeURIComponent(msg), '_blank');
+
+  } else if (method === 'native') {
+    // Web Share API — try to share the image, fall back to text
+    dlJPEGBlob(regNum).then(blob => {
+      const file = new File([blob], `IDY2027_Pass_${regNum}.jpg`, { type: 'image/jpeg' });
+      const shareData = { title: 'IDY 2027 Registration Pass', text: msg };
+      const canShareFile = navigator.canShare && navigator.canShare({ files: [file] });
+      return navigator.share(canShareFile ? { ...shareData, files: [file] } : shareData);
+    }).catch(() => {
+      // Fallback if image capture fails
+      navigator.share({ title: 'IDY 2027', text: msg }).catch(() => {});
+    });
+  }
+}
+
+async function dlJPEGBlob(regNum) {
+  const card = el('pc_' + regNum);
+  const noPrint = card.querySelectorAll('.no-print');
+  noPrint.forEach(e => e.style.visibility = 'hidden');
+  try {
+    const canvas = await html2canvas(card, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
+    return await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.92));
+  } finally {
+    noPrint.forEach(e => e.style.visibility = '');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   DRAW CHAKRA SPOKES
+═══════════════════════════════════════════════════════ */
+(function drawSpokes() {
+  const g = document.getElementById('spokes');
+  const cx=50, cy=50, r1=14, r2=44;
+  for (let i=0; i<24; i++) {
+    const a = (i * 15 - 90) * Math.PI / 180;
+    const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1', cx + r1*Math.cos(a));
+    l.setAttribute('y1', cy + r1*Math.sin(a));
+    l.setAttribute('x2', cx + r2*Math.cos(a));
+    l.setAttribute('y2', cy + r2*Math.sin(a));
+    g.appendChild(l);
+  }
+})();
+
+/* ═══════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════ */
+applyLang();
+</script>
+</body>
+</html>

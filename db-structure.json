@@ -1,0 +1,100 @@
+{
+  "_comment": "IDY 2027 — Firebase Realtime Database Structure Reference",
+  "_note": "This file documents the data shape. It is NOT imported into Firebase. Use it as the canonical schema reference.",
+
+  "counters": {
+    "lastRegistrationNumber": 1000
+  },
+
+  "registrations": {
+    "user_at_example,com": {
+      "_comment": "Key = email with @ replaced by _at_ and . replaced by ,",
+      "email": "user@example.com",
+      "registeredAt": 1751234567890,
+      "participantCount": 2,
+      "participantIds": [1001, 1002]
+    }
+  },
+
+  "participants": {
+    "1001": {
+      "regNum": 1001,
+      "email": "user@example.com",
+      "name": "Priya Sharma",
+      "tshirtSize": "M",
+      "qrToken": "8C3A9F5D72",
+      "status": "registered",
+      "_statusValues": ["registered", "checked_in", "tshirt_issued"],
+      "registeredAt": 1751234567890,
+
+      "checkIn": {
+        "done": false,
+        "timestamp": null,
+        "volunteerId": null,
+        "counter": null
+      },
+
+      "tshirt": {
+        "done": false,
+        "timestamp": null,
+        "volunteerId": null,
+        "counter": null
+      }
+    }
+  },
+
+  "volunteers": {
+    "VOL001": {
+      "name": "Volunteer Name",
+      "role": "checkin",
+      "_roleValues": ["checkin", "tshirt", "admin", "viewer"],
+      "pin": "hashed_pin_here",
+      "active": true,
+      "currentCounter": "CI-1",
+      "lastActivity": 1751234567890
+    }
+  },
+
+  "dashboard": {
+    "summary": {
+      "totalRegistrations": 0,
+      "totalParticipants": 0,
+      "checkedIn": 0,
+      "tshirtIssued": 0,
+      "updatedAt": 1751234567890,
+      "sizes": {
+        "S":   { "registered": 0, "checkedIn": 0, "issued": 0 },
+        "M":   { "registered": 0, "checkedIn": 0, "issued": 0 },
+        "L":   { "registered": 0, "checkedIn": 0, "issued": 0 },
+        "XL":  { "registered": 0, "checkedIn": 0, "issued": 0 },
+        "XXL": { "registered": 0, "checkedIn": 0, "issued": 0 }
+      }
+    }
+  },
+
+  "audit": {
+    "AUTO_PUSH_KEY": {
+      "timestamp": 1751234567890,
+      "action": "check_in",
+      "_actionValues": ["register", "check_in", "tshirt_issue", "manual_override", "qr_replace", "cancel"],
+      "regNum": 1001,
+      "volunteerId": "VOL001",
+      "counter": "CI-1",
+      "device": "iPad Safari",
+      "notes": ""
+    }
+  },
+
+  "incidents": {
+    "AUTO_PUSH_KEY": {
+      "timestamp": 1751234567890,
+      "category": "medical",
+      "_categoryValues": ["medical", "security", "lost_child", "lost_property", "vip_arrival", "technical", "inventory", "weather"],
+      "description": "Participant felt unwell near Gate 2",
+      "assignedTo": "Medical Team",
+      "status": "open",
+      "_statusValues": ["open", "in_progress", "resolved"],
+      "resolvedAt": null
+    }
+  }
+}

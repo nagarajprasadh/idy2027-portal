@@ -1,0 +1,47 @@
+{
+  "rules": {
+
+    "counters": {
+      "lastRegistrationNumber": {
+        ".read": true,
+        ".write": true
+      }
+    },
+
+    "registrations": {
+      "$emailKey": {
+        ".read": false,
+        ".write": "!data.exists() || data.child('participantCount').val() < 5"
+      }
+    },
+
+    "participants": {
+      "$regNum": {
+        ".read": true,
+        ".write": "!data.exists()"
+      }
+    },
+
+    "dashboard": {
+      "summary": {
+        ".read": true,
+        ".write": false
+      }
+    },
+
+    "volunteers": {
+      ".read": false,
+      ".write": false
+    },
+
+    "audit": {
+      ".read": false,
+      ".write": false
+    },
+
+    "incidents": {
+      ".read": false,
+      ".write": false
+    }
+  }
+}

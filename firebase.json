@@ -1,0 +1,32 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "database.rules.json",
+      "db-structure.json",
+      ".firebaserc",
+      "**/.*",
+      ".github/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/registration-portal.html"
+      }
+    ],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          { "key": "X-Frame-Options",        "value": "SAMEORIGIN" },
+          { "key": "X-Content-Type-Options",  "value": "nosniff" },
+          { "key": "Referrer-Policy",         "value": "strict-origin-when-cross-origin" }
+        ]
+      }
+    ]
+  },
+  "database": {
+    "rules": "database.rules.json"
+  }
+}

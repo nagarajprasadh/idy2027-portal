@@ -1,0 +1,45 @@
+# ─────────────────────────────────────────────────────────────────────
+# IDY 2027 — Auto-deploy to Firebase Hosting
+#
+# FIRST-TIME SETUP (do this once):
+#
+# Step 1 — Create a Firebase Service Account key:
+#   Firebase Console → Project Settings → Service Accounts
+#   → Generate new private key → download the JSON file
+#
+# Step 2 — Add it as a GitHub Secret:
+#   GitHub repo → Settings → Secrets and variables → Actions
+#   → New repository secret
+#   Name:  FIREBASE_SERVICE_ACCOUNT_IDY2027
+#   Value: (paste the entire contents of the downloaded JSON file)
+#
+# Step 3 — Add your Firebase Project ID as a secret:
+#   Name:  FIREBASE_PROJECT_ID
+#   Value: your-project-id  (found in Firebase Console → Project Settings)
+#
+# That's it. Every push to the main branch will auto-deploy.
+# ─────────────────────────────────────────────────────────────────────
+
+name: Deploy to Firebase Hosting
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken:             ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_IDY2027 }}
+          projectId:             ${{ secrets.FIREBASE_PROJECT_ID }}
+          channelId:             live
