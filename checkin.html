@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>IDY 2027 — Check-in</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600;700&family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy:    #002D6E;
+      --saffron: #FF9933;
+      --green:   #138808;
+      --white:   #FFFFFF;
+      --bg:      #F4F6FB;
+      --border:  #DDE2EE;
+      --text:    #1A1A2E;
+      --muted:   #6B7280;
+      --error:   #DC2626;
+      --ok:      #16A34A;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans', 'Noto Sans Thai', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Tricolor ── */
+    .tricolor { display: flex; height: 5px; }
+    .tricolor div { flex: 1; }
+    .tc-s { background: var(--saffron); }
+    .tc-w { background: #fff; border-top: 1px solid #E8E0D0; border-bottom: 1px solid #E8E0D0; }
+    .tc-g { background: var(--green); }
+
+    /* ── Header ── */
+    header {
+      background: var(--navy);
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .hdr-left { display: flex; align-items: center; gap: 10px; }
+    .hdr-left h1 { color: #fff; font-size: 15px; font-weight: 700; }
+    .hdr-left p  { color: rgba(255,255,255,.6); font-size: 11px; margin-top: 1px; }
+    .badge {
+      background: var(--saffron);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+    .session-info {
+      display: none;
+      text-align: right;
+    }
+    .session-info.show { display: block; }
+    .session-info .vol-name { color: #fff; font-size: 13px; font-weight: 700; }
+    .session-info .counter  { color: var(--saffron); font-size: 11px; margin-top: 1px; }
+
+    /* ── Container ── */
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 24px 16px 48px;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--white);
+      border-radius: 14px;
+      padding: 28px 22px;
+      box-shadow: 0 2px 8px rgba(0,45,110,0.08);
+      margin-bottom: 14px;
+    }
+    .card-title    { font-size: 20px; font-weight: 700; color: var(--navy); margin-bottom: 5px; }
+    .card-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 24px; line-height: 1.5; }
+
+    /* ── Form ── */
+    .form-group { margin-bottom: 18px; }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 6px;
+    }
+    input[type="text"], input[type="password"], select {
+      width: 100%;
+      padding: 13px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 16px;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--white);
+      transition: border-color .18s;
+      -webkit-appearance: none;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--navy);
+      box-shadow: 0 0 0 3px rgba(0,45,110,0.09);
+    }
+
+    /* ── PIN pad ── */
+    .pin-display {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .pin-dot {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: transparent;
+      transition: all .2s;
+    }
+    .pin-dot.filled { background: var(--navy); border-color: var(--navy); }
+
+    .pin-pad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      max-width: 280px;
+      margin: 0 auto 20px;
+    }
+    .pin-key {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 22px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .15s;
+      user-select: none;
+    }
+    .pin-key:active { background: var(--navy); color: #fff; border-color: var(--navy); }
+    .pin-key.del { font-size: 18px; color: var(--muted); }
+    .pin-key.zero { grid-column: 2; }
+    .pin-error { color: var(--error); font-size: 13px; text-align: center; margin-top: -10px; margin-bottom: 10px; display: none; }
+    .pin-error.show { display: block; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 15px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      transition: all .18s;
+    }
+    .btn-navy   { background: var(--navy);    color: #fff; }
+    .btn-navy:hover:not(:disabled) { background: #003a8c; }
+    .btn-navy:disabled { opacity: .4; cursor: not-allowed; }
+    .btn-green  { background: #16A34A; color: #fff; font-size: 18px; padding: 18px; }
+    .btn-green:hover { background: #15803D; }
+    .btn-ghost  { background: transparent; color: var(--muted); border: 1.5px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--navy); color: var(--navy); }
+    .btn-danger { background: var(--error); color: #fff; }
+    .btn-sm { padding: 10px; font-size: 14px; }
+
+    /* ── Counter grid ── */
+    .counter-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .counter-opt {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--white);
+      color: var(--text);
+      transition: all .15s;
+      user-select: none;
+      text-align: center;
+      line-height: 1.2;
+    }
+    .counter-opt:hover { border-color: var(--navy); color: var(--navy); }
+    .counter-opt.selected { background: var(--navy); border-color: var(--navy); color: #fff; }
+
+    /* ── Scanner screen ── */
+    .scanner-wrap {
+      position: relative;
+      background: #000;
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    #qr-reader {
+      width: 100%;
+    }
+    #qr-reader video {
+      width: 100% !important;
+      border-radius: 14px;
+    }
+    .scan-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .scan-frame {
+      width: 200px; height: 200px;
+      border: 3px solid var(--saffron);
+      border-radius: 12px;
+      box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);
+    }
+    .scan-label {
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    /* ── Result screens ── */
+    .result-screen {
+      border-radius: 14px;
+      padding: 28px 22px;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+    .result-screen.green { background: #DCFCE7; border: 2px solid #86EFAC; }
+    .result-screen.red   { background: #FEE2E2; border: 2px solid #FCA5A5; }
+    .result-screen.warn  { background: #FEF9C3; border: 2px solid #FDE047; }
+
+    .result-icon {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 36px;
+    }
+    .green .result-icon { background: #16A34A; }
+    .red   .result-icon { background: var(--error); }
+    .warn  .result-icon { background: #CA8A04; }
+
+    .result-name { font-size: 24px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .result-reg  { font-size: 14px; color: var(--muted); margin-bottom: 16px; font-family: monospace; }
+
+    .detail-grid {
+      background: rgba(255,255,255,.7);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 18px;
+      text-align: left;
+    }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(0,0,0,.06);
+      font-size: 14px;
+    }
+    .detail-row:last-child { border-bottom: none; }
+    .d-lbl { color: var(--muted); }
+    .d-val { font-weight: 700; }
+    .tsize { background: var(--saffron); color: #fff; font-weight: 700; padding: 2px 12px; border-radius: 20px; font-size: 13px; }
+
+    /* ── Countdown ── */
+    .countdown {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 12px;
+    }
+
+    /* ── Spinner ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    /* ── Session status bar ── */
+    .status-bar {
+      background: #EEF2FF;
+      border: 1px solid #C7D2F0;
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+    }
+    .status-bar .vol  { font-weight: 700; color: var(--navy); }
+    .status-bar .ctr  { color: var(--saffron); font-weight: 700; }
+    .end-session-btn {
+      background: none;
+      border: 1.5px solid var(--border);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all .15s;
+    }
+    .end-session-btn:hover { border-color: var(--error); color: var(--error); }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 400px) {
+      .counter-grid { grid-template-columns: repeat(5, 1fr); gap: 6px; }
+      .counter-opt  { font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="tricolor"><div class="tc-s"></div><div class="tc-w"></div><div class="tc-g"></div></div>
+
+<header>
+  <div class="hdr-left">
+    <div>
+      <h1>IDY 2027 — Check-in</h1>
+      <p>Embassy of India, Bangkok</p>
+    </div>
+  </div>
+  <div class="session-info" id="sessionInfo">
+    <div class="vol-name" id="hdrVolName"></div>
+    <div class="counter" id="hdrCounter"></div>
+  </div>
+  <div id="hdrBadge"><span class="badge">VOLUNTEER</span></div>
+</header>
+
+<div class="container">
+
+  <!-- ════ SCREEN 1: PIN ════ -->
+  <div id="screenPin">
+    <div class="card">
+      <div class="card-title">Volunteer Login</div>
+      <div class="card-subtitle">Enter your 4-digit PIN to begin your check-in session.</div>
+
+      <div class="pin-display">
+        <div class="pin-dot" id="pd1"></div>
+        <div class="pin-dot" id="pd2"></div>
+        <div class="pin-dot" id="pd3"></div>
+        <div class="pin-dot" id="pd4"></div>
+      </div>
+
+      <div class="pin-error" id="pinError">Incorrect PIN. Please try again.</div>
+
+      <div class="pin-pad">
+        <div class="pin-key" onclick="pinKey('1')">1</div>
+        <div class="pin-key" onclick="pinKey('2')">2</div>
+        <div class="pin-key" onclick="pinKey('3')">3</div>
+        <div class="pin-key" onclick="pinKey('4')">4</div>
+        <div class="pin-key" onclick="pinKey('5')">5</div>
+        <div class="pin-key" onclick="pinKey('6')">6</div>
+        <div class="pin-key" onclick="pinKey('7')">7</div>
+        <div class="pin-key" onclick="pinKey('8')">8</div>
+        <div class="pin-key" onclick="pinKey('9')">9</div>
+        <div class="pin-key del" onclick="pinDel()">⌫</div>
+        <div class="pin-key zero" onclick="pinKey('0')">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ SCREEN 2: NAME + COUNTER ════ -->
+  <div id="screenSetup" class="hidden">
+    <div class="card">
+      <div class="card-title">Session Setup</div>
+      <div class="card-subtitle">Enter your name and select your check-in counter.</div>
+
+      <div class="form-group">
+        <label for="volName">Your Name</label>
+        <input type="text" id="volName" placeholder="Enter your name" oninput="chkSetup()">
+      </div>
+
+      <div class="form-group">
+        <label>Check-in Counter</label>
+        <div class="counter-grid" id="counterGrid"></div>
+      </div>
+
+      <button class="btn btn-navy" id="btnBegin" onclick="beginSession()" disabled>
+        Begin Session →
+      </button>
+    </div>
+  </div>
+
+  <!-- ════ SCREEN 3: SCANNER ════ -->
+  <div id="screenScan" class="hidden">
+    <div class="status-bar">
+      <div><span class="vol" id="sbVolName"></span> &nbsp;·&nbsp; <span class="ctr" id="sbCounter"></span></div>
+      <button class="end-session-btn" onclick="endSession()">End Session</button>
+    </div>
+
+    <div class="scan-label">Point camera at participant's QR code</div>
+    <div class="scanner-wrap">
+      <div id="qr-reader"></div>
+      <div class="scan-overlay"><div class="scan-frame"></div></div>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <div class="card-subtitle" style="margin-bottom:10px;">No camera? Enter registration number manually:</div>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="manualReg" placeholder="Registration number (e.g. 1001)"
+               style="flex:1;" oninput="this.value=this.value.replace(/\D/g,'')"
+               onkeydown="if(event.key==='Enter')manualLookup()">
+        <button class="btn btn-navy btn-sm" style="width:auto;padding:10px 18px;"
+                onclick="manualLookup()">Look up</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ SCREEN 4a: GREEN — Ready to check in ════ -->
+  <div id="screenGreen" class="hidden">
+    <div class="result-screen green">
+      <div class="result-icon">✓</div>
+      <div class="result-name" id="gName"></div>
+      <div class="result-reg"  id="gReg"></div>
+      <div class="detail-grid">
+        <div class="detail-row"><span class="d-lbl">Registration #</span> <span class="d-val" id="gRegNum"></span></div>
+        <div class="detail-row"><span class="d-lbl">T-Shirt Size</span>   <span class="tsize" id="gSize"></span></div>
+        <div class="detail-row"><span class="d-lbl">Status</span>         <span class="d-val" style="color:#16A34A;">✓ Ready for check-in</span></div>
+      </div>
+      <button class="btn btn-green" id="btnCheckin" onclick="confirmCheckin()">
+        ✓ CONFIRM CHECK-IN
+      </button>
+    </div>
+    <button class="btn btn-ghost" onclick="cancelResult()" style="margin-top:8px;">Cancel — Scan Next</button>
+  </div>
+
+  <!-- ════ SCREEN 4b: RED — Already checked in ════ -->
+  <div id="screenRed" class="hidden">
+    <div class="result-screen red">
+      <div class="result-icon" style="background:var(--error);">✗</div>
+      <div style="font-size:22px;font-weight:700;color:var(--error);margin-bottom:4px;">Already Checked In</div>
+      <div class="result-name" id="rName"></div>
+      <div class="result-reg"  id="rReg"></div>
+      <div class="detail-grid">
+        <div class="detail-row"><span class="d-lbl">Registration #</span> <span class="d-val" id="rRegNum"></span></div>
+        <div class="detail-row"><span class="d-lbl">T-Shirt Size</span>   <span class="tsize" id="rSize"></span></div>
+        <div class="detail-row"><span class="d-lbl">Checked In At</span>  <span class="d-val" id="rTime"></span></div>
+        <div class="detail-row"><span class="d-lbl">Counter</span>        <span class="d-val" id="rCounter"></span></div>
+        <div class="detail-row"><span class="d-lbl">Volunteer</span>      <span class="d-val" id="rVol"></span></div>
+      </div>
+      <div class="countdown" id="redCountdown"></div>
+    </div>
+    <button class="btn btn-ghost" onclick="cancelResult()">Scan Next</button>
+  </div>
+
+  <!-- ════ SCREEN 4c: WARN — Invalid QR ════ -->
+  <div id="screenWarn" class="hidden">
+    <div class="result-screen warn">
+      <div class="result-icon" style="background:#CA8A04;">!</div>
+      <div style="font-size:20px;font-weight:700;color:#854D0E;margin-bottom:8px;" id="warnTitle">Invalid QR Code</div>
+      <div style="font-size:14px;color:#854D0E;" id="warnMsg">This QR code was not found in the system.</div>
+      <div class="countdown" id="warnCountdown"></div>
+    </div>
+    <button class="btn btn-ghost" onclick="cancelResult()">Scan Next</button>
+  </div>
+
+</div><!-- /container -->
+
+<!-- Firebase + html5-qrcode -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   CONFIG  —  admin: change CHECKIN_PIN before event day
+═══════════════════════════════════════════════════════ */
+const CHECKIN_PIN    = '2027';          // 4-digit PIN for all check-in volunteers
+const COUNTER_COUNT  = 10;             // number of check-in counters
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyCJ31EusilYxaGWaorwYjqffVgV5crSecM",
+  authDomain:        "idy2027-dba28.firebaseapp.com",
+  databaseURL:       "https://idy2027-dba28-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "idy2027-dba28",
+  storageBucket:     "idy2027-dba28.firebasestorage.app",
+  messagingSenderId: "29018221908",
+  appId:             "1:29018221908:web:9d2871f91ed3f441e82cc1"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* ═══════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════ */
+let pinBuffer       = '';
+let volunteerName   = '';
+let selectedCounter = '';
+let qrScanner       = null;
+let currentParticipant = null;
+let countdownTimer  = null;
+let sessionTimeout  = null;
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+
+/* ═══════════════════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════════════════ */
+const el = id => document.getElementById(id);
+function show(id)   { el(id).classList.remove('hidden'); }
+function hide(id)   { el(id).classList.add('hidden');    }
+function showOnly(id) {
+  ['screenPin','screenSetup','screenScan','screenGreen','screenRed','screenWarn']
+    .forEach(s => hide(s));
+  show(id);
+}
+
+function fmtTime(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+/* ═══════════════════════════════════════════════════════
+   BUILD COUNTERS
+═══════════════════════════════════════════════════════ */
+(function buildCounters() {
+  const grid = el('counterGrid');
+  for (let i = 1; i <= COUNTER_COUNT; i++) {
+    const d = document.createElement('div');
+    d.className = 'counter-opt';
+    d.textContent = 'CI-' + i;
+    d.onclick = () => pickCounter('CI-' + i, d);
+    grid.appendChild(d);
+  }
+})();
+
+function pickCounter(val, btn) {
+  selectedCounter = val;
+  document.querySelectorAll('.counter-opt').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  chkSetup();
+}
+
+/* ═══════════════════════════════════════════════════════
+   PIN SCREEN
+═══════════════════════════════════════════════════════ */
+function pinKey(digit) {
+  if (pinBuffer.length >= 4) return;
+  pinBuffer += digit;
+  updatePinDots();
+  el('pinError').classList.remove('show');
+  if (pinBuffer.length === 4) validatePin();
+}
+
+function pinDel() {
+  pinBuffer = pinBuffer.slice(0, -1);
+  updatePinDots();
+  el('pinError').classList.remove('show');
+}
+
+function updatePinDots() {
+  for (let i = 1; i <= 4; i++) {
+    el('pd' + i).classList.toggle('filled', i <= pinBuffer.length);
+  }
+}
+
+function validatePin() {
+  setTimeout(() => {
+    if (pinBuffer === CHECKIN_PIN) {
+      showOnly('screenSetup');
+      pinBuffer = '';
+      updatePinDots();
+    } else {
+      el('pinError').classList.add('show');
+      pinBuffer = '';
+      updatePinDots();
+    }
+  }, 200);
+}
+
+/* ═══════════════════════════════════════════════════════
+   SETUP SCREEN
+═══════════════════════════════════════════════════════ */
+function chkSetup() {
+  const nameOk = el('volName').value.trim().length > 1;
+  const ctrOk  = selectedCounter !== '';
+  el('btnBegin').disabled = !(nameOk && ctrOk);
+}
+
+function beginSession() {
+  volunteerName = el('volName').value.trim();
+  el('sbVolName').textContent  = volunteerName;
+  el('sbCounter').textContent  = selectedCounter;
+  el('hdrVolName').textContent = volunteerName;
+  el('hdrCounter').textContent = selectedCounter;
+  el('sessionInfo').classList.add('show');
+  el('hdrBadge').classList.add('hidden');
+  showOnly('screenScan');
+  startScanner();
+  resetSessionTimeout();
+}
+
+function endSession() {
+  if (!confirm('End check-in session?')) return;
+  stopScanner();
+  volunteerName = '';
+  selectedCounter = '';
+  el('volName').value = '';
+  document.querySelectorAll('.counter-opt').forEach(b => b.classList.remove('selected'));
+  el('sessionInfo').classList.remove('show');
+  el('hdrBadge').classList.remove('hidden');
+  el('btnBegin').disabled = true;
+  clearTimeout(sessionTimeout);
+  clearTimeout(countdownTimer);
+  pinBuffer = ''; updatePinDots();
+  showOnly('screenPin');
+}
+
+/* ═══════════════════════════════════════════════════════
+   SESSION TIMEOUT
+═══════════════════════════════════════════════════════ */
+function resetSessionTimeout() {
+  clearTimeout(sessionTimeout);
+  sessionTimeout = setTimeout(() => {
+    alert('Session timed out due to inactivity. Please log in again.');
+    endSession();
+  }, SESSION_TIMEOUT_MS);
+}
+
+document.addEventListener('touchstart', resetSessionTimeout);
+document.addEventListener('click', resetSessionTimeout);
+
+/* ═══════════════════════════════════════════════════════
+   QR SCANNER
+═══════════════════════════════════════════════════════ */
+function startScanner() {
+  qrScanner = new Html5Qrcode('qr-reader');
+  qrScanner.start(
+    { facingMode: 'environment' },
+    { fps: 12, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 },
+    onQrSuccess,
+    () => {} // silent failure
+  ).catch(err => {
+    el('qr-reader').innerHTML =
+      '<div style="padding:40px;text-align:center;color:#6B7280;font-size:14px;">' +
+      '📷 Camera not available.<br>Use manual entry below.</div>';
+  });
+}
+
+function stopScanner() {
+  if (qrScanner) {
+    qrScanner.stop().catch(() => {});
+    qrScanner = null;
+  }
+}
+
+function pauseScanner() { if (qrScanner) qrScanner.pause(true); }
+function resumeScanner() { if (qrScanner) qrScanner.resume(); }
+
+/* ═══════════════════════════════════════════════════════
+   QR SCAN RESULT
+═══════════════════════════════════════════════════════ */
+async function onQrSuccess(qrText) {
+  pauseScanner();
+  await processQR(qrText);
+}
+
+async function manualLookup() {
+  const regNum = el('manualReg').value.trim();
+  if (!regNum) return;
+  pauseScanner();
+  // For manual entry, we skip token validation
+  await processQR(regNum + '|MANUAL', true);
+  el('manualReg').value = '';
+}
+
+async function processQR(qrText, isManual = false) {
+  const parts  = qrText.split('|');
+  const regNum = parseInt(parts[0]);
+  const token  = parts[1] || '';
+
+  if (!regNum || regNum < 1000) {
+    showWarn('Invalid QR Code', 'This QR code format is not recognised.');
+    return;
+  }
+
+  try {
+    const snap = await db.ref('participants/' + regNum).once('value');
+
+    if (!snap.exists()) {
+      showWarn('Not Found', 'Registration #' + regNum + ' was not found in the system.');
+      return;
+    }
+
+    const p = snap.val();
+
+    // Token check (skip for manual entry)
+    if (!isManual && p.qrToken && p.qrToken !== token) {
+      showWarn('Invalid QR Code', 'QR token does not match. This QR may have been tampered with.');
+      return;
+    }
+
+    currentParticipant = p;
+
+    if (p.status === 'registered') {
+      showGreen(p);
+    } else {
+      showRed(p);
+    }
+
+  } catch (err) {
+    console.error(err);
+    showWarn('Connection Error', 'Could not reach the database. Check your internet connection.');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESULT SCREENS
+═══════════════════════════════════════════════════════ */
+function showGreen(p) {
+  el('gName').textContent   = p.name;
+  el('gReg').textContent    = 'Registration #' + p.regNum;
+  el('gRegNum').textContent = p.regNum;
+  el('gSize').textContent   = p.tshirtSize;
+  el('btnCheckin').disabled = false;
+  el('btnCheckin').innerHTML = '✓ CONFIRM CHECK-IN';
+  showOnly('screenGreen');
+}
+
+function showRed(p) {
+  el('rName').textContent    = p.name;
+  el('rReg').textContent     = 'Registration #' + p.regNum;
+  el('rRegNum').textContent  = p.regNum;
+  el('rSize').textContent    = p.tshirtSize;
+  el('rTime').textContent    = p.checkIn?.timestamp ? fmtTime(p.checkIn.timestamp) : '—';
+  el('rCounter').textContent = p.checkIn?.counter    || '—';
+  el('rVol').textContent     = p.checkIn?.volunteerId || '—';
+  showOnly('screenRed');
+  startCountdown('redCountdown', 6, cancelResult);
+}
+
+function showWarn(title, msg) {
+  el('warnTitle').textContent = title;
+  el('warnMsg').textContent   = msg;
+  showOnly('screenWarn');
+  startCountdown('warnCountdown', 4, cancelResult);
+}
+
+function cancelResult() {
+  clearTimeout(countdownTimer);
+  currentParticipant = null;
+  showOnly('screenScan');
+  resumeScanner();
+}
+
+/* ═══════════════════════════════════════════════════════
+   CONFIRM CHECK-IN
+═══════════════════════════════════════════════════════ */
+async function confirmCheckin() {
+  if (!currentParticipant) return;
+  const p   = currentParticipant;
+  const btn = el('btnCheckin');
+
+  btn.disabled  = true;
+  btn.innerHTML = '<span class="spinner"></span>Checking in…';
+
+  try {
+    const now = firebase.database.ServerValue.TIMESTAMP;
+
+    // Atomic transaction — prevents duplicate check-in even under concurrent scans
+    const txResult = await db.ref('participants/' + p.regNum).transaction(data => {
+      if (!data) return data;
+      if (data.status !== 'registered') return; // abort — already checked in
+      data.status = 'checked_in';
+      data.checkIn = {
+        done:        true,
+        timestamp:   Date.now(),
+        volunteerId: volunteerName,
+        counter:     selectedCounter
+      };
+      return data;
+    });
+
+    if (!txResult.committed) {
+      // Another device just checked in this person
+      const latest = txResult.snapshot.val();
+      showRed(latest);
+      return;
+    }
+
+    // Write audit log
+    db.ref('audit').push({
+      timestamp:   Date.now(),
+      action:      'check_in',
+      regNum:      p.regNum,
+      volunteerId: volunteerName,
+      counter:     selectedCounter,
+      device:      navigator.userAgent.substring(0, 80)
+    });
+
+    // Increment dashboard counter
+    db.ref('dashboard/summary/checkedIn').transaction(n => (n || 0) + 1);
+    db.ref(`dashboard/summary/sizes/${p.tshirtSize}/checkedIn`).transaction(n => (n || 0) + 1);
+
+    // Flash green then auto-return
+    btn.innerHTML = '✓ Checked In!';
+    btn.style.background = '#15803D';
+    startCountdown('', 2, cancelResult);
+    setTimeout(cancelResult, 2000);
+
+  } catch (err) {
+    console.error(err);
+    btn.disabled  = false;
+    btn.innerHTML = '✓ CONFIRM CHECK-IN';
+    alert('Check-in failed. Please try again.');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   COUNTDOWN HELPER
+═══════════════════════════════════════════════════════ */
+function startCountdown(elId, seconds, callback) {
+  clearTimeout(countdownTimer);
+  let remaining = seconds;
+
+  function tick() {
+    if (elId) {
+      const el2 = el(elId);
+      if (el2) el2.textContent = `Returning to scanner in ${remaining}s…`;
+    }
+    if (remaining <= 0) { callback(); return; }
+    remaining--;
+    countdownTimer = setTimeout(tick, 1000);
+  }
+  tick();
+}
+
+/* ═══════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════ */
+showOnly('screenPin');
+</script>
+</body>
+</html>

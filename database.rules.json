@@ -18,23 +18,23 @@
     "participants": {
       "$regNum": {
         ".read": true,
-        ".write": "!data.exists()"
+        ".write": true
       }
     },
 
     "dashboard": {
       "summary": {
         ".read": true,
-        ".write": false
+        ".write": true
       }
     },
 
-    "volunteers": {
+    "audit": {
       ".read": false,
-      ".write": false
+      ".write": true
     },
 
-    "audit": {
+    "volunteers": {
       ".read": false,
       ".write": false
     },
