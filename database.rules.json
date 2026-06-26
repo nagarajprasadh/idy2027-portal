@@ -10,7 +10,7 @@
 
     "registrations": {
       "$emailKey": {
-        ".read": false,
+        ".read": true,
         ".write": "!data.exists() || data.child('participantCount').val() < 5"
       }
     },
