@@ -639,8 +639,7 @@ function endSession() {
   clearTimeout(sessionTimeout);
   clearTimeout(sessionWarnTimeout);
   clearTimeout(countdownTimer);
-  pinBuffer = ''; updatePinDots();
-  showOnly('screenPin');
+  showOnly('screenSetup');
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -925,9 +924,9 @@ function startCountdown(elId, seconds, callback) {
 })();
 
 /* ═══════════════════════════════════════════════════════
-   INIT
+   INIT — no PIN, go straight to setup
 ═══════════════════════════════════════════════════════ */
-showOnly('screenPin');
+showOnly('screenSetup');
 </script>
 </body>
 </html>
