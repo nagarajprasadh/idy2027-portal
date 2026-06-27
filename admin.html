@@ -43,7 +43,7 @@
     /* PIN GATE */
     #pinGate {
       position: fixed; inset: 0; background: var(--bg);
-      display: flex; align-items: center; justify-content: center; z-index: 100;
+      display: none; align-items: center; justify-content: center; z-index: 100;
     }
     .pin-box {
       background: var(--white); border-radius: 20px; padding: 36px 32px;
@@ -68,7 +68,7 @@
     #pinError { color: var(--danger); font-size: 13px; min-height: 20px; }
 
     /* MAIN */
-    #mainApp { display: none; }
+    #mainApp { display: block; }
     .container { max-width: 900px; margin: 0 auto; padding: 20px 16px 60px; }
 
     /* SEARCH */
@@ -825,6 +825,9 @@ function updateResultCount() {
   const cards = document.querySelectorAll('.p-card');
   setCount(cards.length + ' result' + (cards.length !== 1 ? 's' : ''));
 }
+
+// No PIN — load immediately
+loadRecent();
 </script>
 </body>
 </html>
