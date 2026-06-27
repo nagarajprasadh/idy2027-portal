@@ -547,23 +547,23 @@ function updateDailyStats(daily) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   REAL-TIME LISTENER — LIVE REGISTRATIONS FEED
-   Reads from dedicated recentRegistrations node (not
-   a query on participants) for reliable real-time updates
+   LIVE FEED — REST initial load + SDK child listeners
 ═══════════════════════════════════════════════════════ */
-db.ref('dashboard/recentRegistrations').orderByKey().limitToLast(10).on('value', snap => {
-  const list = el('feedList');
-  const items = [];
-  snap.forEach(child => items.push(child.val()));
-  items.reverse(); // newest first
+const DB_REST = 'https://idy2027-dba28-default-rtdb.asia-southeast1.firebasedatabase.app';
+const feedCache = {}; // push-key → entry
 
-  if (items.length === 0) {
+function renderFeed() {
+  const list = el('feedList');
+  const items = Object.values(feedCache);
+  items.sort((a, b) => (b.registeredAt || 0) - (a.registeredAt || 0));
+  const recent = items.slice(0, 10);
+
+  if (recent.length === 0) {
     list.innerHTML = '<li class="feed-empty">No registrations yet — feed updates live as people register.</li>';
     return;
   }
-
   list.innerHTML = '';
-  items.forEach(p => {
+  recent.forEach(p => {
     const li = document.createElement('li');
     li.className = 'feed-item';
     const ts = p.registeredAt ? timeAgo(p.registeredAt) : '';
@@ -574,7 +574,22 @@ db.ref('dashboard/recentRegistrations').orderByKey().limitToLast(10).on('value',
       <span class="feed-time">${ts}</span>`;
     list.appendChild(li);
   });
-});
+}
+
+// Step 1: REST fetch for guaranteed complete initial load
+fetch(`${DB_REST}/dashboard/recentRegistrations.json`)
+  .then(r => r.json())
+  .then(data => {
+    if (data && typeof data === 'object') {
+      Object.entries(data).forEach(([k, v]) => { feedCache[k] = v; });
+    }
+    renderFeed();
+  }).catch(() => {});
+
+// Step 2: child listeners for live updates
+const feedRef = db.ref('dashboard/recentRegistrations');
+feedRef.on('child_added',   snap => { feedCache[snap.key] = snap.val(); renderFeed(); });
+feedRef.on('child_removed', snap => { delete feedCache[snap.key];       renderFeed(); });
 
 function timeAgo(ts) {
   const diff = Math.floor((Date.now() - ts) / 1000);
