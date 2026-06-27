@@ -969,7 +969,28 @@ function startCountdown(elId, seconds, callback) {
 (function initUsbScanner() {
   let buf   = '';
   let timer = null;
-  const TIMEOUT = 80; // ms — scanners finish in <50ms; humans type slower
+
+  function tryProcess() {
+    clearTimeout(timer);
+    const data = buf.trim();
+    buf = '';
+    if (data.length < 3) return; // too short to be a valid QR
+
+    // If on a result screen, dismiss it first
+    const onResult = ['screenGreen','screenRed','screenWarn']
+      .some(id => !el(id).classList.contains('hidden'));
+    if (onResult) {
+      clearTimeout(countdownTimer);
+      currentParticipant = null;
+    }
+
+    // Must be on scan screen (or result screen above)
+    const onScanOrResult = onResult || !el('screenScan').classList.contains('hidden');
+    if (!onScanOrResult) return;
+
+    pauseScanner();
+    processQR(data);
+  }
 
   document.addEventListener('keydown', e => {
     // Ignore modifier-only keys
@@ -978,38 +999,18 @@ function startCountdown(elId, seconds, callback) {
     // Buffer printable characters (scanner sends all chars in <50ms)
     if (e.key.length === 1) {
       buf += e.key;
-      clearTimeout(timer);
-      // Prevent char from appearing in any focused input while scanner is streaming
+      // Prevent char from appearing in any focused element while scanner streams
       if (buf.length > 1) e.preventDefault();
-      // Auto-flush if no Enter arrives (shouldn't happen with real scanners)
-      timer = setTimeout(() => { buf = ''; }, 500);
+      clearTimeout(timer);
+      // Auto-process 150ms after last character — no Enter required
+      timer = setTimeout(tryProcess, 150);
       return;
     }
 
+    // Enter: process immediately (works for scanners that DO send Enter)
     if (e.key === 'Enter') {
-      clearTimeout(timer);
-      const data = buf.trim();
-      buf = '';
-      if (data.length < 3) return; // too short to be a valid QR
-
-      e.preventDefault(); // block form submission / newline in any focused element
-
-      // If on a result screen, cancel it first then process new scan
-      const onResult = ['screenGreen','screenRed','screenWarn']
-        .some(id => !el(id).classList.contains('hidden'));
-      if (onResult) {
-        clearTimeout(countdownTimer);
-        currentParticipant = null;
-      }
-
-      // Must be past setup to process scans
-      const onScanOrResult = onResult ||
-        !el('screenScan').classList.contains('hidden');
-      if (!onScanOrResult) return;
-
-      pauseScanner();
-      processQR(data);
-      return;
+      e.preventDefault();
+      tryProcess();
     }
   });
 })();
