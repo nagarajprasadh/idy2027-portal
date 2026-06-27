@@ -73,7 +73,7 @@
     .updated-time { color: rgba(255,255,255,.5); font-size: 11px; }
 
     /* ── Container ── */
-    .container { max-width: 860px; margin: 0 auto; padding: 22px 18px 48px; }
+    .container { max-width: 680px; margin: 0 auto; padding: 22px 18px 48px; }
 
     /* ── Section label ── */
     .section-lbl {
@@ -83,6 +83,7 @@
       text-transform: uppercase;
       color: var(--muted);
       margin: 22px 0 10px;
+      text-align: center;
     }
 
     /* ── Card base ── */
@@ -105,9 +106,10 @@
     .stat-card {
       background: var(--white);
       border-radius: 14px;
-      padding: 20px 18px;
+      padding: 18px 14px;
       box-shadow: 0 1px 4px rgba(0,45,110,0.07);
       border-top: 4px solid transparent;
+      text-align: center;
     }
     .stat-card.c-navy   { border-top-color: var(--navy); }
     .stat-card.c-saf    { border-top-color: var(--saffron); }
@@ -115,7 +117,7 @@
     .stat-card.c-purple { border-top-color: #7C3AED; }
 
     .stat-lbl   { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin-bottom: 6px; }
-    .stat-val   { font-size: 36px; font-weight: 800; color: var(--text); line-height: 1; }
+    .stat-val   { font-size: 30px; font-weight: 800; color: var(--text); line-height: 1; }
     .stat-sub   { font-size: 12px; color: var(--muted); margin-top: 6px; }
 
     /* ── Check-in progress bar ── */
@@ -153,46 +155,35 @@
     .ci-checked { font-weight: 700; color: var(--ok); }
     .ci-pending { font-weight: 700; color: var(--warn); }
 
-    /* ── T-Shirt size table ── */
-    .size-grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 12px;
-    }
-    @media (max-width: 600px) { .size-grid { grid-template-columns: repeat(3, 1fr); } }
-
-    .size-card {
-      background: var(--white);
-      border-radius: 12px;
-      padding: 16px 14px;
-      box-shadow: 0 1px 4px rgba(0,45,110,0.07);
-      text-align: center;
-      border-bottom: 4px solid var(--border);
-      transition: border-color .3s;
-    }
-    .size-card.ok   { border-bottom-color: var(--ok); }
-    .size-card.warn { border-bottom-color: var(--warn); }
-    .size-card.low  { border-bottom-color: var(--danger); }
-
-    .size-name  { font-size: 22px; font-weight: 800; color: var(--navy); margin-bottom: 10px; }
-    .size-reg   { font-size: 26px; font-weight: 800; color: var(--text); }
-    .size-reg-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin-bottom: 8px; }
-    .size-mini-bar {
-      background: #F0F2F8;
-      border-radius: 99px;
-      height: 6px;
-      margin: 8px 0 10px;
-      overflow: hidden;
-    }
-    .size-mini-fill { height: 100%; border-radius: 99px; background: var(--saffron); transition: width .5s ease; }
-    .size-row {
+    /* ── T-Shirt size boxes ── */
+    .size-boxes {
       display: flex;
-      justify-content: space-between;
-      font-size: 11px;
-      color: var(--muted);
-      margin-top: 4px;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
     }
-    .size-row span:last-child { font-weight: 700; color: var(--text); }
+    .sz-box {
+      background: #F0F4FF;
+      border: 1.5px solid #C7D4F0;
+      border-radius: 12px;
+      padding: 14px 18px;
+      text-align: center;
+      min-width: 80px;
+      flex: 1;
+      max-width: 110px;
+    }
+    .sz-lbl { font-size: 20px; font-weight: 800; color: var(--navy); line-height: 1; }
+    .sz-num { font-size: 26px; font-weight: 800; color: var(--text); margin-top: 6px; line-height: 1; }
+    .sz-ci  { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .sz-total {
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .sz-total strong { color: var(--navy); }
 
 
     /* ── Loading state ── */
@@ -291,8 +282,8 @@
   </div>
 
   <!-- ── T-SHIRT SIZES ── -->
-  <div class="section-lbl">T-Shirt Sizes — Registration &amp; Check-in</div>
-  <div class="size-grid" id="sizeGrid">
+  <div class="section-lbl">T-Shirt Sizes</div>
+  <div class="card" id="sizeGrid">
     <div class="loading"><span class="spinner-sm"></span>Loading…</div>
   </div>
 
@@ -379,38 +370,25 @@ function updateSummary(s) {
 const SIZES = ['S','M','L','XL','XXL'];
 
 function updateSizeGrid(sizes) {
-  const grid = el('sizeGrid');
-  const totalReg = SIZES.reduce((acc, sz) => acc + ((sizes[sz]?.registered) || 0), 0);
+  const grid    = el('sizeGrid');
+  const total   = SIZES.reduce((acc, sz) => acc + ((sizes[sz]?.registered) || 0), 0);
+  const totalCI = SIZES.reduce((acc, sz) => acc + ((sizes[sz]?.checkedIn)  || 0), 0);
 
-  grid.innerHTML = '';
+  let boxes = '<div class="size-boxes">';
   SIZES.forEach(sz => {
-    const data    = sizes[sz] || { registered: 0, checkedIn: 0, issued: 0 };
-    const reg     = data.registered || 0;
-    const ci      = data.checkedIn  || 0;
-    const issued  = data.issued     || 0;
-    const ciPct   = pct(ci, reg);
-    const barPct  = totalReg > 0 ? pct(reg, totalReg) : 0;
-
-    // Color code by check-in %
-    let colorClass = '';
-    if (reg > 0) {
-      if (ciPct >= 30) colorClass = 'ok';
-      else if (ciPct >= 10) colorClass = 'warn';
-      else colorClass = 'low';
-    }
-
-    const card = document.createElement('div');
-    card.className = 'size-card ' + colorClass;
-    card.innerHTML = `
-      <div class="size-name">${sz}</div>
-      <div class="size-reg-lbl">Registered</div>
-      <div class="size-reg">${fmt(reg)}</div>
-      <div class="size-mini-bar">
-        <div class="size-mini-fill" style="width:${barPct}%"></div>
-      </div>
-      <div class="size-row"><span>Checked In</span><span>${fmt(ci)} <span style="color:var(--muted);font-weight:400;">(${ciPct}%)</span></span></div>`;
-    grid.appendChild(card);
+    const data = sizes[sz] || {};
+    const reg  = data.registered || 0;
+    const ci   = data.checkedIn  || 0;
+    boxes += `
+      <div class="sz-box">
+        <div class="sz-lbl">${sz}</div>
+        <div class="sz-num">${fmt(reg)}</div>
+        <div class="sz-ci">${fmt(ci)} in</div>
+      </div>`;
   });
+  boxes += '</div>';
+  boxes += `<div class="sz-total">Total registered: <strong>${fmt(total)}</strong> &nbsp;·&nbsp; Checked in: <strong>${fmt(totalCI)}</strong></div>`;
+  grid.innerHTML = boxes;
 }
 
 
