@@ -917,13 +917,21 @@ async function confirmCheckin() {
       device:      navigator.userAgent.substring(0, 80)
     });
 
-    // Increment dashboard counters — check-in + t-shirt together
+    // Increment dashboard counters
     const today = new Date().toLocaleDateString('en-CA');
     db.ref('dashboard/summary/checkedIn').transaction(n => (n || 0) + 1);
     db.ref(`dashboard/summary/sizes/${p.tshirtSize}/checkedIn`).transaction(n => (n || 0) + 1);
     db.ref(`dashboard/daily/${today}/checkedIn`).transaction(n => (n || 0) + 1);
 
-    // Show green screen with t-shirt size — auto-return in 4s
+    // Push to recent check-ins feed, trim to 10
+    const ciRef = db.ref('dashboard/recentCheckIns');
+    ciRef.push({ regNum: p.regNum, name: p.name, tshirtSize: p.tshirtSize, checkedInAt: Date.now(), counter: selectedCounter });
+    ciRef.once('value').then(snap => {
+      const keys = Object.keys(snap.val() || {});
+      if (keys.length > 10) keys.slice(0, keys.length - 10).forEach(k => ciRef.child(k).remove());
+    });
+
+    // Show green screen with t-shirt size — auto-return in 2s
     showGreen(p);
 
   } catch (err) {
