@@ -173,6 +173,18 @@
     .btn-green:hover { background: #15803D; }
     .btn-ghost  { background: transparent; color: var(--muted); border: 1.5px solid var(--border); }
     .btn-ghost:hover { border-color: var(--navy); color: var(--navy); }
+
+    /* Mode toggle */
+    .mode-btn { flex:1; padding:12px; border-radius:12px; border:2px solid var(--border); background:#fff; font-size:15px; font-weight:700; cursor:pointer; font-family:inherit; color:var(--muted); transition:all .15s; }
+    .mode-btn.mode-active { background:var(--navy); color:#fff; border-color:var(--navy); }
+
+    /* On-screen keypad */
+    .keypad-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:4px; }
+    .kp-key  { height:70px; border-radius:14px; border:1.5px solid var(--border); background:#fff; font-size:28px; font-weight:700; color:var(--navy); cursor:pointer; font-family:inherit; transition:background .1s; }
+    .kp-key:active { background:#E0E7FF; }
+    .kp-del  { font-size:22px; color:var(--error); }
+    .kp-enter { background:var(--navy); color:#fff; border-color:var(--navy); font-size:22px; }
+    .kp-enter:active { background:#001a45; }
     .btn-danger { background: var(--error); color: #fff; }
     .btn-sm { padding: 10px; font-size: 14px; }
 
@@ -421,20 +433,45 @@
       <div>IDY 2027 · Check-in &amp; T-Shirt Desk</div>
     </div>
 
-    <div class="scan-label">Point camera at participant's QR code<br><span style="font-size:13px;opacity:.7">or use USB / Bluetooth handheld scanner</span></div>
-    <div class="scanner-wrap">
-      <div id="qr-reader"></div>
-      <div class="scan-overlay"><div class="scan-frame"></div></div>
+    <!-- Mode toggle -->
+    <div style="display:flex;gap:10px;margin-bottom:16px;">
+      <button id="modeQR"  class="mode-btn mode-active" onclick="setMode('qr')">📷 QR Camera</button>
+      <button id="modeKB"  class="mode-btn"             onclick="setMode('kb')">🔢 Keyboard</button>
     </div>
 
-    <div class="card" style="margin-top:14px;">
-      <div class="card-subtitle" style="margin-bottom:10px;">No camera? Enter registration number manually:</div>
-      <div style="display:flex;gap:8px;">
-        <input type="text" id="manualReg" placeholder="Registration number (e.g. 1001)"
-               style="flex:1;" oninput="this.value=this.value.replace(/\D/g,'')"
-               onkeydown="if(event.key==='Enter')manualLookup()">
-        <button class="btn btn-navy btn-sm" style="width:auto;padding:10px 18px;"
-                onclick="manualLookup()">Look up</button>
+    <!-- QR panel -->
+    <div id="panelQR">
+      <div class="scan-label">Point camera at participant's QR code<br><span style="font-size:13px;opacity:.7">or use USB / Bluetooth handheld scanner</span></div>
+      <div class="scanner-wrap">
+        <div id="qr-reader"></div>
+        <div class="scan-overlay"><div class="scan-frame"></div></div>
+      </div>
+    </div>
+
+    <!-- Keyboard panel -->
+    <div id="panelKB" class="hidden">
+      <div style="text-align:center;margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px;">Enter Registration Number</div>
+        <div id="kbDisplay" style="
+          font-size:48px;font-weight:800;color:var(--navy);
+          background:#fff;border:2px solid var(--border);border-radius:14px;
+          padding:16px 24px;min-height:80px;letter-spacing:6px;
+          display:flex;align-items:center;justify-content:center;
+        ">—</div>
+      </div>
+      <div class="keypad-grid">
+        <button class="kp-key" onclick="kbPress('1')">1</button>
+        <button class="kp-key" onclick="kbPress('2')">2</button>
+        <button class="kp-key" onclick="kbPress('3')">3</button>
+        <button class="kp-key" onclick="kbPress('4')">4</button>
+        <button class="kp-key" onclick="kbPress('5')">5</button>
+        <button class="kp-key" onclick="kbPress('6')">6</button>
+        <button class="kp-key" onclick="kbPress('7')">7</button>
+        <button class="kp-key" onclick="kbPress('8')">8</button>
+        <button class="kp-key" onclick="kbPress('9')">9</button>
+        <button class="kp-key kp-del" onclick="kbPress('⌫')">⌫</button>
+        <button class="kp-key" onclick="kbPress('0')">0</button>
+        <button class="kp-key kp-enter" onclick="kbPress('↵')">↵</button>
       </div>
     </div>
   </div>
@@ -682,8 +719,53 @@ function stopScanner() {
   }
 }
 
-function pauseScanner() { if (qrScanner) qrScanner.pause(true); }
+function pauseScanner()  { if (qrScanner) qrScanner.pause(true); }
 function resumeScanner() { if (qrScanner) qrScanner.resume(); }
+
+/* ═══════════════════════════════════════════════════════
+   MODE TOGGLE — QR Camera vs Keyboard
+═══════════════════════════════════════════════════════ */
+let scanMode = 'qr'; // 'qr' | 'kb'
+let kbBuf = '';
+
+function setMode(mode) {
+  scanMode = mode;
+  el('modeQR').classList.toggle('mode-active', mode === 'qr');
+  el('modeKB').classList.toggle('mode-active', mode === 'kb');
+
+  if (mode === 'qr') {
+    el('panelQR').classList.remove('hidden');
+    el('panelKB').classList.add('hidden');
+    startScanner();
+  } else {
+    el('panelQR').classList.add('hidden');
+    el('panelKB').classList.remove('hidden');
+    stopScanner();
+    kbBuf = '';
+    updateKbDisplay();
+  }
+}
+
+function updateKbDisplay() {
+  el('kbDisplay').textContent = kbBuf.length > 0 ? kbBuf : '—';
+}
+
+function kbPress(key) {
+  if (key === '⌫') {
+    kbBuf = kbBuf.slice(0, -1);
+    updateKbDisplay();
+  } else if (key === '↵') {
+    if (kbBuf.length < 3) return;
+    const num = kbBuf;
+    kbBuf = '';
+    updateKbDisplay();
+    processQR(num, true);
+  } else {
+    if (kbBuf.length >= 6) return; // cap at 6 digits
+    kbBuf += key;
+    updateKbDisplay();
+  }
+}
 
 /* ═══════════════════════════════════════════════════════
    QR SCAN RESULT
@@ -780,7 +862,12 @@ function cancelResult() {
   clearTimeout(countdownTimer);
   currentParticipant = null;
   showOnly('screenScan');
-  resumeScanner();
+  if (scanMode === 'qr') {
+    resumeScanner();
+  } else {
+    kbBuf = '';
+    updateKbDisplay();
+  }
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -932,7 +1019,7 @@ function startCountdown(elId, seconds, callback) {
 volunteerName   = 'Staff';
 selectedCounter = 'CI-1';
 showOnly('screenScan');
-startScanner();
+setMode('qr'); // default to QR camera mode
 resetSessionTimeout();
 </script>
 </body>
