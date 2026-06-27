@@ -390,13 +390,17 @@ function loadRecent() {
   showLoading();
   document.getElementById('searchInput').value = '';
 
-  recentRef = db.ref('participants').orderByKey().limitToLast(20);
+  // Read all participants, sort by regNum descending, show last 20
+  // (avoids orderByKey SDK query reliability issues)
+  recentRef = db.ref('participants');
   recentRef.on('value', snap => {
     const items = [];
     snap.forEach(child => items.push({ key: child.key, ...child.val() }));
-    items.reverse();
-    renderCards(items);
-    setCount('Last ' + items.length + ' registrations — live 🔴');
+    // Sort by regNum descending (most recent first)
+    items.sort((a, b) => (parseInt(b.regNum || b.key) || 0) - (parseInt(a.regNum || a.key) || 0));
+    const recent = items.slice(0, 20);
+    renderCards(recent);
+    setCount('Last ' + recent.length + ' of ' + items.length + ' registrations — live 🔴');
   });
 }
 
