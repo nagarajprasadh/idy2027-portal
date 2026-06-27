@@ -18,7 +18,8 @@
     "participants": {
       ".read": true,
       "$regNum": {
-        ".write": true
+        ".write": "!data.exists() || newData.exists()",
+        ".validate": "newData.hasChildren(['name','tshirtSize','status','regNum','registeredAt'])"
       }
     },
 
