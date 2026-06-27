@@ -706,10 +706,13 @@ async function purgeTestRecords() {
   }
 
   db.ref('audit').push({ action: 'ADMIN_PURGE_TEST', cutoff, count: toDelete.length, timestamp: Date.now() });
-  toast(`🧹 Purged ${toDelete.length} test record(s)`, 'warn');
 
-  // Recalc counters automatically after purge
+  // Clear the recent registrations feed entirely — will repopulate on next real registration
+  await db.ref('dashboard/recentRegistrations').remove();
+
+  // Recalc all counters + daily totals + rebuild feed from remaining participants
   await recalcCounters(true);
+  toast(`🧹 Purged ${toDelete.length} test record(s) — dashboard cleared`, 'warn');
   loadRecent();
 }
 
@@ -718,22 +721,36 @@ async function purgeTestRecords() {
 ═══════════════════════════════════════ */
 async function recalcCounters(silent = false) {
   if (!silent && !confirm('Recompute ALL dashboard counters from actual participant records?\n\nThis fixes any drift. Takes a few seconds.')) return;
-  toast('Recalculating…', '');
+  if (!silent) toast('Recalculating…', '');
 
   const snap = await db.ref('participants').once('value');
   const sizes = {};
+  const daily = {}; // { 'YYYY-MM-DD': { registered, checkedIn } }
   let total = 0, checkedIn = 0, tshirtIssued = 0;
 
   snap.forEach(child => {
     const p = child.val();
-    if (!p || p.status === 'deleted') return; // skip soft-deleted
+    if (!p || p.status === 'deleted') return;
     total++;
     const sz = p.tshirtSize || 'UNK';
     if (!sizes[sz]) sizes[sz] = { registered: 0, checkedIn: 0, issued: 0 };
     sizes[sz].registered++;
+
+    // Daily registration count
+    if (p.registeredAt) {
+      const d = new Date(p.registeredAt).toLocaleDateString('en-CA');
+      if (!daily[d]) daily[d] = { registered: 0, checkedIn: 0 };
+      daily[d].registered++;
+    }
+
     if (p.status === 'checked_in') {
       checkedIn++;
       sizes[sz].checkedIn++;
+      if (p.checkIn?.timestamp) {
+        const d = new Date(p.checkIn.timestamp).toLocaleDateString('en-CA');
+        if (!daily[d]) daily[d] = { registered: 0, checkedIn: 0 };
+        daily[d].checkedIn++;
+      }
     }
     if (p.tshirtIssued) {
       tshirtIssued++;
@@ -741,20 +758,28 @@ async function recalcCounters(silent = false) {
     }
   });
 
+  // Wipe old size data first, then rewrite clean
+  await db.ref('dashboard/summary/sizes').remove();
+  await db.ref('dashboard/daily').remove();
+
   const updates = {
     'dashboard/summary/totalParticipants': total,
-    'dashboard/summary/checkedIn': checkedIn,
-    'dashboard/summary/tshirtIssued': tshirtIssued,
+    'dashboard/summary/checkedIn':         checkedIn,
+    'dashboard/summary/tshirtIssued':      tshirtIssued,
   };
   Object.entries(sizes).forEach(([sz, v]) => {
     updates[`dashboard/summary/sizes/${sz}/registered`] = v.registered;
     updates[`dashboard/summary/sizes/${sz}/checkedIn`]  = v.checkedIn;
     updates[`dashboard/summary/sizes/${sz}/issued`]     = v.issued;
   });
+  Object.entries(daily).forEach(([date, v]) => {
+    if (v.registered) updates[`dashboard/daily/${date}/registered`] = v.registered;
+    if (v.checkedIn)  updates[`dashboard/daily/${date}/checkedIn`]  = v.checkedIn;
+  });
 
   await db.ref().update(updates);
   db.ref('audit').push({ action:'ADMIN_RECALC', timestamp: Date.now(), result: { total, checkedIn, tshirtIssued } });
-  toast(`✅ Done — ${total} participants, ${checkedIn} checked in, ${tshirtIssued} shirts issued`, 'ok');
+  toast(`✅ Dashboard synced — ${total} participants, ${checkedIn} checked in`, 'ok');
 }
 
 /* ═══════════════════════════════════════
