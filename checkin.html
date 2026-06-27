@@ -418,8 +418,7 @@
   <!-- ════ SCREEN 3: SCANNER ════ -->
   <div id="screenScan" class="hidden">
     <div class="status-bar">
-      <div><span class="vol" id="sbVolName"></span> &nbsp;·&nbsp; <span class="ctr" id="sbCounter"></span></div>
-      <button class="end-session-btn" onclick="endSession()">End Session</button>
+      <div>IDY 2027 · Check-in &amp; T-Shirt Desk</div>
     </div>
 
     <div class="scan-label">Point camera at participant's QR code<br><span style="font-size:13px;opacity:.7">or use USB / Bluetooth handheld scanner</span></div>
@@ -629,19 +628,12 @@ function beginSession() {
 }
 
 function endSession() {
-  if (!confirm('End check-in session?')) return;
-  stopScanner();
-  volunteerName = '';
-  selectedCounter = '';
-  el('volName').value = '';
-  document.querySelectorAll('.counter-opt').forEach(b => b.classList.remove('selected'));
-  el('sessionInfo').classList.remove('show');
-  el('hdrBadge').classList.remove('hidden');
-  el('btnBegin').disabled = true;
   clearTimeout(sessionTimeout);
   clearTimeout(sessionWarnTimeout);
   clearTimeout(countdownTimer);
-  showOnly('screenSetup');
+  currentParticipant = null;
+  showOnly('screenScan');
+  resumeScanner();
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -935,9 +927,13 @@ function startCountdown(elId, seconds, callback) {
 })();
 
 /* ═══════════════════════════════════════════════════════
-   INIT — no PIN, go straight to setup
+   INIT — no PIN, no setup, go straight to scanner
 ═══════════════════════════════════════════════════════ */
-showOnly('screenSetup');
+volunteerName   = 'Staff';
+selectedCounter = 'CI-1';
+showOnly('screenScan');
+startScanner();
+resetSessionTimeout();
 </script>
 </body>
 </html>
