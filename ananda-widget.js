@@ -183,18 +183,20 @@
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   #_an_hdr_right { display:flex; gap:8px; align-items:center; flex-shrink:0; }
 
-  /* Language toggle — prominent, clear state */
-  #_an_lang {
-    background:rgba(255,255,255,.12);
-    border:1.5px solid rgba(255,255,255,.28);
-    color:#fff; border-radius:8px;
-    padding:5px 11px; font-size:12px; font-weight:700;
-    font-family:inherit; cursor:pointer; letter-spacing:.02em;
-    transition:all .15s; white-space:nowrap;
+  /* Language toggle — segmented EN | TH */
+  #_an_lang_wrap {
+    display:flex; border-radius:8px; overflow:hidden;
+    border:1.5px solid rgba(255,255,255,.28); flex-shrink:0;
   }
-  #_an_lang:hover { background:rgba(255,255,255,.24); border-color:rgba(255,255,255,.5); }
-  #_an_lang.th-active { background:#FF9933; border-color:#FF9933; color:#fff; }
-  #_an_lang.en-active { background:#FF9933; border-color:#FF9933; color:#fff; }
+  .an_lseg {
+    background:transparent; border:none; color:rgba(255,255,255,.55);
+    padding:5px 10px; font-size:12px; font-weight:700;
+    font-family:inherit; cursor:pointer; transition:all .18s;
+    letter-spacing:.03em; line-height:1;
+  }
+  .an_lseg:first-child { border-right:1px solid rgba(255,255,255,.28); }
+  .an_lseg.active { background:#FF9933; color:#fff; }
+  .an_lseg:not(.active):hover { background:rgba(255,255,255,.15); color:#fff; }
 
   #_an_close {
     width:30px; height:30px; border-radius:8px; border:none;
@@ -387,7 +389,7 @@
   const root = document.createElement('div');
   root.id = '_ananda';
   root.innerHTML = `
-    <button id="_ananda_btn" title="Chat with Ananda">
+    <button type="button" id="_ananda_btn" title="Chat with Ananda">
       🧘<span id="_ananda_dot"></span>
     </button>
 
@@ -399,8 +401,11 @@
           <div id="_an_status"></div>
         </div>
         <div id="_an_hdr_right">
-          <button id="_an_lang"></button>
-          <button id="_an_close">✕</button>
+          <div id="_an_lang_wrap">
+            <button type="button" class="an_lseg" id="_an_seg_en" onclick="window._anSetLang('en')">EN</button>
+            <button type="button" class="an_lseg" id="_an_seg_th" onclick="window._anSetLang('th')">TH</button>
+          </div>
+          <button type="button" id="_an_close">✕</button>
         </div>
       </div>
       <div id="_an_tri"><span></span><span></span><span></span></div>
@@ -408,7 +413,7 @@
       <div id="_an_chips"></div>
       <div id="_an_bar">
         <input id="_an_inp" type="text" autocomplete="off">
-        <button id="_an_snd" title="Send">
+        <button type="button" id="_an_snd" title="Send">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2.5"
             stroke-linecap="round" stroke-linejoin="round">
@@ -426,31 +431,30 @@
   const chips = document.getElementById('_an_chips');
   const inp   = document.getElementById('_an_inp');
   const dot   = document.getElementById('_ananda_dot');
-  const langB = document.getElementById('_an_lang');
 
   /* ══════════════════════════════════════
-     LANGUAGE
+     LANGUAGE — global so onclick always works
   ══════════════════════════════════════ */
   function t() { return T[LANG]; }
 
   function applyLang() {
-    const tx = t();
-    document.getElementById('_an_status').textContent = tx.status;
-    document.getElementById('_an_inp').placeholder = tx.ph;
-    langB.textContent = tx.switch;
-    // Visual state on toggle button
-    langB.className = LANG === 'th' ? 'th-active' : 'en-active';
+    document.getElementById('_an_status').textContent = t().status;
+    document.getElementById('_an_inp').placeholder    = t().ph;
+    // Segmented toggle: highlight active segment
+    document.getElementById('_an_seg_en').className = 'an_lseg' + (LANG==='en'?' active':'');
+    document.getElementById('_an_seg_th').className = 'an_lseg' + (LANG==='th'?' active':'');
     buildChips();
   }
 
-  langB.addEventListener('click', () => {
-    LANG = LANG === 'en' ? 'th' : 'en';
+  // Exposed globally — onclick attributes are most reliable cross-browser
+  window._anSetLang = function(lang) {
+    if (LANG === lang) return;
+    LANG = lang;
     applyLang();
-    // Clear and re-greet in new language
     msgs.innerHTML = '';
     chips.style.display = 'flex';
-    setTimeout(() => addGreet(), 250);
-  });
+    setTimeout(addGreet, 250);
+  };
 
   /* ══════════════════════════════════════
      CHIP TOPICS
@@ -622,7 +626,7 @@
       <label class="_an_fl">${tx.yob_lbl}</label>
       <input  class="_an_fi" id="_anf_yb_${uid}" type="text"  placeholder="${tx.yob_ph}">
       <div class="_an_ferr" id="_anf_er_${uid}"></div>
-      <button class="_an_fbtn" id="_anf_bt_${uid}">${tx.submit}</button>`;
+      <button type="button" class="_an_fbtn" id="_anf_bt_${uid}">${tx.submit}</button>`;
 
     formRow.appendChild(spacer);
     formRow.appendChild(card);
