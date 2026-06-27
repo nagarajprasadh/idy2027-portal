@@ -1186,7 +1186,28 @@ async function submit() {
         .transaction(n => (n || 0) + 1);
     });
 
-    // ── 6. Show success page ───────────────────────────────────────
+    // ── 6. Write to recent registrations feed (last 10 shown on dashboard) ──
+    participants.forEach(p => {
+      db.ref('dashboard/recentRegistrations').push({
+        regNum:      p.regNum,
+        name:        p.name,
+        tshirtSize:  p.size,
+        registeredAt: Date.now()
+      });
+    });
+    // Trim to last 50 entries so the node stays small
+    db.ref('dashboard/recentRegistrations').orderByKey().once('value', snap => {
+      const keys = [];
+      snap.forEach(c => keys.push(c.key));
+      if (keys.length > 50) {
+        const toDelete = keys.slice(0, keys.length - 50);
+        const del = {};
+        toDelete.forEach(k => { del['dashboard/recentRegistrations/' + k] = null; });
+        db.ref().update(del);
+      }
+    });
+
+    // ── 7. Show success page ───────────────────────────────────────
     result = { email, participants };
     ['step1','step2','step3','step4'].forEach(id => el(id).classList.add('hidden'));
     el('stepsBar').classList.add('hidden');
