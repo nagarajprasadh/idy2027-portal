@@ -502,17 +502,6 @@
     /* ── Hidden ── */
     .hidden { display: none !important; }
 
-    /* ── Tab toggle ── */
-    .tab-toggle {
-      display: flex; gap: 8px; margin-bottom: 18px;
-    }
-    .tab-btn {
-      flex: 1; padding: 11px 8px; border-radius: 10px; font-size: 14px; font-weight: 700;
-      cursor: pointer; border: 2px solid var(--navy); background: #fff; color: var(--navy);
-      transition: all .15s;
-    }
-    .tab-btn.tab-active { background: var(--navy); color: #fff; }
-
     /* ── Retrieve section ── */
     .retrieve-hit {
       background: #fff; border-radius: 14px; border: 1.5px solid var(--border);
@@ -576,14 +565,11 @@
 <!-- Main -->
 <div class="container">
 
-  <!-- Tab Toggle -->
-  <div class="tab-toggle no-print">
-    <button id="tabRegister" class="tab-btn tab-active" onclick="showTab('register')">📝 <span id="tabRegLbl">Register</span></button>
-    <button id="tabRetrieve" class="tab-btn"            onclick="showTab('retrieve')">🔍 <span id="tabRetLbl">Retrieve My Pass</span></button>
-  </div>
-
   <!-- Retrieve My Pass Section -->
   <div id="retrieveSection" class="hidden">
+    <button onclick="showTab('register')" class="btn-back no-print" style="margin-bottom:10px;">
+      ← <span id="backToRegLbl">Back to Registration</span>
+    </button>
     <div class="card">
       <div class="card-title"    id="retTitle">Retrieve Your Registration Pass</div>
       <div class="card-subtitle" id="retSub">Enter your email address, mobile number, or registration number.</div>
@@ -607,6 +593,15 @@
       <div class="field-err" id="retrieveErr" style="margin-top:10px;"></div>
     </div>
     <div id="retrieveResults"></div>
+  </div>
+
+  <!-- Already registered? link -->
+  <div id="alreadyRegLink" class="no-print" style="text-align:center;margin-bottom:14px;">
+    <span style="font-size:13px;color:var(--muted);" id="alreadyRegTxt">Already registered?</span>
+    <button onclick="showTab('retrieve')" id="alreadyRegBtn"
+      style="background:none;border:none;color:var(--navy);font-size:13px;font-weight:700;cursor:pointer;text-decoration:underline;margin-left:4px;padding:0;">
+      <span id="alreadyRegBtnLbl">Retrieve your pass →</span>
+    </button>
   </div>
 
   <!-- Step Indicator -->
@@ -768,8 +763,9 @@ const STR = {
     emailPH:     'your@email.com',
     lPhone:      'Mobile Number',
     lPhoneOpt:   '(optional — for pass retrieval)',
-    tabReg:      'Register',
-    tabRet:      'Retrieve My Pass',
+    alreadyReg:  'Already registered?',
+    alreadyBtn:  'Retrieve your pass →',
+    backToReg:   'Back to Registration',
     retTitle:    'Retrieve Your Registration Pass',
     retSub:      'Enter your email address, mobile number, or registration number.',
     retLblSearch:'Email / Mobile / Registration #',
@@ -848,8 +844,9 @@ const STR = {
     emailPH:     'อีเมลของท่าน@example.com',
     lPhone:      'หมายเลขโทรศัพท์มือถือ',
     lPhoneOpt:   '(ไม่บังคับ — สำหรับค้นหาบัตรลงทะเบียน)',
-    tabReg:      'ลงทะเบียน',
-    tabRet:      'ค้นหาบัตรลงทะเบียน',
+    alreadyReg:  'ลงทะเบียนแล้ว?',
+    alreadyBtn:  'ค้นหาบัตรของท่าน →',
+    backToReg:   'กลับไปหน้าลงทะเบียน',
     retTitle:    'ค้นหาบัตรลงทะเบียนของท่าน',
     retSub:      'กรอกอีเมล หมายเลขโทรศัพท์ หรือหมายเลขการลงทะเบียน',
     retLblSearch:'อีเมล / มือถือ / หมายเลขลงทะเบียน',
@@ -975,7 +972,7 @@ function applyLang() {
     's4Title','s4Sub','lDeclAccept','bSubmit',
     'okTitle','okSub','actTitle','bJPEG','bPrint',
     'sl1','sl2','sl3','sl4',
-    'tabRegLbl','tabRetLbl',
+    'alreadyRegTxt','alreadyRegBtnLbl','backToRegLbl',
     'retTitle','retSub','retLblSearch','retHint','retBtnLbl'
   ];
   ids.forEach(id => setText(id, s(id)));
@@ -1589,8 +1586,7 @@ async function dlJPEGBlob(regNum) {
 ═══════════════════════════════════════════════════════ */
 function showTab(tab) {
   const isRetrieve = tab === 'retrieve';
-  el('tabRegister').classList.toggle('tab-active', !isRetrieve);
-  el('tabRetrieve').classList.toggle('tab-active',  isRetrieve);
+  el('alreadyRegLink').classList.toggle('hidden', isRetrieve);
   el('stepsBar').classList.toggle('hidden', isRetrieve);
   el('retrieveSection').classList.toggle('hidden', !isRetrieve);
   ['step1','step2','step3','step4'].forEach(id => {
