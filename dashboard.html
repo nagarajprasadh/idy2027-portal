@@ -286,6 +286,7 @@
   <div class="hdr-right">
     <div class="live-badge"><div class="live-dot"></div> LIVE</div>
     <div class="updated-time" id="updatedTime">Connecting…</div>
+    <button onclick="hardRefresh()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;padding:5px 12px;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;font-weight:600;margin-left:8px;">🔄 Refresh</button>
   </div>
 </header>
 
@@ -610,6 +611,26 @@ function updateBarChart(daily) {
     chart.appendChild(col);
   });
 }
+
+/* ═══════════════════════════════════════════════════════
+   REFRESH / RECONNECT
+═══════════════════════════════════════════════════════ */
+function hardRefresh() {
+  location.reload();
+}
+
+// Auto-refresh when tab becomes visible again (catches stale state after idle)
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) location.reload();
+});
+
+// Firebase connection status
+db.ref('.info/connected').on('value', snap => {
+  const connected = snap.val();
+  const dot = document.querySelector('.live-dot');
+  if (dot) dot.style.background = connected ? '' : '#94A3B8';
+  if (!connected) el('updatedTime').textContent = 'Reconnecting…';
+});
 </script>
 </body>
 </html>
