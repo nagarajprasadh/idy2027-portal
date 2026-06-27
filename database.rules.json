@@ -17,6 +17,7 @@
 
     "participants": {
       ".read": true,
+      ".indexOn": ["checkIn/timestamp"],
       "$regNum": {
         ".write": true,
         ".validate": "!newData.exists() || newData.hasChildren(['name','tshirtSize','status','regNum','registeredAt'])"
