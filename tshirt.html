@@ -304,12 +304,9 @@ document.addEventListener('touchstart', () => { if (volName) resetSessionTimer()
 document.addEventListener('click',      () => { if (volName) resetSessionTimer(); });
 
 function endSession(auto = false) {
-  if (!auto && !confirm('End T-shirt session?')) return;
   clearTimeout(sessionTimer); clearTimeout(warnTimer);
-  volName = ''; selectedDesk = '';
-  el('volName').value = ''; pending = null;
-  pinBuf = ''; updateDots();
-  showOnly('screenPin');
+  pending = null;
+  showOnly('screenScan');
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -414,9 +411,11 @@ function showErr(icon, title, sub) {
   });
 })();
 
-// No PIN — go straight to setup
-buildDeskGrid();
-showOnly('screenSetup');
+// No PIN, no setup — go straight to scan
+volName      = 'Staff';
+selectedDesk = 'TS-1';
+showOnly('screenScan');
+resetSessionTimer();
 </script>
 </body>
 </html>
