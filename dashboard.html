@@ -73,7 +73,7 @@
     .updated-time { color: rgba(255,255,255,.5); font-size: 11px; }
 
     /* ── Container ── */
-    .container { max-width: 1100px; margin: 0 auto; padding: 22px 18px 48px; }
+    .container { max-width: 860px; margin: 0 auto; padding: 22px 18px 48px; }
 
     /* ── Section label ── */
     .section-lbl {
@@ -117,15 +117,6 @@
     .stat-lbl   { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin-bottom: 6px; }
     .stat-val   { font-size: 36px; font-weight: 800; color: var(--text); line-height: 1; }
     .stat-sub   { font-size: 12px; color: var(--muted); margin-top: 6px; }
-    .stat-delta {
-      display: inline-flex; align-items: center; gap: 3px;
-      font-size: 12px; font-weight: 700;
-      padding: 2px 8px; border-radius: 20px;
-      margin-top: 6px;
-    }
-    .delta-up   { background: #DCFCE7; color: var(--ok); }
-    .delta-down { background: #FEE2E2; color: var(--danger); }
-    .delta-flat { background: #F3F4F6; color: var(--muted); }
 
     /* ── Check-in progress bar ── */
     .checkin-card { display: flex; flex-direction: column; gap: 12px; }
@@ -203,37 +194,6 @@
     }
     .size-row span:last-child { font-weight: 700; color: var(--text); }
 
-    /* ── Daily registration chart (simple bars) ── */
-    .bar-chart {
-      display: flex;
-      align-items: flex-end;
-      gap: 8px;
-      height: 80px;
-      padding: 0 4px;
-    }
-    .bar-col {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      height: 100%;
-      justify-content: flex-end;
-    }
-    .bar-fill {
-      width: 100%;
-      border-radius: 4px 4px 0 0;
-      background: var(--navy);
-      transition: height .4s ease;
-      min-height: 3px;
-    }
-    .bar-fill.today { background: var(--saffron); }
-    .bar-lbl { font-size: 9px; color: var(--muted); text-align: center; }
-    .bar-val  { font-size: 10px; font-weight: 700; color: var(--text); }
-
-    /* ── Two-column layout ── */
-    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    @media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
 
     /* ── Loading state ── */
     .loading { text-align: center; color: var(--muted); padding: 40px; font-size: 14px; }
@@ -327,7 +287,6 @@
     <div class="ci-summary">
       <span>✓ Checked In: <span class="ci-checked" id="ciCheckedSub">0</span></span>
       <span>⏳ Pending: <span class="ci-pending" id="ciPendingSub">0</span></span>
-      <span id="ciIssuedSub" style="color:var(--muted);">👕 T-Shirts Issued: 0</span>
     </div>
   </div>
 
@@ -352,31 +311,6 @@
     </ul>
   </div>
 
-  <!-- ── TODAY vs YESTERDAY + DAILY TREND ── -->
-  <div class="section-lbl">Daily Registration Trend</div>
-  <div class="two-col">
-    <div class="card">
-      <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px;">Today vs Yesterday</div>
-      <div style="display:flex;gap:20px;align-items:center;">
-        <div>
-          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Yesterday</div>
-          <div style="font-size:28px;font-weight:800;" id="statYday">—</div>
-        </div>
-        <div style="font-size:28px;color:var(--border);">→</div>
-        <div>
-          <div style="font-size:11px;color:var(--saffron);text-transform:uppercase;letter-spacing:.5px;font-weight:700;">Today</div>
-          <div style="font-size:28px;font-weight:800;color:var(--saffron);" id="statTodayLg">—</div>
-        </div>
-        <div id="trendBadge" style="margin-left:auto;"></div>
-      </div>
-    </div>
-    <div class="card">
-      <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px;">Last 7 Days</div>
-      <div class="bar-chart" id="barChart">
-        <div class="loading" style="padding:10px;font-size:12px;width:100%;">No daily data yet</div>
-      </div>
-    </div>
-  </div>
 
 </div>
 
@@ -407,24 +341,6 @@ const el  = id => document.getElementById(id);
 const fmt = n  => (n || 0).toLocaleString();
 
 function today()     { return new Date().toLocaleDateString('en-CA'); }
-function yesterday() {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return d.toLocaleDateString('en-CA');
-}
-function last7Days() {
-  const days = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    days.push(d.toLocaleDateString('en-CA'));
-  }
-  return days;
-}
-function shortDate(iso) {
-  const d = new Date(iso);
-  return d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
-}
 function pct(a, b) { return b > 0 ? Math.round((a / b) * 100) : 0; }
 
 /* ═══════════════════════════════════════════════════════
@@ -438,10 +354,9 @@ db.ref('dashboard/summary').on('value', snap => {
 });
 
 function updateSummary(s) {
-  const total   = s.totalParticipants   || 0;
-  const emails  = s.totalRegistrations  || 0;
-  const ci      = s.checkedIn           || 0;
-  const issued  = s.tshirtIssued        || 0;
+  const total   = s.totalParticipants  || 0;
+  const emails  = s.totalRegistrations || 0;
+  const ci      = s.checkedIn          || 0;
   const pending = total - ci;
 
   el('statTotal').textContent   = fmt(total);
@@ -452,11 +367,10 @@ function updateSummary(s) {
 
   // Progress bar
   const p = pct(ci, total);
-  el('ciBar').style.width   = p + '%';
-  el('ciBarLabel').textContent = p + '%';
+  el('ciBar').style.width        = p + '%';
+  el('ciBarLabel').textContent   = p + '%';
   el('ciCheckedSub').textContent = fmt(ci);
   el('ciPendingSub').textContent = fmt(pending);
-  el('ciIssuedSub').innerHTML = '👕 T-Shirts Issued: <strong>' + fmt(issued) + '</strong>';
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -494,57 +408,11 @@ function updateSizeGrid(sizes) {
       <div class="size-mini-bar">
         <div class="size-mini-fill" style="width:${barPct}%"></div>
       </div>
-      <div class="size-row"><span>Checked In</span><span>${fmt(ci)} <span style="color:var(--muted);font-weight:400;">(${ciPct}%)</span></span></div>
-      <div class="size-row"><span>T-Shirt Issued</span><span>${fmt(issued)}</span></div>
-      <div class="size-row"><span>% of Total</span><span>${barPct}%</span></div>`;
+      <div class="size-row"><span>Checked In</span><span>${fmt(ci)} <span style="color:var(--muted);font-weight:400;">(${ciPct}%)</span></span></div>`;
     grid.appendChild(card);
   });
 }
 
-/* ═══════════════════════════════════════════════════════
-   REAL-TIME LISTENER — DAILY DATA
-═══════════════════════════════════════════════════════ */
-db.ref('dashboard/daily').on('value', snap => {
-  const daily = snap.val() || {};
-  updateDailyStats(daily);
-  updateBarChart(daily);
-});
-
-function updateDailyStats(daily) {
-  const todayStr = today();
-  const ydayStr  = yesterday();
-
-  const todayCount = (daily[todayStr]?.registered) || 0;
-  const ydayCount  = (daily[ydayStr]?.registered)  || 0;
-  const delta      = todayCount - ydayCount;
-
-  el('statToday').textContent   = fmt(todayCount);
-  el('statTodayLg').textContent = fmt(todayCount);
-  el('statYday').textContent    = fmt(ydayCount);
-
-  // Delta badge
-  const deltaEl = el('statDelta');
-  if (ydayCount === 0) {
-    deltaEl.innerHTML = '';
-  } else if (delta > 0) {
-    deltaEl.innerHTML = `<span class="stat-delta delta-up">↑ ${fmt(delta)} vs yesterday</span>`;
-  } else if (delta < 0) {
-    deltaEl.innerHTML = `<span class="stat-delta delta-down">↓ ${fmt(Math.abs(delta))} vs yesterday</span>`;
-  } else {
-    deltaEl.innerHTML = `<span class="stat-delta delta-flat">= same as yesterday</span>`;
-  }
-
-  // Trend badge
-  const tb = el('trendBadge');
-  if (ydayCount > 0) {
-    const pctChg = Math.round(((todayCount - ydayCount) / ydayCount) * 100);
-    const cls    = pctChg >= 0 ? 'delta-up' : 'delta-down';
-    const arrow  = pctChg >= 0 ? '↑' : '↓';
-    tb.innerHTML = `<span class="stat-delta ${cls}" style="font-size:14px;">${arrow} ${Math.abs(pctChg)}%</span>`;
-  } else {
-    tb.innerHTML = '';
-  }
-}
 
 /* ═══════════════════════════════════════════════════════
    LIVE FEED — REST initial load + SDK child listeners
@@ -603,29 +471,6 @@ function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-function updateBarChart(daily) {
-  const days   = last7Days();
-  const values = days.map(d => (daily[d]?.registered) || 0);
-  const maxVal = Math.max(...values, 1);
-  const todayStr = today();
-
-  const chart = el('barChart');
-  chart.innerHTML = '';
-
-  days.forEach((d, i) => {
-    const v      = values[i];
-    const hPct   = Math.max((v / maxVal) * 100, v > 0 ? 6 : 0);
-    const isToday = d === todayStr;
-
-    const col = document.createElement('div');
-    col.className = 'bar-col';
-    col.innerHTML = `
-      <div class="bar-val" style="color:${isToday ? 'var(--saffron)' : 'var(--text)'}">${v > 0 ? fmt(v) : ''}</div>
-      <div class="bar-fill ${isToday ? 'today' : ''}" style="height:${hPct}%"></div>
-      <div class="bar-lbl">${isToday ? 'Today' : shortDate(d)}</div>`;
-    chart.appendChild(col);
-  });
-}
 
 /* ═══════════════════════════════════════════════════════
    REFRESH / RECONNECT
