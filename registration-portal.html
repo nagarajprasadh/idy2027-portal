@@ -985,6 +985,10 @@ function applyLang() {
   ids.forEach(id => setText(id, s(id)));
   setAttr('email',  'placeholder', s('emailPH'));
   setAttr('emailC', 'placeholder', s('emailPH'));
+  // Year of birth placeholder — show BE equivalent in Thai
+  const yobPH = lang === 'th' ? 'เช่น 2528' : 'e.g. 1985';
+  setAttr('regYOB', 'placeholder', yobPH);
+  setAttr('rYOB',   'placeholder', yobPH);
   el('declBox').textContent = s('decl');
   if (el('okAlert').textContent) el('okAlert').textContent = s('okAlert');
   if (pCount > 0) buildPForms(pCount);
@@ -1236,6 +1240,13 @@ function emailToKey(email) {
   return email.toLowerCase().replace(/\./g, ',').replace(/@/g, '_at_');
 }
 
+// Convert year input to CE — transparently handles Thai Buddhist Era (BE) input
+function normalizeYOB(val) {
+  const y = parseInt((val || '').trim());
+  if (!y || y < 1900) return null;
+  return y > 2400 ? y - 543 : y; // BE → CE if > 2400
+}
+
 function normalizePhone(p) {
   let s = (p || '').replace(/[\s\-\(\)\.]/g, '');
   if (s.startsWith('+66')) s = '0' + s.slice(3);
@@ -1332,8 +1343,7 @@ async function submit() {
 
     // Update registration index
     const existingIds = existingData ? (existingData.participantIds || []) : [];
-    const yobRaw = (el('regYOB').value || '').trim();
-    const yearOfBirth = /^\d{4}$/.test(yobRaw) ? parseInt(yobRaw) : null;
+    const yearOfBirth = normalizeYOB(el('regYOB').value);
     writes[`registrations/${emailKey}`] = {
       email,
       registeredAt:     existingData ? existingData.registeredAt : now,
@@ -1644,8 +1654,8 @@ async function doRetrieve() {
 
     // Year of birth verification — only if stored at registration
     if (reg.yearOfBirth) {
-      const yobEntered = parseInt(yobInput);
-      if (!yobInput || yobEntered !== reg.yearOfBirth) {
+      const yobEntered = normalizeYOB(yobInput);
+      if (!yobEntered || yobEntered !== reg.yearOfBirth) {
         res.innerHTML = '';
         err.textContent = lang === 'th'
           ? 'ปีเกิดไม่ถูกต้อง กรุณาลองใหม่'
