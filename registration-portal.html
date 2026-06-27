@@ -681,6 +681,20 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
 <script>
+/* ══════════════════════════════════════════════════════════
+   EVENT CONFIGURATION — UPDATE BEFORE GOING LIVE
+══════════════════════════════════════════════════════════ */
+const CFG = {
+  dateEN:        '21 June 2027',
+  dateTH:        '21 มิถุนายน 2570',
+  venueEN:       'Lumpini Park, Bangkok',
+  venueTH:       'สวนลุมพินี กรุงเทพฯ',
+  timeEN:        'Reporting Time: 06:30',
+  timeTH:        'เวลารายงานตัว: 06:30 น.',
+  maxReg:        6500,           // set 0 for unlimited
+  regOpen:       true,           // set false to close registrations
+};
+
 /* ═══════════════════════════════════════════════════════
    LANGUAGE STRINGS
 ═══════════════════════════════════════════════════════ */
@@ -741,9 +755,9 @@ const STR = {
     lVenue:      'Venue',
     lTime:       'Reporting Time',
     evtName:     '13th International Day of Yoga 2027',
-    evtDate:     '[Event Date — To Be Confirmed]',
-    evtVenue:    '[Venue — To Be Confirmed]',
-    evtTime:     '[Reporting Time — To Be Confirmed]',
+    evtDate:     CFG.dateEN,
+    evtVenue:    CFG.venueEN,
+    evtTime:     CFG.timeEN,
     forEmail:    'Registered Email',
     forCount:    'Registered For',
     sl1:'Email', sl2:'Participants', sl3:'Details', sl4:'Confirm',
@@ -812,9 +826,9 @@ const STR = {
     lVenue:      'สถานที่',
     lTime:       'เวลารายงานตัว',
     evtName:     'วันโยคะสากลครั้งที่ 13 ปี 2027',
-    evtDate:     '[วันที่ — รอยืนยัน]',
-    evtVenue:    '[สถานที่ — รอยืนยัน]',
-    evtTime:     '[เวลารายงานตัว — รอยืนยัน]',
+    evtDate:     CFG.dateTH,
+    evtVenue:    CFG.venueTH,
+    evtTime:     CFG.timeTH,
     forEmail:    'อีเมลที่ลงทะเบียน',
     forCount:    'จำนวนที่ลงทะเบียน',
     sl1:'อีเมล', sl2:'ผู้เข้าร่วม', sl3:'รายละเอียด', sl4:'ยืนยัน',
@@ -936,6 +950,40 @@ function go(n) {
 ═══════════════════════════════════════════════════════ */
 const RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/* Common domain typo map — keys are misspellings → correct value */
+const DOMAIN_FIXES = {
+  'gmali.com':'gmail.com','gmai.com':'gmail.com','gmal.com':'gmail.com',
+  'gmali.com':'gmail.com','gmaill.com':'gmail.com','gmaol.com':'gmail.com',
+  'gmial.com':'gmail.com','gamil.com':'gmail.com','gnail.com':'gmail.com',
+  'yaho.com':'yahoo.com','yahooo.com':'yahoo.com','yahho.com':'yahoo.com',
+  'yaoo.com':'yahoo.com','yhoo.com':'yahoo.com','yaho.co':'yahoo.com',
+  'hotmial.com':'hotmail.com','hotmal.com':'hotmail.com','hotmall.com':'hotmail.com',
+  'homail.com':'hotmail.com','hotmai.com':'hotmail.com','hotimail.com':'hotmail.com',
+  'outlok.com':'outlook.com','outloook.com':'outlook.com','outloo.com':'outlook.com',
+  'iclould.com':'icloud.com','icoud.com':'icloud.com','iclud.com':'icloud.com',
+  'protonmai.com':'protonmail.com','protonmial.com':'protonmail.com',
+};
+
+function suggestDomain(email) {
+  const at = email.lastIndexOf('@');
+  if (at < 0) return null;
+  const domain = email.slice(at + 1).toLowerCase();
+  return DOMAIN_FIXES[domain] ? email.slice(0, at + 1) + DOMAIN_FIXES[domain] : null;
+}
+
+function emailStructureError(email) {
+  if (/\.\./.test(email))        return 'Email cannot contain two consecutive dots (..)';
+  if (/[,;]/.test(email))        return 'Email cannot contain commas or semicolons';
+  if (/\s/.test(email))          return 'Email cannot contain spaces';
+  if (/^\./.test(email.split('@')[0])) return 'Email local part cannot start with a dot';
+  if (/\.$/.test(email.split('@')[0])) return 'Email local part cannot end with a dot';
+  const parts = email.split('@');
+  if (parts.length !== 2)        return 'Email must contain exactly one @ symbol';
+  if (!parts[1].includes('.'))   return 'Email domain must include a dot (e.g. gmail.com)';
+  if (/^-/.test(parts[1]))       return 'Email domain cannot start with a hyphen';
+  return null;
+}
+
 function chkEmail() {
   const ev = el('email').value.trim();
   const cv = el('emailC').value.trim();
@@ -947,10 +995,26 @@ function chkEmail() {
   el('emailC').classList.remove('err','good');
 
   if (ev) {
-    if (!RE.test(ev)) {
+    const structErr = emailStructureError(ev);
+    const suggestion = suggestDomain(ev);
+    if (structErr) {
+      el('emailErr').textContent = structErr;
+      el('emailErr').classList.add('show');
+      el('email').classList.add('err');
+      ok = false;
+    } else if (!RE.test(ev)) {
       el('emailErr').textContent = s('errInvalid');
       el('emailErr').classList.add('show');
       el('email').classList.add('err');
+      ok = false;
+    } else if (suggestion) {
+      // Valid structure but suspected typo in domain
+      el('emailErr').innerHTML =
+        `Did you mean <strong>${suggestion}</strong>? ` +
+        `<span style="cursor:pointer;color:var(--navy);text-decoration:underline;" ` +
+        `onclick="applyEmailSuggestion('${suggestion}')">Use this</span>`;
+      el('emailErr').classList.add('show');
+      el('email').classList.add('err'); // treat as warning until they accept/ignore
       ok = false;
     } else {
       el('email').classList.add('good');
@@ -962,11 +1026,17 @@ function chkEmail() {
       el('emailCErr').classList.add('show');
       el('emailC').classList.add('err');
       ok = false;
-    } else if (RE.test(ev)) {
+    } else if (RE.test(ev) && !emailStructureError(ev)) {
       el('emailC').classList.add('good');
     }
   }
-  el('btnS1').disabled = !(ev && cv && RE.test(ev) && ev === cv);
+  el('btnS1').disabled = !(ev && cv && RE.test(ev) && ev === cv && !emailStructureError(ev) && !suggestDomain(ev));
+}
+
+function applyEmailSuggestion(corrected) {
+  el('email').value = corrected;
+  el('emailC').value = corrected;
+  chkEmail();
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -1104,6 +1174,23 @@ async function submit() {
   btnLabel.innerHTML = '<span class="spinner"></span>Registering…';
 
   try {
+    // ── 0. Check registration is open and cap not reached ──────────
+    if (!CFG.regOpen) {
+      alert(lang === 'th'
+        ? 'ขณะนี้การลงทะเบียนปิดแล้ว ขอบคุณสำหรับความสนใจของท่าน'
+        : 'Registrations are now closed. Thank you for your interest.');
+      btn.disabled = false; btnLabel.textContent = s('bSubmit'); return;
+    }
+    if (CFG.maxReg > 0) {
+      const capSnap = await db.ref('dashboard/summary/totalParticipants').once('value');
+      if ((capSnap.val() || 0) + pCount > CFG.maxReg) {
+        alert(lang === 'th'
+          ? `ขออภัย การลงทะเบียนเต็มแล้ว (${CFG.maxReg.toLocaleString()} คน)`
+          : `Registrations are full (${CFG.maxReg.toLocaleString()} participants). No further slots available.`);
+        btn.disabled = false; btnLabel.textContent = s('bSubmit'); return;
+      }
+    }
+
     // ── 1. Check existing registrations for this email ──────────────
     const existingSnap = await db.ref('registrations/' + emailKey).once('value');
     const existingData = existingSnap.exists() ? existingSnap.val() : null;
@@ -1421,7 +1508,10 @@ applyLang();
   z-index:999;
 ">
   <a href="#" onclick="staffNav('checkin.html');return false;" style="color:rgba(255,255,255,0.55);font-size:12px;text-decoration:none;letter-spacing:.5px;">
-    🔒 Check-in Portal
+    🔒 Check-in
+  </a>
+  <a href="#" onclick="staffNav('tshirt.html');return false;" style="color:rgba(255,255,255,0.55);font-size:12px;text-decoration:none;letter-spacing:.5px;">
+    🔒 T-Shirts
   </a>
   <a href="#" onclick="staffNav('dashboard.html');return false;" style="color:rgba(255,255,255,0.55);font-size:12px;text-decoration:none;letter-spacing:.5px;">
     🔒 Dashboard
