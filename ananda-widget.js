@@ -1,559 +1,739 @@
-/* ─────────────────────────────────────────
-   Ananda · IDY 2027 Chat Assistant
-   Modern UI · Bilingual EN / TH
-───────────────────────────────────────── */
+/* ════════════════════════════════════════
+   Ananda · IDY 2027 · Chat Assistant
+   v4 — clean UI, working EN/TH, no overflow
+════════════════════════════════════════ */
 (function () {
-  if (document.getElementById('ananda-root')) return;
+  if (document.getElementById('_ananda')) return;
 
-  function loadScript(src, id) {
-    return new Promise(resolve => {
-      if (document.getElementById(id)) { resolve(); return; }
-      const s = document.createElement('script');
-      s.src = src; s.id = id; s.onload = resolve; s.onerror = resolve;
-      document.head.appendChild(s);
-    });
-  }
+  /* ── script loader ── */
+  const _load = (src, id) => new Promise(res => {
+    if (document.getElementById(id)) { res(); return; }
+    const s = document.createElement('script');
+    s.src = src; s.id = id; s.onload = res; s.onerror = res;
+    document.head.appendChild(s);
+  });
 
-  const FB = {
+  const FB_CFG = {
     apiKey:      'AIzaSyCJ31EusilYxaGWaorwYjqffVgV5crSecM',
     databaseURL: 'https://idy2027-dba28-default-rtdb.asia-southeast1.firebasedatabase.app',
     projectId:   'idy2027-dba28',
     authDomain:  'idy2027-dba28.firebaseapp.com',
   };
 
-  /* ─── Language state (independent of page) ─── */
-  let L = 'en';
-
-  const TEXT = {
+  /* ══════════════════════════════════════
+     TRANSLATIONS
+  ══════════════════════════════════════ */
+  let LANG = 'en';
+  const T = {
     en: {
-      online:      'Online · Ready to help',
-      input_ph:    'Type a message…',
-      lang_toggle: 'TH',
-      greet_title: 'Hi there! I\'m Ananda 🙏',
-      greet_body:  'Your guide for the 13th International Day of Yoga 2027. I can help you find your QR code, learn about T-shirts, mats, and more.',
-      qr_label:    '🔍  Retrieve my QR code',
-      reg_label:   '🔢  Registration number',
-      shirt_label: '👕  T-shirt collection',
-      mat_label:   '🧘  Yoga mats',
-      water_label: '💧  Hydration',
-      event_label: '📅  Event details',
-
-      qr_intro: '<strong>Let\'s find your QR code</strong><br>No email is sent — your QR was shown on-screen when you registered. Fill in your details and I\'ll pull it up right now.',
-      reg_intro: '<strong>Let\'s find your pass</strong><br>Your registration number is on your pass. Enter your details below.',
-
-      f_email:   'Email used at registration',
-      f_email_ph:'your@email.com',
-      f_yob:     'Year of Birth',
-      f_yob_ph:  'e.g. 1985  or  2528 (BE)',
-      f_submit:  'Find my pass',
-      f_loading: 'Searching…',
-      f_err_email:   'Please enter a valid email address.',
-      f_err_yob:     'Year of birth doesn\'t match. Please check and try again.',
-      f_err_none:    'No registration found for this email.',
-      f_err_conn:    'Connection error — please try again.',
-      f_found:       n => `Found ${n} pass${n>1?'es':''}  ·  screenshot to save!`,
-      f_pass_note:   '📸  Screenshot your pass — needed for entry and T-shirt collection.',
-
-      shirt: '<strong>👕  T-shirt collection</strong><br><br>✅  One T-shirt per registered participant.<br>✅  Show your QR code at the counter — no QR, no shirt.<br>🚫  No bulk collection. Each person collects in person.<br>🚫  Unclaimed shirts won\'t be held after closing time.<br><br>📍  Collection counter is at the event entrance.',
-      mat:   '<strong>🧘  Yoga mats</strong><br><br>✅  Mats will be laid out for every participant — nothing to bring.<br><br>If you prefer your own mat for comfort or hygiene, you\'re welcome to bring it.',
-      water: '<strong>💧  Hydration</strong><br><br>✅  Bring your own water bottle — Bangkok in June is warm!<br>✅  Water refill stations are available on-site.<br><br>We recommend at least 500 ml – 1 L. Avoid heavy meals 1–2 hours before the session.',
-      event: '<strong>📅  Event details</strong><br><br>🗓  Sunday, <strong>20 June 2027</strong><br>📍  <strong>Chulalongkorn University</strong>, Bangkok<br><br>Bring your QR code and a water bottle. Mats and T-shirts are handled on-site.',
-      bulk:  '<strong>🚫  No bulk collection</strong><br><br>T-shirts cannot be collected on behalf of others. Each participant must show up in person with their own QR code.',
-      lost:  '<strong>QR code missing?</strong><br><br>No email confirmation is sent — your QR was only shown on-screen at registration.<br><br>Tap <em>Retrieve my QR code</em> above and I\'ll get it for you right now.',
-      checkin:'<strong>✅  Check-in on the day</strong><br><br>1. Head to the <strong>check-in counter</strong> at Chulalongkorn University.<br>2. Show your <strong>QR code</strong> (phone or printed).<br>3. Then visit the T-shirt counter with the same QR code.<br><br>💡  Have your QR ready before joining the queue!',
-      travel: '<strong>🚌  Getting there</strong><br><br><strong>BTS</strong> — Sala Daeng or National Stadium<br><strong>MRT</strong> — Sam Yan (short walk to campus)<br><br>Limited campus parking. Public transport is strongly recommended.',
-      thanks: 'You\'re welcome! 🙏  See you on 20 June 2027 at Chulalongkorn University! 🪷',
-      hello:  'Namaste! 🙏  I\'m Ananda. Ask me anything or choose a topic below!',
-      fallback:'I\'m not sure about that — try one of the topics below, or ask about your QR code, T-shirts, mats, or the event.',
+      status:    'IDY 2027 · Always here to help',
+      ph:        'Ask me anything…',
+      switch:    'ภาษาไทย',
+      greet:     'Hi! I\'m <b>Ananda</b> 🙏 Your assistant for the 13th International Day of Yoga 2027.<br><br>I can retrieve your <b>QR code</b> right here, or answer questions about T-shirts, mats, hydration, and the event.',
+      topics:    [
+        { id:'qr',     icon:'🔍', text:'Get my QR code'      },
+        { id:'reg',    icon:'🔢', text:'Registration number'  },
+        { id:'shirt',  icon:'👕', text:'T-shirt collection'   },
+        { id:'mat',    icon:'🧘', text:'Yoga mats'            },
+        { id:'water',  icon:'💧', text:'Hydration'            },
+        { id:'event',  icon:'📅', text:'Event details'        },
+      ],
+      answers: {
+        qr:    { title: 'Retrieve your QR code', body: 'No confirmation email is sent. Your QR was displayed on screen right after registration.\n\nEnter your details below and I\'ll pull it up for you now.' },
+        reg:   { title: 'Find your pass', body: 'Your registration number is printed on your pass. Enter your details and I\'ll retrieve it.' },
+        shirt: { title: 'T-shirt collection 👕', body: '✅ One T-shirt per registered participant\n✅ Show your QR code at the counter\n🚫 No bulk collection — each person collects in person\n🚫 Unclaimed shirts won\'t be held\n\n📍 Counter is at the event entrance' },
+        mat:   { title: 'Yoga mats 🧘', body: '✅ Mats will be laid out for every participant — nothing to bring.\n\nIf you prefer your own mat, you\'re welcome to bring it.' },
+        water: { title: 'Hydration 💧', body: '✅ Bring your own water bottle — Bangkok in June is warm!\n✅ Water refill stations on-site\n\nAim for at least 500 ml – 1 L. Avoid heavy meals 1–2 hours before.' },
+        event: { title: 'Event details 📅', body: '🗓 Sunday, 20 June 2027\n📍 Chulalongkorn University, Bangkok\n\nBring your QR code and a water bottle. Mats and T-shirts are provided on-site.' },
+        bulk:  { title: 'No bulk collection 🚫', body: 'T-shirts cannot be collected on behalf of others.\n\nEach participant must be present with their own QR code.' },
+        lost:  { title: 'QR code missing?', body: 'No email is sent — your QR was only shown on screen at registration.\n\nTap "Get my QR code" above and I\'ll retrieve it right now.' },
+        checkin:{ title: 'Check-in on the day ✅', body: '1. Go to the check-in counter at Chulalongkorn University\n2. Show your QR code (phone or printed)\n3. Collect your T-shirt at the same counter with the same QR\n\n💡 Have your QR ready before joining the queue!' },
+        travel: { title: 'Getting there 🚌', body: 'BTS — Sala Daeng or National Stadium\nMRT — Sam Yan (short walk to campus)\n\nLimited parking on campus. Public transport strongly recommended.' },
+        thanks: { title: '', body: 'You\'re welcome! 🙏\n\nSee you on 20 June 2027 at Chulalongkorn University! 🪷' },
+        hello:  { title: '', body: 'Namaste! 🙏 I\'m Ananda. Choose a topic below or ask me anything!' },
+      },
+      form: {
+        email_lbl: 'Email used at registration',
+        email_ph:  'your@email.com',
+        yob_lbl:   'Year of Birth',
+        yob_ph:    'e.g. 1985  or  2528',
+        submit:    'Find my pass →',
+        loading:   'Searching…',
+        err_email: 'Please enter a valid email address.',
+        err_yob:   'Year of birth doesn\'t match. Please check and try again.',
+        err_none:  'No registration found for this email.',
+        err_conn:  'Connection error — please try again.',
+        found:     n => `Found ${n} pass${n>1?'es':''} · Screenshot to save! 📸`,
+        pass_note: 'Screenshot this pass — needed for entry and T-shirt collection.',
+      },
+      fallback: 'I\'m not sure about that. Try one of the topics below, or ask about QR codes, T-shirts, mats, or the event.',
     },
     th: {
-      online:      'ออนไลน์ · พร้อมช่วยเหลือ',
-      input_ph:    'พิมพ์ข้อความ…',
-      lang_toggle: 'EN',
-      greet_title: 'สวัสดีค่ะ! ฉันคืออานันดา 🙏',
-      greet_body:  'ผู้ช่วยงานวันโยคะสากล 2027 ครั้งที่ 13 ฉันช่วยหา QR code ของคุณ ให้ข้อมูลเรื่องเสื้อ เสื่อ น้ำ และรายละเอียดงานได้เลยค่ะ',
-      qr_label:    '🔍  ดึง QR code ของฉัน',
-      reg_label:   '🔢  เลขลงทะเบียน',
-      shirt_label: '👕  รับเสื้อ',
-      mat_label:   '🧘  เสื่อโยคะ',
-      water_label: '💧  น้ำดื่ม',
-      event_label: '📅  รายละเอียดงาน',
-
-      qr_intro: '<strong>มาหา QR code ของคุณกันเลย</strong><br>ไม่มีการส่งอีเมล — QR code จะแสดงบนหน้าจอตอนลงทะเบียนเท่านั้น กรอกข้อมูลด้านล่างแล้วฉันจะดึงให้ทันทีเลยค่ะ',
-      reg_intro: '<strong>มาหาบัตรผ่านของคุณกัน</strong><br>เลขลงทะเบียนอยู่บนบัตรผ่าน กรอกข้อมูลด้านล่างได้เลยค่ะ',
-
-      f_email:   'อีเมลที่ใช้ลงทะเบียน',
-      f_email_ph:'อีเมลของท่าน@example.com',
-      f_yob:     'ปีเกิด',
-      f_yob_ph:  'เช่น 1985 หรือ 2528',
-      f_submit:  'ค้นหาบัตรผ่าน',
-      f_loading: 'กำลังค้นหา…',
-      f_err_email:   'กรุณากรอกที่อยู่อีเมลให้ถูกต้อง',
-      f_err_yob:     'ปีเกิดไม่ตรงกัน กรุณาตรวจสอบและลองใหม่',
-      f_err_none:    'ไม่พบข้อมูลการลงทะเบียนสำหรับอีเมลนี้',
-      f_err_conn:    'เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่',
-      f_found:       n => `พบ ${n} บัตรผ่าน · ถ่ายภาพหน้าจอเก็บไว้!`,
-      f_pass_note:   '📸  ถ่ายภาพหน้าจอบัตรนี้ — ใช้สำหรับเข้างานและรับเสื้อ',
-
-      shirt: '<strong>👕  การรับเสื้อ</strong><br><br>✅  1 ตัวต่อผู้ลงทะเบียน 1 คน<br>✅  แสดง QR code ที่จุดรับเสื้อ — ไม่มี QR ไม่ได้รับเสื้อ<br>🚫  ไม่รับแทน ผู้เข้าร่วมแต่ละคนต้องมารับด้วยตนเอง<br>🚫  เสื้อที่ไม่ได้รับภายในเวลาจะไม่ถูกจัดเก็บ<br><br>📍  จุดรับเสื้ออยู่บริเวณทางเข้างาน',
-      mat:   '<strong>🧘  เสื่อโยคะ</strong><br><br>✅  มีเสื่อปูไว้ให้ทุกคน ไม่ต้องนำมาเอง<br><br>หากต้องการใช้เสื่อส่วนตัวเพื่อความสะดวกหรือสุขอนามัย สามารถนำมาได้',
-      water: '<strong>💧  น้ำดื่ม</strong><br><br>✅  นำขวดน้ำส่วนตัวมาด้วย — อากาศกรุงเทพฯ เดือนมิถุนายนร้อนมาก!<br>✅  มีจุดเติมน้ำในงาน<br><br>แนะนำให้มีน้ำอย่างน้อย 500 มล.–1 ล. และหลีกเลี่ยงอาหารหนัก 1–2 ชั่วโมงก่อนเริ่ม',
-      event: '<strong>📅  รายละเอียดงาน</strong><br><br>🗓  วันอาทิตย์ที่ <strong>20 มิถุนายน 2570</strong><br>📍  <strong>จุฬาลงกรณ์มหาวิทยาลัย</strong> กรุงเทพฯ<br><br>นำ QR code และขวดน้ำมาด้วย มีเสื่อและเสื้อจัดไว้ในงาน',
-      bulk:  '<strong>🚫  ไม่รับแทน</strong><br><br>ไม่สามารถรับเสื้อแทนผู้อื่นได้ ผู้เข้าร่วมแต่ละคนต้องมาแสดง QR code ของตนเองด้วยตนเอง',
-      lost:  '<strong>QR code หาย?</strong><br><br>ไม่มีการส่งอีเมล — QR code จะแสดงบนหน้าจอตอนลงทะเบียนเท่านั้น<br><br>กด <em>ดึง QR code ของฉัน</em> ด้านบน แล้วฉันจะดึงให้ทันทีเลย',
-      checkin:'<strong>✅  การเช็คอินในวันงาน</strong><br><br>1. ไปที่ <strong>จุดเช็คอิน</strong> ที่จุฬาลงกรณ์มหาวิทยาลัย<br>2. แสดง <strong>QR code</strong> (โทรศัพท์หรือพิมพ์ออกมา)<br>3. จากนั้นไปรับเสื้อที่จุดรับเสื้อด้วย QR code เดิม<br><br>💡  เตรียม QR ให้พร้อมก่อนต่อคิว!',
-      travel: '<strong>🚌  การเดินทาง</strong><br><br><strong>BTS</strong> — สาลาแดง หรือ สนามกีฬาแห่งชาติ<br><strong>MRT</strong> — สามย่าน (เดินเข้าจุฬาฯ)<br><br>ที่จอดรถในมหาวิทยาลัยมีจำกัด แนะนำให้ใช้ขนส่งสาธารณะ',
-      thanks: 'ด้วยความยินดีค่ะ! 🙏  เจอกันวันที่ 20 มิถุนายน 2570 ที่จุฬาลงกรณ์มหาวิทยาลัย! 🪷',
-      hello:  'นมัสเต! 🙏  ฉันคืออานันดา ถามได้เลยหรือเลือกหัวข้อด้านล่างค่ะ!',
-      fallback:'ขออภัย ฉันไม่แน่ใจเรื่องนั้น ลองเลือกหัวข้อด้านล่าง หรือถามเรื่อง QR code เสื้อ เสื่อ หรือรายละเอียดงานได้เลยค่ะ',
-    }
+      status:    'IDY 2027 · พร้อมช่วยเหลือเสมอ',
+      ph:        'พิมพ์คำถาม…',
+      switch:    'English',
+      greet:     'สวัสดีค่ะ! ฉันคือ <b>อานันดา</b> 🙏 ผู้ช่วยงานวันโยคะสากล 2027 ครั้งที่ 13<br><br>ฉันช่วยดึง <b>QR code</b> ของคุณได้ทันที หรือตอบคำถามเรื่องเสื้อ เสื่อ น้ำ และรายละเอียดงาน',
+      topics:    [
+        { id:'qr',     icon:'🔍', text:'ดู QR code ของฉัน'    },
+        { id:'reg',    icon:'🔢', text:'เลขลงทะเบียน'         },
+        { id:'shirt',  icon:'👕', text:'รับเสื้อ'              },
+        { id:'mat',    icon:'🧘', text:'เสื่อโยคะ'             },
+        { id:'water',  icon:'💧', text:'น้ำดื่ม'               },
+        { id:'event',  icon:'📅', text:'รายละเอียดงาน'        },
+      ],
+      answers: {
+        qr:    { title: 'ดึง QR code ของคุณ', body: 'ไม่มีการส่งอีเมลยืนยัน QR code จะแสดงบนหน้าจอทันทีหลังลงทะเบียน\n\nกรอกข้อมูลด้านล่างแล้วฉันจะดึง QR code ให้ทันทีเลยค่ะ' },
+        reg:   { title: 'ค้นหาบัตรผ่าน', body: 'เลขลงทะเบียนอยู่บนบัตรผ่านของคุณ กรอกข้อมูลแล้วฉันจะดึงให้' },
+        shirt: { title: 'การรับเสื้อ 👕', body: '✅ 1 ตัวต่อผู้ลงทะเบียน 1 คน\n✅ แสดง QR code ที่จุดรับเสื้อ\n🚫 ไม่รับแทน — ผู้เข้าร่วมแต่ละคนต้องมารับด้วยตนเอง\n🚫 เสื้อที่ไม่ได้รับภายในเวลาจะไม่ถูกจัดเก็บ\n\n📍 จุดรับเสื้ออยู่ที่ทางเข้างาน' },
+        mat:   { title: 'เสื่อโยคะ 🧘', body: '✅ มีเสื่อปูไว้ให้ทุกคน ไม่ต้องนำมาเอง\n\nหากต้องการใช้เสื่อส่วนตัว สามารถนำมาได้เลย' },
+        water: { title: 'น้ำดื่ม 💧', body: '✅ นำขวดน้ำส่วนตัวมาด้วย — อากาศกรุงเทพฯ เดือนมิถุนายนร้อนมาก\n✅ มีจุดเติมน้ำในงาน\n\nแนะนำให้มีน้ำอย่างน้อย 500 มล.–1 ล. และหลีกเลี่ยงอาหารหนัก 1–2 ชั่วโมงก่อน' },
+        event: { title: 'รายละเอียดงาน 📅', body: '🗓 วันอาทิตย์ที่ 20 มิถุนายน 2570\n📍 จุฬาลงกรณ์มหาวิทยาลัย กรุงเทพฯ\n\nนำ QR code และขวดน้ำมาด้วย มีเสื่อและเสื้อจัดไว้ในงาน' },
+        bulk:  { title: 'ไม่รับแทน 🚫', body: 'ไม่สามารถรับเสื้อแทนผู้อื่นได้\n\nผู้เข้าร่วมแต่ละคนต้องมาแสดง QR code ของตนเองด้วยตนเอง' },
+        lost:  { title: 'QR code หาย?', body: 'ไม่มีการส่งอีเมล — QR code จะแสดงบนหน้าจอตอนลงทะเบียนเท่านั้น\n\nกด "ดู QR code ของฉัน" แล้วฉันจะดึงให้ทันที' },
+        checkin:{ title: 'การเช็คอินในวันงาน ✅', body: '1. ไปที่จุดเช็คอินที่จุฬาลงกรณ์มหาวิทยาลัย\n2. แสดง QR code (โทรศัพท์หรือพิมพ์)\n3. รับเสื้อที่จุดรับเสื้อด้วย QR code เดิม\n\n💡 เตรียม QR ให้พร้อมก่อนต่อคิว!' },
+        travel: { title: 'การเดินทาง 🚌', body: 'BTS — สาลาแดง หรือ สนามกีฬาแห่งชาติ\nMRT — สามย่าน (เดินเข้าจุฬาฯ)\n\nที่จอดรถมีจำกัด แนะนำให้ใช้ขนส่งสาธารณะ' },
+        thanks: { title: '', body: 'ด้วยความยินดีค่ะ! 🙏\n\nเจอกันวันที่ 20 มิถุนายน 2570 ที่จุฬาลงกรณ์มหาวิทยาลัย! 🪷' },
+        hello:  { title: '', body: 'นมัสเต! 🙏 ฉันคืออานันดา เลือกหัวข้อด้านล่างหรือถามได้เลยค่ะ!' },
+      },
+      form: {
+        email_lbl: 'อีเมลที่ใช้ลงทะเบียน',
+        email_ph:  'อีเมล@example.com',
+        yob_lbl:   'ปีเกิด',
+        yob_ph:    'เช่น 1985 หรือ 2528',
+        submit:    'ค้นหาบัตรผ่าน →',
+        loading:   'กำลังค้นหา…',
+        err_email: 'กรุณากรอกอีเมลให้ถูกต้อง',
+        err_yob:   'ปีเกิดไม่ตรงกัน กรุณาตรวจสอบและลองใหม่',
+        err_none:  'ไม่พบข้อมูลสำหรับอีเมลนี้',
+        err_conn:  'เกิดข้อผิดพลาด กรุณาลองใหม่',
+        found:     n => `พบ ${n} บัตรผ่าน · ถ่ายภาพหน้าจอเก็บไว้! 📸`,
+        pass_note: 'ถ่ายภาพหน้าจอบัตรนี้ — ใช้เข้างานและรับเสื้อ',
+      },
+      fallback: 'ขออภัยค่ะ ฉันไม่แน่ใจเรื่องนั้น ลองเลือกหัวข้อด้านล่างหรือถามเรื่อง QR code เสื้อ เสื่อ หรืองาน',
+    },
   };
 
-  /* ─── Inject styles ─── */
-  const css = document.createElement('style');
-  css.textContent = `
-    #ananda-root { font-family: 'Noto Sans Thai','Noto Sans',system-ui,sans-serif; }
-    #ananda-root * { box-sizing:border-box; margin:0; padding:0; }
+  /* ══════════════════════════════════════
+     STYLES — self-contained, no leakage
+  ══════════════════════════════════════ */
+  const CSS = `
+  #_ananda * { box-sizing:border-box; margin:0; padding:0;
+    font-family:'Noto Sans Thai','Noto Sans',system-ui,sans-serif; }
 
-    /* Launcher */
-    #an-launch {
-      position:fixed; bottom:28px; right:28px; z-index:9999;
-      width:58px; height:58px; border-radius:16px; border:none; cursor:pointer;
-      background:linear-gradient(145deg,#1a4a9e,#002D6E);
-      box-shadow:0 4px 20px rgba(0,45,110,.40), 0 1px 3px rgba(0,0,0,.15);
-      display:flex; align-items:center; justify-content:center;
-      font-size:26px; transition:transform .18s, box-shadow .18s;
-    }
-    #an-launch:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(0,45,110,.45); }
-    #an-launch:active { transform:translateY(0); }
-    #an-badge {
-      position:absolute; top:-6px; right:-6px;
-      width:20px; height:20px; background:#FF9933; color:#fff;
-      font-size:11px; font-weight:700; border-radius:50%; border:2px solid #fff;
-      display:none; align-items:center; justify-content:center;
-    }
+  /* ── Launcher ── */
+  #_ananda_btn {
+    position:fixed; bottom:24px; right:24px; z-index:10000;
+    width:56px; height:56px; border-radius:16px; border:none;
+    background:linear-gradient(145deg,#002D6E,#1a4a9e);
+    box-shadow:0 4px 16px rgba(0,45,110,.40);
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+    font-size:26px; transition:transform .2s, box-shadow .2s;
+    animation:_an_pulse 3s ease-in-out infinite;
+  }
+  #_ananda_btn:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,45,110,.5); }
+  @keyframes _an_pulse {
+    0%,100% { box-shadow:0 4px 16px rgba(0,45,110,.4),0 0 0 0 rgba(255,153,51,.5); }
+    60%     { box-shadow:0 4px 16px rgba(0,45,110,.4),0 0 0 10px rgba(255,153,51,0); }
+  }
+  #_ananda_dot {
+    position:absolute; top:-4px; right:-4px;
+    width:16px; height:16px; border-radius:50%;
+    background:#FF9933; border:2.5px solid #fff;
+    font-size:9px; font-weight:800; color:#fff;
+    display:none; align-items:center; justify-content:center;
+  }
 
-    /* Window */
-    #an-win {
-      position:fixed; bottom:100px; right:28px; z-index:9998;
-      width:370px; max-height:580px; border-radius:20px;
-      background:#ffffff;
-      box-shadow:0 12px 48px rgba(0,45,110,.18), 0 2px 8px rgba(0,0,0,.08);
-      display:flex; flex-direction:column; overflow:hidden;
-      opacity:0; pointer-events:none;
-      transform:translateY(12px) scale(.96);
-      transition:opacity .2s ease, transform .2s ease;
-    }
-    #an-win.open { opacity:1; pointer-events:all; transform:none; }
+  /* ── Chat window ── */
+  #_ananda_win {
+    position:fixed; bottom:92px; right:24px; z-index:9999;
+    width:360px;
+    display:flex; flex-direction:column;
+    border-radius:20px; overflow:hidden;
+    background:#f5f6fa;
+    box-shadow:0 16px 56px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.1);
+    opacity:0; pointer-events:none;
+    transform:translateY(16px) scale(.95);
+    transition:opacity .22s ease, transform .22s ease;
+    max-height:580px;
+  }
+  #_ananda_win.open {
+    opacity:1; pointer-events:all; transform:none;
+  }
 
-    /* Header */
-    #an-hdr {
-      background:linear-gradient(135deg,#002D6E 0%,#1a3a8c 100%);
-      padding:16px 16px 14px; flex-shrink:0;
-      display:flex; align-items:center; gap:12px;
-    }
-    .an-av-wrap { position:relative; flex-shrink:0; }
-    .an-av {
-      width:42px; height:42px; border-radius:14px;
-      background:linear-gradient(135deg,#FF9933,#e07700);
-      display:flex; align-items:center; justify-content:center;
-      font-size:20px;
-    }
-    .an-online-dot {
-      position:absolute; bottom:-2px; right:-2px;
-      width:11px; height:11px; background:#22c55e;
-      border-radius:50%; border:2px solid #002D6E;
-    }
-    #an-hdr-info { flex:1; min-width:0; }
-    .an-name { color:#fff; font-size:15px; font-weight:700; letter-spacing:-.01em; }
-    .an-status { color:rgba(255,255,255,.6); font-size:11px; margin-top:2px; }
+  /* ── Header ── */
+  #_an_hdr {
+    background:linear-gradient(135deg,#001845 0%,#002D6E 100%);
+    padding:14px 16px; flex-shrink:0;
+    display:flex; align-items:center; gap:11px;
+  }
+  ._an_av {
+    width:40px; height:40px; border-radius:14px; flex-shrink:0;
+    background:linear-gradient(135deg,#FF9933,#e07700);
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px; position:relative;
+  }
+  ._an_av::after {
+    content:''; position:absolute; bottom:-2px; right:-2px;
+    width:10px; height:10px; border-radius:50%;
+    background:#22c55e; border:2px solid #002D6E;
+  }
+  #_an_info { flex:1; min-width:0; }
+  #_an_name { color:#fff; font-size:15px; font-weight:700; letter-spacing:-.02em; }
+  #_an_status { color:rgba(255,255,255,.55); font-size:11px; margin-top:2px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #_an_hdr_right { display:flex; gap:8px; align-items:center; flex-shrink:0; }
 
-    /* Language + close */
-    .an-hdr-actions { display:flex; align-items:center; gap:7px; flex-shrink:0; }
-    #an-lang {
-      background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.22);
-      color:#fff; border-radius:8px; padding:5px 10px;
-      font-size:12px; font-weight:600; font-family:inherit; cursor:pointer;
-      letter-spacing:.03em; transition:background .15s;
-    }
-    #an-lang:hover { background:rgba(255,255,255,.22); }
-    #an-close {
-      background:rgba(255,255,255,.1); border:none; color:rgba(255,255,255,.8);
-      width:30px; height:30px; border-radius:8px;
-      font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center;
-      transition:background .15s;
-    }
-    #an-close:hover { background:rgba(255,255,255,.2); color:#fff; }
+  /* Language toggle — prominent, clear state */
+  #_an_lang {
+    background:rgba(255,255,255,.12);
+    border:1.5px solid rgba(255,255,255,.28);
+    color:#fff; border-radius:8px;
+    padding:5px 11px; font-size:12px; font-weight:700;
+    font-family:inherit; cursor:pointer; letter-spacing:.02em;
+    transition:all .15s; white-space:nowrap;
+  }
+  #_an_lang:hover { background:rgba(255,255,255,.24); border-color:rgba(255,255,255,.5); }
+  #_an_lang.th-active { background:#FF9933; border-color:#FF9933; color:#fff; }
+  #_an_lang.en-active { background:#FF9933; border-color:#FF9933; color:#fff; }
 
-    /* Tricolor */
-    #an-tri { display:flex; height:3px; flex-shrink:0; }
-    #an-tri span:nth-child(1){flex:1;background:#FF9933}
-    #an-tri span:nth-child(2){flex:1;background:#e8e0d0}
-    #an-tri span:nth-child(3){flex:1;background:#138808}
+  #_an_close {
+    width:30px; height:30px; border-radius:8px; border:none;
+    background:rgba(255,255,255,.1); color:rgba(255,255,255,.7);
+    font-size:14px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:background .15s;
+  }
+  #_an_close:hover { background:rgba(255,255,255,.22); color:#fff; }
 
-    /* Messages */
-    #an-msgs {
-      flex:1; overflow-y:auto; padding:16px 14px 8px;
-      display:flex; flex-direction:column; gap:10px; min-height:0;
-      background:#f8f9fc;
-    }
-    #an-msgs::-webkit-scrollbar { width:4px; }
-    #an-msgs::-webkit-scrollbar-thumb { background:#dde2ee; border-radius:4px; }
+  /* Tricolor */
+  #_an_tri { display:flex; height:3px; flex-shrink:0; }
+  #_an_tri span:nth-child(1){flex:1;background:#FF9933}
+  #_an_tri span:nth-child(2){flex:1;background:#e8e0d0}
+  #_an_tri span:nth-child(3){flex:1;background:#138808}
 
-    .an-msg { display:flex; gap:8px; align-items:flex-end; max-width:86%; }
-    .an-msg.bot  { align-self:flex-start; }
-    .an-msg.user { align-self:flex-end; flex-direction:row-reverse; }
+  /* ── Messages ── */
+  #_an_msgs {
+    flex:1; overflow-y:auto; overflow-x:hidden;
+    padding:14px 12px 8px; min-height:0;
+    display:flex; flex-direction:column; gap:8px;
+    scroll-behavior:smooth;
+  }
+  #_an_msgs::-webkit-scrollbar { width:4px; }
+  #_an_msgs::-webkit-scrollbar-thumb { background:#d1d5e0; border-radius:4px; }
 
-    .an-msg-av {
-      width:28px; height:28px; border-radius:9px; flex-shrink:0;
-      background:linear-gradient(135deg,#FF9933,#e07700);
-      display:flex; align-items:center; justify-content:center; font-size:13px;
-    }
-    .an-bbl {
-      padding:10px 13px; border-radius:16px;
-      font-size:13.5px; line-height:1.58;
-    }
-    .an-msg.bot  .an-bbl {
-      background:#fff; color:#1a1a2e;
-      border-radius:4px 16px 16px 16px;
-      box-shadow:0 1px 4px rgba(0,0,0,.07);
-    }
-    .an-msg.user .an-bbl {
-      background:linear-gradient(135deg,#002D6E,#1a4a9e);
-      color:#fff;
-      border-radius:16px 4px 16px 16px;
-    }
-    .an-bbl strong { color:#002D6E; }
-    .an-msg.user .an-bbl strong { color:#FF9933; }
-    .an-bbl br+br { display:block; margin-top:4px; content:''; }
+  ._an_row { display:flex; gap:8px; align-items:flex-end;
+    width:100%; flex-shrink:0; }
+  ._an_row.bot  { align-self:flex-start; }
+  ._an_row.user { align-self:flex-end; flex-direction:row-reverse; }
 
-    /* Typing */
-    .an-typing { display:flex; gap:4px; padding:10px 14px; }
-    .an-typing span {
-      width:7px; height:7px; background:#b0bbd0; border-radius:50%;
-      animation:an-bounce 1.3s infinite ease-in-out;
-    }
-    .an-typing span:nth-child(2){animation-delay:.18s}
-    .an-typing span:nth-child(3){animation-delay:.36s}
-    @keyframes an-bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+  ._an_av_sm {
+    width:28px; height:28px; border-radius:9px; flex-shrink:0;
+    background:linear-gradient(135deg,#FF9933,#e07700);
+    display:flex; align-items:center; justify-content:center; font-size:13px;
+  }
 
-    /* Quick-reply chips */
-    #an-chips {
-      padding:8px 14px 10px; display:flex; flex-wrap:wrap; gap:6px;
-      background:#f8f9fc; flex-shrink:0;
-      border-top:1px solid #eef0f5;
-    }
-    .an-chip {
-      background:#fff; border:1.5px solid #e0e5f0;
-      color:#002D6E; border-radius:8px;
-      padding:7px 12px; font-size:12.5px; font-weight:500;
-      font-family:inherit; cursor:pointer;
-      transition:all .15s; box-shadow:0 1px 3px rgba(0,0,0,.05);
-      text-align:left; line-height:1.3;
-    }
-    .an-chip:hover {
-      background:#002D6E; color:#fff; border-color:#002D6E;
-      box-shadow:0 3px 10px rgba(0,45,110,.25);
-      transform:translateY(-1px);
-    }
+  /* KEY FIX: bubbles must never overflow */
+  ._an_bbl {
+    max-width:calc(100% - 44px);
+    padding:10px 13px;
+    font-size:13.5px; line-height:1.58;
+    word-wrap:break-word; overflow-wrap:break-word; word-break:break-word;
+    white-space:pre-wrap;
+  }
+  ._an_row.bot  ._an_bbl {
+    background:#fff; color:#111827;
+    border-radius:4px 16px 16px 16px;
+    box-shadow:0 1px 3px rgba(0,0,0,.07), 0 2px 8px rgba(0,45,110,.05);
+  }
+  ._an_row.user ._an_bbl {
+    background:linear-gradient(135deg,#002D6E,#1a4a9e);
+    color:#fff; border-radius:16px 4px 16px 16px;
+    white-space:normal;
+  }
+  ._an_bbl b { font-weight:700; }
+  ._an_row.bot ._an_bbl b { color:#002D6E; }
+  ._an_row.user ._an_bbl b { color:#ffd080; }
 
-    /* Input */
-    #an-input-row {
-      display:flex; align-items:center; gap:8px;
-      padding:10px 14px 14px; background:#fff; flex-shrink:0;
-      border-top:1px solid #eef0f5;
-    }
-    #an-inp {
-      flex:1; padding:10px 14px; border:1.5px solid #e0e5f0;
-      border-radius:12px; font-size:13.5px; font-family:inherit;
-      outline:none; color:#1a1a2e; background:#f8f9fc;
-      transition:border-color .18s, background .18s;
-    }
-    #an-inp:focus { border-color:#002D6E; background:#fff; }
-    #an-inp::placeholder { color:#a0aec0; }
-    #an-send {
-      width:40px; height:40px; border-radius:12px; border:none;
-      background:linear-gradient(135deg,#1a4a9e,#002D6E);
-      color:#fff; font-size:16px; cursor:pointer; flex-shrink:0;
-      display:flex; align-items:center; justify-content:center;
-      box-shadow:0 2px 8px rgba(0,45,110,.3);
-      transition:transform .15s, box-shadow .15s;
-    }
-    #an-send:hover { transform:translateY(-1px); box-shadow:0 4px 14px rgba(0,45,110,.38); }
-    #an-send:active { transform:none; }
+  /* Greeting card inside bot bubble */
+  ._an_greet {
+    background:linear-gradient(135deg,#002D6E,#1a3a8c);
+    border-radius:12px; padding:14px 15px; color:#fff;
+    word-wrap:break-word; overflow-wrap:break-word;
+  }
+  ._an_greet ._an_gt { font-size:15px; font-weight:700; margin-bottom:6px; }
+  ._an_greet ._an_gb { font-size:13px; line-height:1.58; color:rgba(255,255,255,.82); }
 
-    /* Retrieve form */
-    .an-form {
-      margin-top:10px; background:#f4f6fb;
-      border:1.5px solid #e0e5f0; border-radius:12px; padding:14px;
-    }
-    .an-form-row { margin-bottom:10px; }
-    .an-form label {
-      display:block; font-size:11.5px; font-weight:600;
-      color:#6b7280; text-transform:uppercase; letter-spacing:.04em; margin-bottom:5px;
-    }
-    .an-form input {
-      width:100%; padding:9px 12px; border:1.5px solid #dde2ee;
-      border-radius:9px; font-size:13px; font-family:inherit;
-      outline:none; background:#fff; color:#1a1a2e;
-      transition:border-color .18s;
-    }
-    .an-form input:focus { border-color:#002D6E; }
-    .an-form-btn {
-      width:100%; padding:10px; border:none; border-radius:9px;
-      background:linear-gradient(135deg,#1a4a9e,#002D6E);
-      color:#fff; font-size:13px; font-weight:600;
-      font-family:inherit; cursor:pointer;
-      box-shadow:0 2px 8px rgba(0,45,110,.25);
-      transition:opacity .15s;
-    }
-    .an-form-btn:disabled { opacity:.55; cursor:not-allowed; }
-    .an-form-err { color:#dc2626; font-size:12px; margin-bottom:8px; }
+  /* Typing indicator */
+  ._an_typing { display:flex; gap:5px; padding:12px 14px;
+    background:#fff; border-radius:4px 16px 16px 16px;
+    box-shadow:0 1px 3px rgba(0,0,0,.07); }
+  ._an_typing span {
+    width:7px; height:7px; background:#c0c8d8; border-radius:50%;
+    animation:_an_dot 1.3s ease-in-out infinite;
+  }
+  ._an_typing span:nth-child(2){animation-delay:.18s}
+  ._an_typing span:nth-child(3){animation-delay:.36s}
+  @keyframes _an_dot{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
 
-    /* Pass card */
-    .an-pass {
-      margin-top:10px; background:#fff;
-      border:1.5px solid #e0e5f0; border-radius:14px;
-      padding:14px; text-align:center;
-      box-shadow:0 2px 10px rgba(0,0,0,.06);
-    }
-    .an-pass-name { font-size:15px; font-weight:700; color:#002D6E; }
-    .an-pass-meta { font-size:12px; color:#6b7280; margin:4px 0 10px; }
-    .an-pass-reg  { display:inline-flex; align-items:center; gap:5px; background:#ecfdf5; color:#138808; border:1.5px solid #86efac; border-radius:8px; font-size:11px; font-weight:700; padding:3px 10px; margin-bottom:12px; }
-    .an-pass-ci   { display:inline-flex; align-items:center; gap:5px; background:#fef3c7; color:#b45309; border:1.5px solid #fcd34d; border-radius:8px; font-size:11px; font-weight:700; padding:3px 10px; margin-bottom:12px; }
-    .an-pass-note { font-size:11px; color:#6b7280; margin-top:8px; }
+  /* ── Topic chips ── */
+  #_an_chips {
+    padding:8px 12px 10px; flex-shrink:0;
+    background:#f5f6fa; border-top:1px solid #eaecf2;
+    display:flex; flex-wrap:wrap; gap:6px;
+  }
+  ._an_chip {
+    background:#fff; border:1.5px solid #dde3f0;
+    color:#002D6E; border-radius:9px;
+    padding:7px 12px; font-size:12.5px; font-weight:600;
+    font-family:inherit; cursor:pointer; display:flex;
+    align-items:center; gap:5px;
+    box-shadow:0 1px 3px rgba(0,0,0,.05);
+    transition:all .15s; white-space:nowrap;
+  }
+  ._an_chip:hover {
+    background:#002D6E; color:#fff; border-color:#002D6E;
+    transform:translateY(-1px); box-shadow:0 3px 10px rgba(0,45,110,.22);
+  }
 
-    /* Greeting card */
-    .an-greet-card {
-      background:linear-gradient(135deg,#002D6E,#1a3a8c);
-      border-radius:14px; padding:16px; color:#fff;
-    }
-    .an-greet-card h3 { font-size:15px; font-weight:700; margin-bottom:6px; }
-    .an-greet-card p  { font-size:13px; line-height:1.55; color:rgba(255,255,255,.82); }
+  /* ── Retrieve form — rendered as SEPARATE row, not inside bubble ── */
+  ._an_form_row {
+    display:flex; gap:8px; align-items:flex-start; width:100%; flex-shrink:0;
+  }
+  ._an_form_spacer { width:28px; flex-shrink:0; }
+  ._an_form_card {
+    flex:1; background:#fff; border:1.5px solid #e0e5f0;
+    border-radius:4px 16px 16px 16px;
+    padding:14px; box-shadow:0 1px 3px rgba(0,0,0,.07), 0 2px 8px rgba(0,45,110,.05);
+    min-width:0;
+  }
+  ._an_fl { display:block; font-size:11px; font-weight:700; color:#6b7280;
+    text-transform:uppercase; letter-spacing:.05em; margin-bottom:5px; }
+  ._an_fi {
+    display:block; width:100%; padding:9px 12px;
+    border:1.5px solid #dde3f0; border-radius:9px;
+    font-size:13.5px; font-family:inherit; color:#111827;
+    outline:none; background:#f8f9fc; transition:border-color .18s, background .18s;
+    margin-bottom:10px;
+  }
+  ._an_fi:focus { border-color:#002D6E; background:#fff; }
+  ._an_ferr { color:#dc2626; font-size:12px; margin-bottom:8px;
+    display:none; word-wrap:break-word; }
+  ._an_fbtn {
+    width:100%; padding:10px; border:none; border-radius:9px;
+    background:linear-gradient(135deg,#002D6E,#1a4a9e);
+    color:#fff; font-size:13px; font-weight:700; font-family:inherit;
+    cursor:pointer; box-shadow:0 2px 8px rgba(0,45,110,.25);
+    transition:opacity .15s, transform .15s;
+  }
+  ._an_fbtn:hover:not(:disabled) { opacity:.88; transform:translateY(-1px); }
+  ._an_fbtn:disabled { opacity:.5; cursor:not-allowed; transform:none; }
 
-    @media(max-width:430px){
-      #an-win { width:calc(100vw - 24px); right:12px; bottom:90px; }
-      #an-launch { right:16px; bottom:16px; }
-    }
-  `;
-  document.head.appendChild(css);
+  /* ── Pass card ── */
+  ._an_pass {
+    background:#fff; border:1.5px solid #e0e5f0;
+    border-radius:14px; padding:14px; margin-top:8px;
+    text-align:center; box-shadow:0 2px 10px rgba(0,0,0,.06);
+  }
+  ._an_pname { font-size:14px; font-weight:700; color:#002D6E; }
+  ._an_pmeta { font-size:12px; color:#6b7280; margin:4px 0 10px; }
+  ._an_preg  { display:inline-block; background:#ecfdf5; color:#138808;
+    border:1.5px solid #86efac; border-radius:8px;
+    font-size:11px; font-weight:700; padding:3px 10px; margin-bottom:10px; }
+  ._an_pci   { display:inline-block; background:#fef3c7; color:#b45309;
+    border:1.5px solid #fcd34d; border-radius:8px;
+    font-size:11px; font-weight:700; padding:3px 10px; margin-bottom:10px; }
+  ._an_pnote { font-size:11px; color:#6b7280; margin-top:8px;
+    word-wrap:break-word; }
+  ._an_pqr   { margin:0 auto 10px; }
 
-  /* ─── HTML skeleton ─── */
+  /* ── Input bar ── */
+  #_an_bar {
+    display:flex; gap:8px; padding:10px 12px 14px;
+    background:#fff; flex-shrink:0; border-top:1px solid #eaecf2;
+    align-items:center;
+  }
+  #_an_inp {
+    flex:1; padding:10px 14px; border:1.5px solid #dde3f0;
+    border-radius:12px; font-size:13.5px; font-family:inherit;
+    outline:none; color:#111827; background:#f5f6fa;
+    transition:border-color .18s, background .18s; min-width:0;
+  }
+  #_an_inp:focus { border-color:#002D6E; background:#fff; }
+  #_an_inp::placeholder { color:#9ca3af; }
+  #_an_snd {
+    width:40px; height:40px; flex-shrink:0; border-radius:12px; border:none;
+    background:linear-gradient(135deg,#002D6E,#1a4a9e); color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; box-shadow:0 2px 8px rgba(0,45,110,.3);
+    transition:transform .15s, box-shadow .15s;
+  }
+  #_an_snd:hover { transform:translateY(-1px); box-shadow:0 4px 14px rgba(0,45,110,.4); }
+  #_an_snd svg { display:block; }
+
+  @media(max-width:430px){
+    #_ananda_win { width:calc(100vw - 20px); right:10px; bottom:86px; }
+    #_ananda_btn { right:14px; bottom:14px; }
+  }`;
+
+  const styleEl = document.createElement('style');
+  styleEl.textContent = CSS;
+  document.head.appendChild(styleEl);
+
+  /* ══════════════════════════════════════
+     DOM SKELETON
+  ══════════════════════════════════════ */
   const root = document.createElement('div');
-  root.id = 'ananda-root';
+  root.id = '_ananda';
   root.innerHTML = `
-    <button id="an-launch">🧘<span id="an-badge"></span></button>
-    <div id="an-win">
-      <div id="an-hdr">
-        <div class="an-av-wrap">
-          <div class="an-av">🧘</div>
-          <div class="an-online-dot"></div>
+    <button id="_ananda_btn" title="Chat with Ananda">
+      🧘<span id="_ananda_dot"></span>
+    </button>
+
+    <div id="_ananda_win">
+      <div id="_an_hdr">
+        <div class="_an_av">🧘</div>
+        <div id="_an_info">
+          <div id="_an_name">Ananda</div>
+          <div id="_an_status"></div>
         </div>
-        <div id="an-hdr-info">
-          <div class="an-name">Ananda</div>
-          <div class="an-status" id="an-status-txt"></div>
-        </div>
-        <div class="an-hdr-actions">
-          <button id="an-lang"></button>
-          <button id="an-close">✕</button>
+        <div id="_an_hdr_right">
+          <button id="_an_lang"></button>
+          <button id="_an_close">✕</button>
         </div>
       </div>
-      <div id="an-tri"><span></span><span></span><span></span></div>
-      <div id="an-msgs"></div>
-      <div id="an-chips"></div>
-      <div id="an-input-row">
-        <input id="an-inp" type="text" autocomplete="off">
-        <button id="an-send">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      <div id="_an_tri"><span></span><span></span><span></span></div>
+      <div id="_an_msgs"></div>
+      <div id="_an_chips"></div>
+      <div id="_an_bar">
+        <input id="_an_inp" type="text" autocomplete="off">
+        <button id="_an_snd" title="Send">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
         </button>
       </div>
     </div>`;
   document.body.appendChild(root);
 
-  /* ─── DOM refs ─── */
-  const win    = document.getElementById('an-win');
-  const msgs   = document.getElementById('an-msgs');
-  const inp    = document.getElementById('an-inp');
-  const badge  = document.getElementById('an-badge');
-  const chips  = document.getElementById('an-chips');
-  const langB  = document.getElementById('an-lang');
-  const statEl = document.getElementById('an-status-txt');
+  /* ── refs ── */
+  const win   = document.getElementById('_ananda_win');
+  const msgs  = document.getElementById('_an_msgs');
+  const chips = document.getElementById('_an_chips');
+  const inp   = document.getElementById('_an_inp');
+  const dot   = document.getElementById('_ananda_dot');
+  const langB = document.getElementById('_an_lang');
 
-  /* ─── Apply language ─── */
+  /* ══════════════════════════════════════
+     LANGUAGE
+  ══════════════════════════════════════ */
+  function t() { return T[LANG]; }
+
   function applyLang() {
-    const t = TEXT[L];
-    statEl.textContent = t.online;
-    langB.textContent  = t.lang_toggle;
-    inp.placeholder    = t.input_ph;
-    chips.innerHTML    = '';
-    [['qr',t.qr_label],['reg',t.reg_label],['shirt',t.shirt_label],
-     ['mat',t.mat_label],['water',t.water_label],['event',t.event_label]
-    ].forEach(([k,lbl]) => {
+    const tx = t();
+    document.getElementById('_an_status').textContent = tx.status;
+    document.getElementById('_an_inp').placeholder = tx.ph;
+    langB.textContent = tx.switch;
+    // Visual state on toggle button
+    langB.className = LANG === 'th' ? 'th-active' : 'en-active';
+    buildChips();
+  }
+
+  langB.addEventListener('click', () => {
+    LANG = LANG === 'en' ? 'th' : 'en';
+    applyLang();
+    // Clear and re-greet in new language
+    msgs.innerHTML = '';
+    chips.style.display = 'flex';
+    setTimeout(() => addGreet(), 250);
+  });
+
+  /* ══════════════════════════════════════
+     CHIP TOPICS
+  ══════════════════════════════════════ */
+  function buildChips() {
+    chips.innerHTML = '';
+    t().topics.forEach(({ id, icon, text }) => {
       const b = document.createElement('button');
-      b.className = 'an-chip'; b.textContent = lbl;
-      b.onclick = () => chipClick(k);
+      b.className = '_an_chip';
+      b.innerHTML = `<span>${icon}</span><span>${text}</span>`;
+      b.addEventListener('click', () => chipClick(id));
       chips.appendChild(b);
     });
   }
 
-  langB.addEventListener('click', () => { L = L==='en'?'th':'en'; applyLang(); });
-  document.getElementById('an-close').addEventListener('click', () => win.classList.remove('open'));
-  document.getElementById('an-launch').addEventListener('click', () => {
-    const opening = !win.classList.contains('open');
-    win.classList.toggle('open');
-    if (opening) { badge.style.display='none'; inp.focus(); if(!_greeted) greet(); }
-  });
-  document.getElementById('an-send').addEventListener('click', send);
-  inp.addEventListener('keydown', e => { if (e.key==='Enter') send(); });
+  /* ══════════════════════════════════════
+     MESSAGE HELPERS
+  ══════════════════════════════════════ */
+  function addRow(side) {
+    const row = document.createElement('div');
+    row.className = `_an_row ${side}`;
+    if (side === 'bot') {
+      const av = document.createElement('div');
+      av.className = '_an_av_sm'; av.textContent = '🧘';
+      row.appendChild(av);
+    }
+    msgs.appendChild(row);
+    scroll();
+    return row;
+  }
 
-  /* ─── Messages ─── */
-  function botBubble(html) {
-    const row = document.createElement('div'); row.className='an-msg bot';
-    const av  = document.createElement('div'); av.className='an-msg-av'; av.textContent='🧘';
-    const b   = document.createElement('div'); b.className='an-bbl'; b.innerHTML=html;
-    row.appendChild(av); row.appendChild(b);
-    msgs.appendChild(row); msgs.scrollTop=msgs.scrollHeight; return b;
+  function botMsg(html, usePre) {
+    const row = addRow('bot');
+    const b = document.createElement('div');
+    b.className = '_an_bbl';
+    if (usePre) { b.textContent = html; }   // pre-wrap for multi-line text
+    else        { b.innerHTML  = html; }
+    row.appendChild(b);
+    scroll();
+    return b;
   }
-  function userBubble(text) {
-    const row = document.createElement('div'); row.className='an-msg user';
-    const b   = document.createElement('div'); b.className='an-bbl'; b.textContent=text;
-    row.appendChild(b); msgs.appendChild(row); msgs.scrollTop=msgs.scrollHeight;
-  }
-  function typing() {
-    const row = document.createElement('div'); row.className='an-msg bot'; row.id='an-typing';
-    const av  = document.createElement('div'); av.className='an-msg-av'; av.textContent='🧘';
-    const b   = document.createElement('div'); b.className='an-bbl an-typing'; b.innerHTML='<span></span><span></span><span></span>';
-    row.appendChild(av); row.appendChild(b); msgs.appendChild(row); msgs.scrollTop=msgs.scrollHeight;
-  }
-  function rmTyping() { const e=document.getElementById('an-typing'); if(e) e.remove(); }
 
-  /* ─── QR retrieval form ─── */
-  async function showForm(bubble) {
+  function userMsg(text) {
+    const row = addRow('user');
+    const b = document.createElement('div');
+    b.className = '_an_bbl';
+    b.textContent = text;
+    row.appendChild(b);
+    scroll();
+  }
+
+  function addTyping() {
+    const row = addRow('bot');
+    row.id = '_an_typing_row';
+    const b = document.createElement('div');
+    b.className = '_an_typing';
+    b.innerHTML = '<span></span><span></span><span></span>';
+    row.appendChild(b);
+    scroll();
+  }
+  function rmTyping() {
+    const el = document.getElementById('_an_typing_row');
+    if (el) el.remove();
+  }
+
+  function scroll() {
+    requestAnimationFrame(() => { msgs.scrollTop = msgs.scrollHeight; });
+  }
+
+  /* ══════════════════════════════════════
+     GREETING
+  ══════════════════════════════════════ */
+  function addGreet() {
+    const row = addRow('bot');
+    const b = document.createElement('div');
+    b.className = '_an_bbl';
+    b.style.cssText = 'padding:0;background:transparent;box-shadow:none;';
+    const card = document.createElement('div');
+    card.className = '_an_greet';
+    const gt = document.createElement('div'); gt.className = '_an_gt';
+    gt.textContent = LANG === 'en' ? 'Hi! I\'m Ananda 🙏' : 'สวัสดีค่ะ! ฉันคืออานันดา 🙏';
+    const gb = document.createElement('div'); gb.className = '_an_gb';
+    gb.innerHTML = t().greet;
+    card.appendChild(gt); card.appendChild(gb);
+    b.appendChild(card); row.appendChild(b);
+    scroll();
+  }
+
+  /* ══════════════════════════════════════
+     ANSWER LOGIC
+  ══════════════════════════════════════ */
+  function respond(id) {
+    const ans = t().answers[id];
+    if (!ans) { botMsg(t().fallback, true); return; }
+
+    if (id === 'qr' || id === 'reg') {
+      // Show intro then form as separate card
+      botMsg((ans.title ? `<b>${ans.title}</b>\n\n` : '') + ans.body, true);
+      showForm();
+    } else {
+      const full = (ans.title ? ans.title + '\n\n' : '') + ans.body;
+      botMsg(full, true);
+    }
+  }
+
+  function chipClick(id) {
+    chips.style.display = 'none';
+    const topic = t().topics.find(x => x.id === id);
+    userMsg(topic ? `${topic.icon} ${topic.text}` : id);
+    addTyping();
+    setTimeout(() => { rmTyping(); respond(id); }, 550 + Math.random() * 300);
+  }
+
+  /* ══════════════════════════════════════
+     FREE-TEXT INPUT
+  ══════════════════════════════════════ */
+  function sendText() {
+    const text = inp.value.trim(); if (!text) return;
+    inp.value = ''; chips.style.display = 'none';
+    userMsg(text);
+    addTyping();
+    setTimeout(() => {
+      rmTyping();
+      const tl = text.toLowerCase();
+      if (/qr|retrieve|pass|บัตร|คิวอาร์|รหัส/.test(tl))      respond('qr');
+      else if (/reg.*num|number|เลขลง/.test(tl))               respond('reg');
+      else if (/shirt|เสื้อ/.test(tl))                          respond('shirt');
+      else if (/mat|เสื่อ/.test(tl))                            respond('mat');
+      else if (/water|hydrat|น้ำ/.test(tl))                     respond('water');
+      else if (/event|date|venue|chula|งาน|วัน/.test(tl))       respond('event');
+      else if (/bulk|behalf|แทน/.test(tl))                      respond('bulk');
+      else if (/lost|หาย|missing/.test(tl))                     respond('lost');
+      else if (/check.?in|เช็คอิน|entry/.test(tl))              respond('checkin');
+      else if (/park|bts|mrt|travel|เดินทาง/.test(tl))          respond('travel');
+      else if (/thank|ขอบคุณ/.test(tl))                         respond('thanks');
+      else if (/^(hi|hello|hey|namaste|สวัสดี|หวัดดี)/.test(tl)) respond('hello');
+      else botMsg(t().fallback, true);
+    }, 550 + Math.random() * 300);
+  }
+
+  /* ══════════════════════════════════════
+     RETRIEVE FORM — rendered as own card row
+  ══════════════════════════════════════ */
+  async function showForm() {
     await Promise.all([
-      loadScript('https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js',      'an-fb-app'),
-      loadScript('https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js', 'an-fb-db'),
-      loadScript('https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',  'an-qrlib'),
+      _load('https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js',      '_an_fb_app'),
+      _load('https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js', '_an_fb_db'),
+      _load('https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',  '_an_qrlib'),
     ]);
     try {
-      if (!window._anFbApp) window._anFbApp = firebase.initializeApp(FB, 'ananda');
+      if (!window._anFbApp) window._anFbApp = firebase.initializeApp(FB_CFG, 'ananda');
       window._anDb = firebase.app('ananda').database();
-    } catch(e) { window._anDb = firebase.database(); }
+    } catch(e) { try { window._anDb = firebase.database(); } catch(_){} }
 
-    const t=TEXT[L]; const uid=Date.now();
-    const form = document.createElement('div'); form.className='an-form'; form.id='anf-'+uid;
-    form.innerHTML = `
-      <div class="an-form-row">
-        <label>${t.f_email}</label>
-        <input id="ane-${uid}" type="email" placeholder="${t.f_email_ph}">
-      </div>
-      <div class="an-form-row">
-        <label>${t.f_yob}</label>
-        <input id="any-${uid}" type="text" placeholder="${t.f_yob_ph}">
-      </div>
-      <div class="an-form-err" id="aner-${uid}" style="display:none"></div>
-      <button class="an-form-btn" id="anb-${uid}" onclick="_anSubmit(${uid})">${t.f_submit}</button>`;
-    const resDiv = document.createElement('div'); resDiv.id='anr-'+uid;
-    bubble.appendChild(form); bubble.appendChild(resDiv);
-    msgs.scrollTop=msgs.scrollHeight;
-    // Focus email
-    setTimeout(()=>{ const el=document.getElementById('ane-'+uid); if(el) el.focus(); },200);
+    const uid = Date.now();
+    const tx  = t().form;
+
+    // Form is its OWN row (not inside a bubble) — this prevents overflow
+    const formRow = document.createElement('div');
+    formRow.className = '_an_form_row';
+    formRow.id = `_anf_row_${uid}`;
+
+    const spacer = document.createElement('div'); spacer.className = '_an_form_spacer';
+    const card   = document.createElement('div'); card.className = '_an_form_card';
+
+    card.innerHTML = `
+      <label class="_an_fl">${tx.email_lbl}</label>
+      <input  class="_an_fi" id="_anf_em_${uid}" type="email" placeholder="${tx.email_ph}">
+      <label class="_an_fl">${tx.yob_lbl}</label>
+      <input  class="_an_fi" id="_anf_yb_${uid}" type="text"  placeholder="${tx.yob_ph}">
+      <div class="_an_ferr" id="_anf_er_${uid}"></div>
+      <button class="_an_fbtn" id="_anf_bt_${uid}">${tx.submit}</button>`;
+
+    formRow.appendChild(spacer);
+    formRow.appendChild(card);
+    msgs.appendChild(formRow);
+    scroll();
+
+    // Enter key in YOB field submits
+    document.getElementById(`_anf_yb_${uid}`)
+      .addEventListener('keydown', e => { if(e.key==='Enter') _anSubmit(uid); });
+    document.getElementById(`_anf_bt_${uid}`)
+      .addEventListener('click', () => _anSubmit(uid));
+
+    setTimeout(() => {
+      document.getElementById(`_anf_em_${uid}`)?.focus();
+    }, 200);
   }
 
-  window._anSubmit = async function(uid) {
-    const t=TEXT[L];
-    const email=(document.getElementById('ane-'+uid).value||'').trim().toLowerCase();
-    const yob  =(document.getElementById('any-'+uid).value||'').trim();
-    const errEl=document.getElementById('aner-'+uid);
-    const btnEl=document.getElementById('anb-'+uid);
-    const resEl=document.getElementById('anr-'+uid);
-    errEl.style.display='none';
-    if (!email||!email.includes('@')) { errEl.textContent=t.f_err_email; errEl.style.display='block'; return; }
-    btnEl.disabled=true; btnEl.textContent=t.f_loading;
-    const eKey = e=>e.replace(/\./g,',').replace(/@/g,'_at_');
-    const normY= v=>{ const y=parseInt((v||'').trim()); if(!y||y<1900) return null; return y>2400?y-543:y; };
+  async function _anSubmit(uid) {
+    const tx     = t().form;
+    const email  = (document.getElementById(`_anf_em_${uid}`)?.value||'').trim().toLowerCase();
+    const yob    = (document.getElementById(`_anf_yb_${uid}`)?.value||'').trim();
+    const errEl  = document.getElementById(`_anf_er_${uid}`);
+    const btnEl  = document.getElementById(`_anf_bt_${uid}`);
+
+    errEl.style.display = 'none';
+    if (!email || !email.includes('@')) {
+      errEl.textContent = tx.err_email; errEl.style.display = 'block'; return;
+    }
+    btnEl.disabled = true; btnEl.textContent = tx.loading;
+
+    const eKey = e => e.replace(/\./g,',').replace(/@/g,'_at_');
+    const normY = v => { const y=parseInt((v||'').trim()); if(!y||y<1900) return null; return y>2400?y-543:y; };
+
     try {
-      const snap=await window._anDb.ref('registrations/'+eKey(email)).once('value');
-      if (!snap.exists()) { errEl.textContent=t.f_err_none; errEl.style.display='block'; btnEl.disabled=false; btnEl.textContent=t.f_submit; return; }
-      const reg=snap.val();
+      const snap = await window._anDb.ref('registrations/'+eKey(email)).once('value');
+      if (!snap.exists()) {
+        errEl.textContent = tx.err_none; errEl.style.display = 'block';
+        btnEl.disabled=false; btnEl.textContent=tx.submit; return;
+      }
+      const reg = snap.val();
       if (reg.yearOfBirth) {
-        const y=normY(yob);
-        if (!y||y!==reg.yearOfBirth) { errEl.textContent=t.f_err_yob; errEl.style.display='block'; btnEl.disabled=false; btnEl.textContent=t.f_submit; return; }
+        const y = normY(yob);
+        if (!y || y !== reg.yearOfBirth) {
+          errEl.textContent = tx.err_yob; errEl.style.display = 'block';
+          btnEl.disabled=false; btnEl.textContent=tx.submit; return;
+        }
       }
-      const passes=(await Promise.all((reg.participantIds||[]).map(id=>window._anDb.ref('participants/'+id).once('value').then(s=>s.val())))).filter(Boolean);
-      document.getElementById('anf-'+uid).style.display='none';
-      const note=document.createElement('p');
-      note.style.cssText='font-size:12px;color:#138808;font-weight:700;margin:10px 0 6px;';
-      note.textContent=t.f_found(passes.length); resEl.appendChild(note);
-      passes.forEach((p,i)=>{
-        const card=document.createElement('div'); card.className='an-pass';
-        const qDiv=document.createElement('div'); qDiv.style.cssText='margin:0 auto 8px;width:140px;'; qDiv.id='anqr-'+uid+'-'+i;
-        card.innerHTML=`<div class="an-pass-name">${p.name||''}</div><div class="an-pass-meta">Reg # ${p.regNum}  ·  ${p.tshirtSize||''} T-Shirt</div><span class="${p.status==='checked_in'?'an-pass-ci':'an-pass-reg'}">${p.status==='checked_in'?'✓ Checked in':'✓ Registered'}</span>`;
-        card.appendChild(qDiv);
-        card.innerHTML+=`<div class="an-pass-note">${t.f_pass_note}</div>`;
-        resEl.appendChild(card);
-        const qrData=p.qrToken?`${p.regNum}|${p.qrToken}`:String(p.regNum);
-        setTimeout(()=>new QRCode(document.getElementById('anqr-'+uid+'-'+i),{text:qrData,width:140,height:140,correctLevel:QRCode.CorrectLevel.M}),120);
+      const passes = (await Promise.all(
+        (reg.participantIds||[]).map(id=>window._anDb.ref('participants/'+id).once('value').then(s=>s.val()))
+      )).filter(Boolean);
+
+      // Hide the form row
+      const formRow = document.getElementById(`_anf_row_${uid}`);
+      if (formRow) formRow.style.display = 'none';
+
+      // Found message
+      botMsg(tx.found(passes.length), true);
+
+      // Each pass as its own card row
+      passes.forEach((p, i) => {
+        const pRow = document.createElement('div');
+        pRow.className = '_an_form_row';
+        const sp = document.createElement('div'); sp.className = '_an_form_spacer';
+        const card = document.createElement('div'); card.className = '_an_pass';
+        const qrDiv = document.createElement('div'); qrDiv.className = '_an_pqr'; qrDiv.id = `_anqr_${uid}_${i}`;
+        card.innerHTML = `
+          <div class="_an_pname">${p.name||''}</div>
+          <div class="_an_pmeta">Reg # ${p.regNum} · ${p.tshirtSize||''} T-Shirt</div>
+          <span class="${p.status==='checked_in'?'_an_pci':'_an_preg'}">${p.status==='checked_in'?'✓ Checked In':'✓ Registered'}</span>`;
+        card.appendChild(qrDiv);
+        card.innerHTML += `<div class="_an_pnote">${tx.pass_note}</div>`;
+        pRow.appendChild(sp); pRow.appendChild(card);
+        msgs.appendChild(pRow); scroll();
+        const qrData = p.qrToken ? `${p.regNum}|${p.qrToken}` : String(p.regNum);
+        setTimeout(() => {
+          new QRCode(document.getElementById(`_anqr_${uid}_${i}`), {
+            text: qrData, width: 130, height: 130, correctLevel: QRCode.CorrectLevel.M
+          });
+          scroll();
+        }, 150);
       });
-      msgs.scrollTop=msgs.scrollHeight;
-    } catch(e) { errEl.textContent=t.f_err_conn; errEl.style.display='block'; }
-    if (btnEl) { btnEl.disabled=false; btnEl.textContent=t.f_submit; }
-  };
 
-  /* ─── Chip click ─── */
-  function chipClick(key) {
-    chips.style.display='none';
-    const t=TEXT[L];
-    const labels={qr:t.qr_label,reg:t.reg_label,shirt:t.shirt_label,mat:t.mat_label,water:t.water_label,event:t.event_label};
-    userBubble(labels[key]);
-    typing();
-    setTimeout(async ()=>{
-      rmTyping();
-      if (key==='qr'||key==='reg') {
-        const b=botBubble(key==='qr'?t.qr_intro:t.reg_intro);
-        await showForm(b);
-      } else {
-        botBubble({shirt:t.shirt,mat:t.mat,water:t.water,event:t.event}[key]);
-      }
-    }, 550+Math.random()*300);
+    } catch(e) {
+      errEl.textContent = tx.err_conn; errEl.style.display = 'block';
+    }
+    if (btnEl) { btnEl.disabled=false; btnEl.textContent=tx.submit; }
   }
 
-  /* ─── Text input ─── */
-  function send() {
-    const text=inp.value.trim(); if (!text) return; inp.value='';
-    userBubble(text); chips.style.display='none';
-    typing();
-    setTimeout(async ()=>{
-      rmTyping();
-      const tl=text.toLowerCase(); const t=TEXT[L];
-      if (/qr|retrieve|pass|บัตร|คิวอาร์|ดึง/.test(tl)) {
-        const b=botBubble(t.qr_intro); await showForm(b);
-      } else if (/reg.*num|number|เลขลง|รหัส/.test(tl)) {
-        const b=botBubble(t.reg_intro); await showForm(b);
-      } else if (/shirt|เสื้อ/.test(tl))      { botBubble(t.shirt);
-      } else if (/mat|เสื่อ/.test(tl))         { botBubble(t.mat);
-      } else if (/water|hydrat|น้ำ/.test(tl))  { botBubble(t.water);
-      } else if (/event|date|venue|chula|งาน|วันที่|สถาน/.test(tl)) { botBubble(t.event);
-      } else if (/bulk|behalf|แทน/.test(tl))   { botBubble(t.bulk);
-      } else if (/lost|หาย/.test(tl))          { botBubble(t.lost);
-      } else if (/check.?in|เช็คอิน/.test(tl)) { botBubble(t.checkin);
-      } else if (/park|bts|mrt|travel|เดินทาง/.test(tl)) { botBubble(t.travel);
-      } else if (/thank|ขอบคุณ/.test(tl))      { botBubble(t.thanks);
-      } else if (/hi|hello|hey|namaste|สวัสดี|หวัดดี/.test(tl)) { botBubble(t.hello);
-      } else { botBubble(t.fallback); }
-    }, 550+Math.random()*300);
-  }
+  /* ══════════════════════════════════════
+     OPEN / CLOSE
+  ══════════════════════════════════════ */
+  let _opened = false;
+  document.getElementById('_ananda_btn').addEventListener('click', () => {
+    const opening = !win.classList.contains('open');
+    win.classList.toggle('open');
+    if (opening) {
+      dot.style.display = 'none';
+      inp.focus();
+      if (!_opened) { _opened = true; setTimeout(addGreet, 350); }
+    }
+  });
+  document.getElementById('_an_close').addEventListener('click', () => win.classList.remove('open'));
+  document.getElementById('_an_snd').addEventListener('click', sendText);
+  inp.addEventListener('keydown', e => { if (e.key==='Enter') sendText(); });
 
-  /* ─── Greeting ─── */
-  let _greeted=false;
-  function greet() {
-    _greeted=true;
-    setTimeout(()=>{
-      const t=TEXT[L];
-      botBubble(`<div class="an-greet-card"><h3>${t.greet_title}</h3><p>${t.greet_body}</p></div>`);
-    },350);
-  }
-
-  /* ─── Init ─── */
+  /* ══════════════════════════════════════
+     INIT
+  ══════════════════════════════════════ */
   applyLang();
-  setTimeout(()=>{ if (!win.classList.contains('open')) { badge.style.display='flex'; badge.textContent='1'; }},2000);
+  setTimeout(() => {
+    if (!win.classList.contains('open')) {
+      dot.style.display = 'flex'; dot.textContent = '1';
+    }
+  }, 2500);
+
 })();
