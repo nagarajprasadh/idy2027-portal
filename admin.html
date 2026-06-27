@@ -1002,6 +1002,32 @@ function updateResultCount() {
 
 // No PIN — load immediately
 loadRecent();
+
+// Re-establish live listener when tab comes back into focus
+// (catches stale state after idle or after purge operations)
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && recentRef) loadRecent();
+});
+
+// Firebase connection status indicator
+const connDot = document.createElement('span');
+connDot.id = 'connDot';
+connDot.style.cssText = 'display:inline-block;width:8px;height:8px;border-radius:50%;background:#16A34A;margin-right:6px;vertical-align:middle;';
+const connLabel = document.createElement('span');
+connLabel.id = 'connLabel';
+connLabel.style.cssText = 'font-size:12px;color:var(--muted);';
+connLabel.textContent = 'Live';
+const connWrap = document.createElement('div');
+connWrap.style.cssText = 'display:flex;align-items:center;margin-left:auto;';
+connWrap.appendChild(connDot); connWrap.appendChild(connLabel);
+document.querySelector('.toolbar').appendChild(connWrap);
+
+db.ref('.info/connected').on('value', snap => {
+  const ok = snap.val();
+  connDot.style.background  = ok ? '#16A34A' : '#DC2626';
+  connLabel.textContent      = ok ? 'Live' : 'Reconnecting…';
+  if (ok && !recentRef) loadRecent(); // re-attach if listener dropped
+});
 </script>
 </body>
 </html>
