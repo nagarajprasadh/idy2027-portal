@@ -502,6 +502,28 @@
     /* ── Hidden ── */
     .hidden { display: none !important; }
 
+    /* ── Tab toggle ── */
+    .tab-toggle {
+      display: flex; gap: 8px; margin-bottom: 18px;
+    }
+    .tab-btn {
+      flex: 1; padding: 11px 8px; border-radius: 10px; font-size: 14px; font-weight: 700;
+      cursor: pointer; border: 2px solid var(--navy); background: #fff; color: var(--navy);
+      transition: all .15s;
+    }
+    .tab-btn.tab-active { background: var(--navy); color: #fff; }
+
+    /* ── Retrieve section ── */
+    .or-divider { text-align: center; color: var(--muted); margin: 10px 0; font-size: 13px; }
+    .retrieve-hit {
+      background: #fff; border-radius: 14px; border: 1.5px solid var(--border);
+      padding: 20px 16px; margin-bottom: 14px; text-align: center;
+    }
+    .retrieve-hit .rh-name { font-size: 18px; font-weight: 700; color: var(--navy); margin-bottom: 3px; }
+    .retrieve-hit .rh-meta { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+    .rh-status-ok  { display:inline-block; background:#15803D; color:#fff; padding:4px 14px; border-radius:20px; font-size:12px; font-weight:700; margin-bottom:10px; }
+    .rh-status-reg { display:inline-block; background:#FF9933; color:#fff; padding:4px 14px; border-radius:20px; font-size:12px; font-weight:700; margin-bottom:10px; }
+
     /* ── Print ── */
     @media print {
       .no-print { display: none !important; }
@@ -555,6 +577,43 @@
 <!-- Main -->
 <div class="container">
 
+  <!-- Tab Toggle -->
+  <div class="tab-toggle no-print">
+    <button id="tabRegister" class="tab-btn tab-active" onclick="showTab('register')">📝 <span id="tabRegLbl">Register</span></button>
+    <button id="tabRetrieve" class="tab-btn"            onclick="showTab('retrieve')">🔍 <span id="tabRetLbl">Retrieve My Pass</span></button>
+  </div>
+
+  <!-- Retrieve My Pass Section -->
+  <div id="retrieveSection" class="hidden">
+    <div class="card">
+      <div class="card-title"    id="retTitle">Retrieve Your Registration Pass</div>
+      <div class="card-subtitle" id="retSub">Enter any one of the following to find your pass.</div>
+
+      <div class="form-group">
+        <label id="retLblEmail">Email Address</label>
+        <input type="email" id="rEmail" placeholder="your@email.com" autocomplete="email">
+      </div>
+
+      <div class="or-divider">— or —</div>
+
+      <div class="form-group">
+        <label id="retLblPhone">Mobile Number</label>
+        <input type="tel" id="rPhone" placeholder="0812345678">
+      </div>
+
+      <div class="or-divider">— or —</div>
+
+      <div class="form-group">
+        <label id="retLblReg">Registration Number</label>
+        <input type="number" id="rRegNum" placeholder="e.g. 1007" min="1000">
+      </div>
+
+      <button class="btn btn-navy btn-full" id="btnRetrieve" onclick="doRetrieve()"><span id="retBtnLbl">🔍 Find My Pass</span></button>
+      <div class="field-err" id="retrieveErr" style="margin-top:10px;"></div>
+    </div>
+    <div id="retrieveResults"></div>
+  </div>
+
   <!-- Step Indicator -->
   <div class="steps no-print" id="stepsBar">
     <div class="step-item">
@@ -592,6 +651,10 @@
         <label for="emailC"><span id="lEmailC">Confirm Email Address</span> <span class="req">*</span></label>
         <input type="email" id="emailC" oninput="chkEmail()">
         <div class="field-err" id="emailCErr"></div>
+      </div>
+      <div class="form-group" style="margin-top:10px;">
+        <label for="phone"><span id="lPhone">Mobile Number</span> <span style="font-weight:400;font-size:12px;color:var(--muted);" id="lPhoneOpt">(optional — for pass retrieval)</span></label>
+        <input type="tel" id="phone" placeholder="0812345678" maxlength="20" autocomplete="tel">
       </div>
       <button class="btn btn-navy btn-full" id="btnS1" onclick="go(2)" disabled>
         <span id="bS1">Continue</span> →
@@ -708,6 +771,16 @@ const STR = {
     lEmail:      'Email Address',
     lEmailC:     'Confirm Email Address',
     emailPH:     'your@email.com',
+    lPhone:      'Mobile Number',
+    lPhoneOpt:   '(optional — for pass retrieval)',
+    tabReg:      'Register',
+    tabRet:      'Retrieve My Pass',
+    retTitle:    'Retrieve Your Registration Pass',
+    retSub:      'Enter any one of the following to find your pass.',
+    retLblEmail: 'Email Address',
+    retLblPhone: 'Mobile Number',
+    retLblReg:   'Registration Number',
+    retBtn:      '🔍 Find My Pass',
     errInvalid:  'Please enter a valid email address.',
     errMismatch: 'Email addresses do not match.',
     bS1:         'Continue',
@@ -779,6 +852,16 @@ const STR = {
     lEmail:      'ที่อยู่อีเมล',
     lEmailC:     'ยืนยันที่อยู่อีเมล',
     emailPH:     'อีเมลของท่าน@example.com',
+    lPhone:      'หมายเลขโทรศัพท์มือถือ',
+    lPhoneOpt:   '(ไม่บังคับ — สำหรับค้นหาบัตรลงทะเบียน)',
+    tabReg:      'ลงทะเบียน',
+    tabRet:      'ค้นหาบัตรลงทะเบียน',
+    retTitle:    'ค้นหาบัตรลงทะเบียนของท่าน',
+    retSub:      'กรอกข้อมูลอย่างใดอย่างหนึ่งเพื่อค้นหาบัตร',
+    retLblEmail: 'ที่อยู่อีเมล',
+    retLblPhone: 'หมายเลขโทรศัพท์มือถือ',
+    retLblReg:   'หมายเลขการลงทะเบียน',
+    retBtn:      '🔍 ค้นหาบัตรของฉัน',
     errInvalid:  'กรุณากรอกที่อยู่อีเมลที่ถูกต้อง',
     errMismatch: 'ที่อยู่อีเมลไม่ตรงกัน',
     bS1:         'ถัดไป',
@@ -892,12 +975,15 @@ function applyLang() {
   const ids = [
     'hTitle','hSub','langBtn',
     's1Title','s1Sub','lEmail','lEmailC','bS1',
+    'lPhone','lPhoneOpt',
     'bk2','bk3','bk4',
     's2Title','s2Sub',
     's3Title','s3Sub','bS3',
     's4Title','s4Sub','lDeclAccept','bSubmit',
     'okTitle','okSub','actTitle','bJPEG','bPrint',
-    'sl1','sl2','sl3','sl4'
+    'sl1','sl2','sl3','sl4',
+    'tabRegLbl','tabRetLbl',
+    'retTitle','retSub','retLblEmail','retLblPhone','retLblReg','retBtnLbl'
   ];
   ids.forEach(id => setText(id, s(id)));
   setAttr('email',  'placeholder', s('emailPH'));
@@ -1153,6 +1239,13 @@ function emailToKey(email) {
   return email.toLowerCase().replace(/\./g, ',').replace(/@/g, '_at_');
 }
 
+function normalizePhone(p) {
+  let s = (p || '').replace(/[\s\-\(\)\.]/g, '');
+  if (s.startsWith('+66')) s = '0' + s.slice(3);
+  else if (s.startsWith('66') && s.length >= 11) s = '0' + s.slice(2);
+  return s.replace(/[^0-9]/g, '');
+}
+
 // Atomically claim the next registration number
 async function claimRegNumber() {
   const ref = db.ref('counters/lastRegistrationNumber');
@@ -1242,12 +1335,18 @@ async function submit() {
 
     // Update registration index
     const existingIds = existingData ? (existingData.participantIds || []) : [];
+    const phone = normalizePhone(el('phone').value || '');
     writes[`registrations/${emailKey}`] = {
       email,
-      registeredAt:   existingData ? existingData.registeredAt : now,
+      registeredAt:     existingData ? existingData.registeredAt : now,
       participantCount: existingCount + pCount,
-      participantIds: [...existingIds, ...participants.map(p => p.regNum)]
+      participantIds:   [...existingIds, ...participants.map(p => p.regNum)],
+      ...(phone ? { phone } : {})
     };
+    // Phone → emailKey index for self-service retrieval
+    if (phone && !existingData) {
+      writes[`phones/${phone}`] = emailKey;
+    }
 
     // Update dashboard size tallies
     participants.forEach(p => {
@@ -1491,6 +1590,142 @@ async function dlJPEGBlob(regNum) {
     g.appendChild(l);
   }
 })();
+
+/* ═══════════════════════════════════════════════════════
+   TAB TOGGLE — Register vs Retrieve My Pass
+═══════════════════════════════════════════════════════ */
+function showTab(tab) {
+  const isRetrieve = tab === 'retrieve';
+  el('tabRegister').classList.toggle('tab-active', !isRetrieve);
+  el('tabRetrieve').classList.toggle('tab-active',  isRetrieve);
+  el('stepsBar').classList.toggle('hidden', isRetrieve);
+  el('retrieveSection').classList.toggle('hidden', !isRetrieve);
+  ['step1','step2','step3','step4'].forEach(id => {
+    el(id).classList.toggle('hidden', isRetrieve);
+  });
+  if (isRetrieve) {
+    el('rEmail').value = '';
+    el('rPhone').value = '';
+    el('rRegNum').value = '';
+    el('retrieveResults').innerHTML = '';
+    el('retrieveErr').classList.remove('show');
+  } else {
+    // Reset to step 1 when switching back
+    ['step2','step3','step4'].forEach(id => el(id).classList.add('hidden'));
+    el('step1').classList.remove('hidden');
+    setStep(1);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   RETRIEVE MY PASS
+═══════════════════════════════════════════════════════ */
+async function doRetrieve() {
+  const emailRaw = (el('rEmail').value || '').trim().toLowerCase();
+  const phone    = normalizePhone(el('rPhone').value || '');
+  const regNum   = parseInt(el('rRegNum').value || '0');
+  const err      = el('retrieveErr');
+  const res      = el('retrieveResults');
+  const btn      = el('btnRetrieve');
+
+  err.classList.remove('show');
+  if (!emailRaw && !phone && !regNum) {
+    err.textContent = lang === 'th' ? 'กรุณากรอกข้อมูลอย่างน้อยหนึ่งช่อง' : 'Please fill in at least one field.';
+    err.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true;
+  res.innerHTML = '<p style="text-align:center;color:var(--muted);padding:20px">Searching…</p>';
+
+  try {
+    let participantIds = [];
+    let foundEmail = '';
+
+    if (regNum >= 1000) {
+      // Direct reg number lookup
+      const snap = await db.ref('participants/' + regNum).once('value');
+      if (snap.exists()) { participantIds = [regNum]; foundEmail = snap.val().email; }
+
+    } else if (emailRaw) {
+      const snap = await db.ref('registrations/' + emailToKey(emailRaw)).once('value');
+      if (snap.exists()) { participantIds = snap.val().participantIds || []; foundEmail = emailRaw; }
+
+    } else if (phone) {
+      const idxSnap = await db.ref('phones/' + phone).once('value');
+      if (idxSnap.exists()) {
+        const regSnap = await db.ref('registrations/' + idxSnap.val()).once('value');
+        if (regSnap.exists()) { participantIds = regSnap.val().participantIds || []; foundEmail = regSnap.val().email; }
+      }
+    }
+
+    if (participantIds.length === 0) {
+      res.innerHTML = '';
+      err.textContent = lang === 'th'
+        ? 'ไม่พบข้อมูลการลงทะเบียน กรุณาตรวจสอบข้อมูลที่กรอก'
+        : 'No registration found. Please check the details and try again.';
+      err.classList.add('show');
+      btn.disabled = false;
+      return;
+    }
+
+    const passes = (await Promise.all(
+      participantIds.map(id => db.ref('participants/' + id).once('value').then(s => s.val()))
+    )).filter(Boolean);
+
+    renderRetrievedPasses(passes, foundEmail);
+
+  } catch(e) {
+    console.error(e);
+    res.innerHTML = '';
+    err.textContent = lang === 'th' ? 'เกิดข้อผิดพลาด กรุณาลองใหม่' : 'Connection error. Please try again.';
+    err.classList.add('show');
+  }
+  btn.disabled = false;
+}
+
+function renderRetrievedPasses(passes, foundEmail) {
+  const res = el('retrieveResults');
+  res.innerHTML = '';
+
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'text-align:center;margin:16px 0 12px;font-weight:700;color:var(--ok);font-size:15px;';
+  hdr.textContent = `✓ Found ${passes.length} pass${passes.length > 1 ? 'es' : ''} for ${foundEmail}`;
+  res.appendChild(hdr);
+
+  passes.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'retrieve-hit';
+
+    const nameEl = document.createElement('div'); nameEl.className = 'rh-name'; nameEl.textContent = p.name;
+    const metaEl = document.createElement('div'); metaEl.className = 'rh-meta'; metaEl.textContent = `Reg #${p.regNum} · ${p.tshirtSize} T-Shirt`;
+    const statusEl = document.createElement('div');
+    statusEl.className = p.status === 'checked_in' ? 'rh-status-ok' : 'rh-status-reg';
+    statusEl.textContent = p.status === 'checked_in' ? '✓ ALREADY CHECKED IN' : 'REGISTERED';
+
+    const qrWrap = document.createElement('div');
+    qrWrap.style.cssText = 'margin:14px auto;max-width:160px;';
+    const canvas = document.createElement('div');
+    canvas.id = 'qr-ret-' + p.regNum;
+    qrWrap.appendChild(canvas);
+
+    card.appendChild(nameEl);
+    card.appendChild(metaEl);
+    card.appendChild(statusEl);
+    card.appendChild(qrWrap);
+    res.appendChild(card);
+
+    const qrData = p.qrToken ? `${p.regNum}|${p.qrToken}` : String(p.regNum);
+    new QRCode(canvas, { text: qrData, width: 160, height: 160, correctLevel: QRCode.CorrectLevel.M });
+  });
+
+  const note = document.createElement('p');
+  note.style.cssText = 'text-align:center;font-size:12px;color:var(--muted);margin:12px 0 30px;';
+  note.textContent = lang === 'th'
+    ? '📸 กรุณาถ่ายภาพหน้าจอหรือพิมพ์บัตรนี้ก่อนออกจากหน้า'
+    : '📸 Screenshot or print this page before leaving.';
+  res.appendChild(note);
+}
 
 /* ═══════════════════════════════════════════════════════
    INIT
