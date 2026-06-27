@@ -595,15 +595,6 @@
     <div id="retrieveResults"></div>
   </div>
 
-  <!-- Already registered? link -->
-  <div id="alreadyRegLink" class="no-print" style="text-align:center;margin-bottom:14px;">
-    <span style="font-size:13px;color:var(--muted);" id="alreadyRegTxt">Already registered?</span>
-    <button onclick="showTab('retrieve')" id="alreadyRegBtn"
-      style="background:none;border:none;color:var(--navy);font-size:13px;font-weight:700;cursor:pointer;text-decoration:underline;margin-left:4px;padding:0;">
-      <span id="alreadyRegBtnLbl">Retrieve your pass →</span>
-    </button>
-  </div>
-
   <!-- Step Indicator -->
   <div class="steps no-print" id="stepsBar">
     <div class="step-item">
@@ -649,6 +640,14 @@
       <button class="btn btn-navy btn-full" id="btnS1" onclick="go(2)" disabled>
         <span id="bS1">Continue</span> →
       </button>
+
+      <div id="alreadyRegLink" class="no-print" style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border);text-align:center;">
+        <span id="alreadyRegTxt" style="font-size:13px;color:var(--muted);">Already registered?</span>
+        <button onclick="showTab('retrieve')" id="alreadyRegBtn"
+          style="background:none;border:none;color:var(--navy);font-size:13px;font-weight:600;cursor:pointer;margin-left:6px;padding:0;letter-spacing:0.01em;">
+          <span id="alreadyRegBtnLbl">Retrieve your pass</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -1586,7 +1585,6 @@ async function dlJPEGBlob(regNum) {
 ═══════════════════════════════════════════════════════ */
 function showTab(tab) {
   const isRetrieve = tab === 'retrieve';
-  el('alreadyRegLink').classList.toggle('hidden', isRetrieve);
   el('stepsBar').classList.toggle('hidden', isRetrieve);
   el('retrieveSection').classList.toggle('hidden', !isRetrieve);
   ['step1','step2','step3','step4'].forEach(id => {
