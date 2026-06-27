@@ -15,6 +15,16 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy to Firebase Hosting
-        run: npx firebase-tools@latest deploy --only hosting --project idy2027-dba28 --non-interactive
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          npx firebase-tools@latest deploy --only hosting \
+            --project idy2027-dba28 --non-interactive 2>&1 | tee /tmp/deploy_out.txt
+          EXIT=${PIPESTATUS[0]}
+          if [ $EXIT -ne 0 ]; then
+            if grep -q "current active version" /tmp/deploy_out.txt; then
+              echo "✅ Files unchanged — already live, nothing to redeploy."
+              exit 0
+            fi
+            exit $EXIT
+          fi
