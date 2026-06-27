@@ -101,6 +101,19 @@
     .btn-danger { background: #FEE2E2; color: var(--danger); }
     .btn-muted  { background: #F3F4F6; color: var(--muted); }
     .btn-csv    { background: #EDE9FE; color: #7C3AED; }
+    .btn-dupe   { background: #FFF1F2; color: #BE123C; }
+
+    /* Duplicate view */
+    .dupe-group { background: #FFF1F2; border: 1.5px solid #FECDD3; border-radius: 14px; padding: 16px; margin-bottom: 18px; }
+    .dupe-group-label { font-size: 11px; font-weight: 800; color: #BE123C; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 12px; }
+    .dupe-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 600px) { .dupe-cards { grid-template-columns: 1fr; } }
+    .dupe-card { background: #fff; border-radius: 10px; padding: 14px; border: 1.5px solid var(--border); font-size: 13px; }
+    .dupe-card .d-name { font-size: 15px; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+    .dupe-card .d-row  { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #F3F4F6; color: var(--muted); }
+    .dupe-card .d-row:last-child { border-bottom: none; }
+    .dupe-card .d-val  { color: var(--text); font-weight: 600; text-align: right; max-width: 60%; word-break: break-all; }
+    .flagged-badge { display: inline-block; background: #FEF3C7; color: #92400E; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; margin-left: 6px; vertical-align: middle; }
 
     /* RESULTS */
     #resultsList { display: flex; flex-direction: column; gap: 10px; }
@@ -238,6 +251,7 @@
       <button class="btn btn-navy" onclick="loadRecent()">📋 Recent 20</button>
       <button class="btn btn-csv"  onclick="exportCSV()">⬇ Export CSV</button>
       <button class="btn btn-warn" onclick="recalcCounters()">🔄 Recalc Counters</button>
+      <button class="btn btn-dupe" onclick="findDuplicates()">🔎 Find Duplicates</button>
       <div style="margin-left:auto;font-size:12px;color:var(--muted);align-self:center;" id="resultCount"></div>
     </div>
 
@@ -704,6 +718,104 @@ async function recalcCounters() {
   await db.ref().update(updates);
   db.ref('audit').push({ action:'ADMIN_RECALC', timestamp: Date.now(), result: { total, checkedIn, tshirtIssued } });
   toast(`✅ Done — ${total} participants, ${checkedIn} checked in, ${tshirtIssued} shirts issued`, 'ok');
+}
+
+/* ═══════════════════════════════════════
+   FIND DUPLICATES
+═══════════════════════════════════════ */
+async function findDuplicates() {
+  detachRecentListener();
+  setCount('Scanning for duplicates…');
+  document.getElementById('resultsList').innerHTML = '<div class="list-msg">Scanning all records…</div>';
+
+  const snap = await db.ref('participants').once('value');
+  const all = [];
+  snap.forEach(child => {
+    const p = child.val();
+    if (!p || p.status === 'deleted') return;
+    all.push({ key: child.key, ...p });
+  });
+
+  // Group by normalised email
+  const byEmail = {};
+  all.forEach(p => {
+    if (!p.email) return;
+    const k = p.email.trim().toLowerCase();
+    if (!byEmail[k]) byEmail[k] = [];
+    byEmail[k].push(p);
+  });
+
+  // Group by normalised full name
+  const byName = {};
+  all.forEach(p => {
+    if (!p.name) return;
+    const k = p.name.trim().toLowerCase().replace(/\s+/g, ' ');
+    if (!byName[k]) byName[k] = [];
+    byName[k].push(p);
+  });
+
+  // Collect groups with 2+ members, tag with reason
+  const groups = [];
+  Object.entries(byEmail).forEach(([email, members]) => {
+    if (members.length > 1) groups.push({ reason: '⚠️ Same email: ' + email, members });
+  });
+  Object.entries(byName).forEach(([name, members]) => {
+    if (members.length > 1) {
+      // skip if already caught by email group
+      const emails = [...new Set(members.map(m => (m.email||'').toLowerCase()))];
+      if (emails.length > 1 || !groups.find(g => g.members.every(m => members.includes(m)))) {
+        groups.push({ reason: '⚠️ Same name: ' + members[0].name, members });
+      }
+    }
+  });
+
+  if (groups.length === 0) {
+    document.getElementById('resultsList').innerHTML = '<div class="list-msg" style="color:var(--ok);">✅ No duplicates found across ' + all.length + ' records.</div>';
+    setCount('No duplicates');
+    return;
+  }
+
+  setCount(groups.length + ' duplicate group' + (groups.length !== 1 ? 's' : '') + ' found');
+
+  const html = groups.map((g, gi) => `
+    <div class="dupe-group">
+      <div class="dupe-group-label">${g.reason}</div>
+      <div class="dupe-cards">
+        ${g.members.map(p => `
+          <div class="dupe-card" id="dupe-${p.regNum}">
+            <div class="d-name">
+              ${p.name}
+              ${p.duplicateFlag ? '<span class="flagged-badge">⚑ FLAGGED</span>' : ''}
+            </div>
+            <div class="d-row"><span>Reg #</span>     <span class="d-val">${p.regNum}</span></div>
+            <div class="d-row"><span>Email</span>     <span class="d-val">${p.email || '—'}</span></div>
+            <div class="d-row"><span>T-Shirt</span>   <span class="d-val">${p.tshirtSize || '—'}</span></div>
+            <div class="d-row"><span>Status</span>    <span class="d-val">${p.status}</span></div>
+            <div class="d-row"><span>Registered</span><span class="d-val">${p.registeredAt ? new Date(p.registeredAt).toLocaleString() : '—'}</span></div>
+            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+              <button class="btn btn-warn" style="flex:1;padding:7px;font-size:12px;"
+                onclick="toggleFlag('${p.regNum}', ${!p.duplicateFlag})">
+                ${p.duplicateFlag ? '✓ Unflag' : '⚑ Flag'}
+              </button>
+              <button class="btn btn-navy" style="flex:1;padding:7px;font-size:12px;"
+                onclick="fetchByRegNum('${p.regNum}')">
+                Open
+              </button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('resultsList').innerHTML = html;
+}
+
+async function toggleFlag(regNum, flagState) {
+  await db.ref('participants/' + regNum).update({ duplicateFlag: flagState || null });
+  db.ref('audit').push({ action: flagState ? 'ADMIN_FLAG_DUPE' : 'ADMIN_UNFLAG_DUPE', regNum, timestamp: Date.now() });
+  toast(flagState ? '⚑ #' + regNum + ' flagged as duplicate' : '✓ #' + regNum + ' unflagged', 'warn');
+  findDuplicates(); // refresh
 }
 
 /* ═══════════════════════════════════════
