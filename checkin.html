@@ -862,6 +862,58 @@ function startCountdown(elId, seconds, callback) {
 }
 
 /* ═══════════════════════════════════════════════════════
+   USB / BLUETOOTH HANDHELD SCANNER SUPPORT
+   Scanners behave like a keyboard: rapid keystrokes → Enter
+   This listener buffers that input and fires processQR()
+═══════════════════════════════════════════════════════ */
+(function initUsbScanner() {
+  let buf   = '';
+  let timer = null;
+  const TIMEOUT = 80; // ms — scanners finish in <50ms; humans type slower
+
+  document.addEventListener('keydown', e => {
+    // Ignore if user is typing into a real input/textarea (PIN pad, manual entry)
+    const tag = document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+    // Ignore modifier-only keys
+    if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+    if (e.key === 'Enter') {
+      clearTimeout(timer);
+      const data = buf.trim();
+      buf = '';
+      if (data.length < 3) return; // too short to be a valid QR
+
+      // If on a result screen, cancel it first then process new scan
+      const onResult = ['screenGreen','screenRed','screenWarn']
+        .some(id => !el(id).classList.contains('hidden'));
+      if (onResult) {
+        clearTimeout(countdownTimer);
+        currentParticipant = null;
+      }
+
+      // Must be past setup to process scans
+      const onScanOrResult = onResult ||
+        !el('screenScan').classList.contains('hidden');
+      if (!onScanOrResult) return;
+
+      pauseScanner();
+      processQR(data);
+      return;
+    }
+
+    // Buffer printable characters
+    if (e.key.length === 1) {
+      buf += e.key;
+      clearTimeout(timer);
+      // Auto-flush after timeout (in case scanner omits Enter)
+      timer = setTimeout(() => { buf = ''; }, 500);
+    }
+  });
+})();
+
+/* ═══════════════════════════════════════════════════════
    INIT
 ═══════════════════════════════════════════════════════ */
 showOnly('screenPin');
