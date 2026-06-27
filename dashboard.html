@@ -453,43 +453,39 @@ const feedRef = db.ref('dashboard/recentRegistrations');
 feedRef.on('child_added',   snap => { feedCache[snap.key] = snap.val(); renderFeed(); });
 feedRef.on('child_removed', snap => { delete feedCache[snap.key];       renderFeed(); });
 
-/* ── Recent Check-ins feed ── */
-const ciCache = {};
-
-function renderCIFeed() {
-  const list  = el('ciList');
-  const items = Object.values(ciCache);
-  items.sort((a, b) => (b.checkedInAt || 0) - (a.checkedInAt || 0));
-  const recent = items.slice(0, 10);
-  if (recent.length === 0) {
+/* ── Recent Check-ins feed — live query directly on participants ── */
+function renderCIFeed(items) {
+  const list = el('ciList');
+  if (!items || items.length === 0) {
     list.innerHTML = '<li class="feed-empty">No check-ins yet.</li>';
     return;
   }
   list.innerHTML = '';
-  recent.forEach(p => {
+  items.forEach(p => {
     const li = document.createElement('li');
     li.className = 'feed-item';
     li.innerHTML = `
       <span class="feed-reg">#${p.regNum}</span>
       <span class="feed-name">${escHtml(p.name || 'Participant')}</span>
       <span class="feed-size">${escHtml(p.tshirtSize || '—')}</span>
-      <span class="feed-time">${timeAgo(p.checkedInAt)}</span>`;
+      <span class="feed-time">${timeAgo(p.checkIn.timestamp)}</span>`;
     list.appendChild(li);
   });
 }
 
-fetch(`${DB_REST}/dashboard/recentCheckIns.json`)
-  .then(r => r.json())
-  .then(data => {
-    if (data && typeof data === 'object') {
-      Object.entries(data).forEach(([k, v]) => { ciCache[k] = v; });
-    }
-    renderCIFeed();
-  }).catch(() => { el('ciList').innerHTML = '<li class="feed-empty">No check-ins yet.</li>'; });
-
-const ciRef = db.ref('dashboard/recentCheckIns');
-ciRef.on('child_added',   snap => { ciCache[snap.key] = snap.val(); renderCIFeed(); });
-ciRef.on('child_removed', snap => { delete ciCache[snap.key];       renderCIFeed(); });
+// Ordered by checkIn/timestamp — only last 10, updates live on every check-in
+db.ref('participants')
+  .orderByChild('checkIn/timestamp')
+  .limitToLast(10)
+  .on('value', snap => {
+    const items = [];
+    snap.forEach(child => {
+      const p = child.val();
+      if (p && p.status === 'checked_in' && p.checkIn?.timestamp) items.push(p);
+    });
+    items.sort((a, b) => b.checkIn.timestamp - a.checkIn.timestamp);
+    renderCIFeed(items);
+  });
 
 function timeAgo(ts) {
   const diff = Math.floor((Date.now() - ts) / 1000);
