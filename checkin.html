@@ -422,7 +422,7 @@
       <button class="end-session-btn" onclick="endSession()">End Session</button>
     </div>
 
-    <div class="scan-label">Point camera at participant's QR code</div>
+    <div class="scan-label">Point camera at participant's QR code<br><span style="font-size:13px;opacity:.7">or use USB / Bluetooth handheld scanner</span></div>
     <div class="scanner-wrap">
       <div id="qr-reader"></div>
       <div class="scan-overlay"><div class="scan-frame"></div></div>
@@ -523,8 +523,10 @@ let selectedCounter = '';
 let qrScanner       = null;
 let currentParticipant = null;
 let countdownTimer  = null;
-let sessionTimeout  = null;
+let sessionTimeout      = null;
+let sessionWarnTimeout  = null;
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+const SESSION_WARN_MS    = 28 * 60 * 1000; // warn 2 minutes before
 
 /* ═══════════════════════════════════════════════════════
    UTILITIES
@@ -635,6 +637,7 @@ function endSession() {
   el('hdrBadge').classList.remove('hidden');
   el('btnBegin').disabled = true;
   clearTimeout(sessionTimeout);
+  clearTimeout(sessionWarnTimeout);
   clearTimeout(countdownTimer);
   pinBuffer = ''; updatePinDots();
   showOnly('screenPin');
@@ -645,6 +648,14 @@ function endSession() {
 ═══════════════════════════════════════════════════════ */
 function resetSessionTimeout() {
   clearTimeout(sessionTimeout);
+  clearTimeout(sessionWarnTimeout);
+  // Warn 2 minutes before logout
+  sessionWarnTimeout = setTimeout(() => {
+    if (volunteerName) {
+      const stay = confirm('⚠️ Session will expire in 2 minutes due to inactivity.\n\nClick OK to stay logged in, or Cancel to log out now.');
+      if (stay) resetSessionTimeout();
+    }
+  }, SESSION_WARN_MS);
   sessionTimeout = setTimeout(() => {
     alert('Session timed out due to inactivity. Please log in again.');
     endSession();
