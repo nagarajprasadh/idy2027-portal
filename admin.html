@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IDY 2027 — Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy:    #002D6E;
+      --saffron: #FF9933;
+      --green:   #138808;
+      --white:   #FFFFFF;
+      --bg:      #F0F2F8;
+      --border:  #DDE2EE;
+      --text:    #1A1A2E;
+      --muted:   #6B7280;
+      --ok:      #16A34A;
+      --warn:    #D97706;
+      --danger:  #DC2626;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Noto Sans', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    .tricolor { display: flex; height: 5px; }
+    .tricolor div { flex: 1; }
+    .tc-s { background: var(--saffron); }
+    .tc-w { background: #fff; border-top: 1px solid #E8E0D0; border-bottom: 1px solid #E8E0D0; }
+    .tc-g { background: var(--green); }
+
+    header {
+      background: var(--navy); padding: 14px 24px;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+    }
+    header h1 { color: #fff; font-size: 16px; font-weight: 700; }
+    header p  { color: rgba(255,255,255,.5); font-size: 12px; margin-top: 2px; }
+    .admin-badge {
+      background: var(--saffron); color: var(--navy);
+      border-radius: 20px; padding: 4px 12px; font-size: 11px; font-weight: 800;
+      letter-spacing: .5px;
+    }
+
+    /* PIN GATE */
+    #pinGate {
+      position: fixed; inset: 0; background: var(--bg);
+      display: flex; align-items: center; justify-content: center; z-index: 100;
+    }
+    .pin-box {
+      background: var(--white); border-radius: 20px; padding: 36px 32px;
+      width: 320px; text-align: center; box-shadow: 0 8px 40px rgba(0,0,0,.12);
+    }
+    .pin-box h2 { color: var(--navy); font-size: 18px; margin-bottom: 4px; }
+    .pin-box p  { color: var(--muted); font-size: 13px; margin-bottom: 22px; }
+    #pinDisplay {
+      font-size: 28px; letter-spacing: 12px; color: var(--navy); font-weight: 800;
+      height: 44px; margin-bottom: 20px;
+    }
+    .keypad { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 14px; }
+    .key {
+      background: var(--bg); border: none; border-radius: 12px; padding: 16px;
+      font-size: 18px; font-weight: 700; color: var(--navy); cursor: pointer;
+      transition: background .12s;
+    }
+    .key:active { background: var(--border); }
+    .key.del { color: var(--danger); }
+    .key.enter { background: var(--navy); color: var(--white); }
+    .key.enter:active { background: #001a45; }
+    #pinError { color: var(--danger); font-size: 13px; min-height: 20px; }
+
+    /* MAIN */
+    #mainApp { display: none; }
+    .container { max-width: 900px; margin: 0 auto; padding: 20px 16px 60px; }
+
+    /* SEARCH */
+    .search-wrap {
+      position: relative; margin-bottom: 16px;
+    }
+    #searchInput {
+      width: 100%; padding: 14px 48px 14px 18px;
+      border: 2px solid var(--border); border-radius: 12px;
+      font-size: 15px; outline: none; background: var(--white);
+      transition: border-color .2s;
+    }
+    #searchInput:focus { border-color: var(--navy); }
+    .search-icon {
+      position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+      color: var(--muted); font-size: 18px; pointer-events: none;
+    }
+    .search-hint { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+
+    /* TOOLBAR */
+    .toolbar { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+    .btn {
+      padding: 9px 16px; border-radius: 10px; border: none;
+      font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity .15s;
+    }
+    .btn:active { opacity: .75; }
+    .btn-navy   { background: var(--navy); color: #fff; }
+    .btn-ok     { background: #DCFCE7; color: var(--ok); }
+    .btn-warn   { background: #FEF3C7; color: var(--warn); }
+    .btn-danger { background: #FEE2E2; color: var(--danger); }
+    .btn-muted  { background: #F3F4F6; color: var(--muted); }
+    .btn-csv    { background: #EDE9FE; color: #7C3AED; }
+
+    /* RESULTS */
+    #resultsList { display: flex; flex-direction: column; gap: 10px; }
+
+    .p-card {
+      background: var(--white); border-radius: 14px; padding: 16px 18px;
+      box-shadow: 0 1px 4px rgba(0,45,110,.07);
+      border-left: 5px solid var(--border);
+      transition: border-color .2s;
+    }
+    .p-card.status-registered  { border-left-color: var(--saffron); }
+    .p-card.status-checked_in  { border-left-color: var(--ok); }
+    .p-card.status-cancelled   { border-left-color: var(--danger); opacity: .65; }
+
+    .p-card-top {
+      display: flex; align-items: flex-start; gap: 14px; flex-wrap: wrap;
+    }
+    .p-reg {
+      background: var(--navy); color: #fff;
+      border-radius: 8px; padding: 4px 10px;
+      font-size: 13px; font-weight: 800; white-space: nowrap;
+    }
+    .p-name { font-size: 15px; font-weight: 700; flex: 1; }
+    .p-size {
+      background: #FFF3E0; color: #B45309;
+      border-radius: 20px; padding: 3px 10px;
+      font-size: 12px; font-weight: 700;
+    }
+    .status-badge {
+      border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: .5px;
+    }
+    .sb-registered { background: #FEF3C7; color: var(--warn); }
+    .sb-checked_in { background: #DCFCE7; color: var(--ok); }
+    .sb-cancelled  { background: #FEE2E2; color: var(--danger); }
+
+    .p-meta { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .p-ci-info { font-size: 12px; color: var(--ok); margin-top: 4px; font-weight: 600; }
+
+    .p-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .p-actions .btn { padding: 8px 14px; font-size: 12px; }
+
+    /* LOADING / EMPTY */
+    .list-msg { text-align: center; color: var(--muted); padding: 40px; font-size: 14px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      display: inline-block; width: 18px; height: 18px;
+      border: 2px solid var(--border); border-top-color: var(--navy);
+      border-radius: 50%; animation: spin .7s linear infinite;
+      vertical-align: middle; margin-right: 8px;
+    }
+
+    /* TOAST */
+    #toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #1A1A2E; color: #fff; border-radius: 10px;
+      padding: 12px 22px; font-size: 13px; font-weight: 600;
+      opacity: 0; transition: opacity .25s; z-index: 999; pointer-events: none;
+      max-width: 340px; text-align: center;
+    }
+    #toast.show { opacity: 1; }
+    #toast.ok   { background: var(--ok); }
+    #toast.err  { background: var(--danger); }
+    #toast.warn { background: var(--warn); }
+
+    /* CONFIRM MODAL */
+    #confirmModal {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.55); z-index: 200;
+      align-items: center; justify-content: center;
+    }
+    .confirm-box {
+      background: #fff; border-radius: 16px; padding: 28px 26px;
+      width: 300px; text-align: center;
+    }
+    .confirm-box h3 { font-size: 16px; color: var(--navy); margin-bottom: 8px; }
+    .confirm-box p  { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+    .confirm-btns   { display: flex; gap: 10px; }
+    .confirm-btns .btn { flex: 1; padding: 11px; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+<div class="tricolor"><div class="tc-s"></div><div class="tc-w"></div><div class="tc-g"></div></div>
+
+<!-- PIN GATE -->
+<div id="pinGate">
+  <div class="pin-box">
+    <div style="font-size:32px;margin-bottom:8px;">🛡️</div>
+    <h2>Admin Portal</h2>
+    <p>13th International Day of Yoga 2027</p>
+    <div id="pinDisplay">——</div>
+    <div class="keypad">
+      <button class="key" onclick="keyPress('1')">1</button>
+      <button class="key" onclick="keyPress('2')">2</button>
+      <button class="key" onclick="keyPress('3')">3</button>
+      <button class="key" onclick="keyPress('4')">4</button>
+      <button class="key" onclick="keyPress('5')">5</button>
+      <button class="key" onclick="keyPress('6')">6</button>
+      <button class="key" onclick="keyPress('7')">7</button>
+      <button class="key" onclick="keyPress('8')">8</button>
+      <button class="key" onclick="keyPress('9')">9</button>
+      <button class="key del" onclick="keyPress('del')">⌫</button>
+      <button class="key" onclick="keyPress('0')">0</button>
+      <button class="key enter" onclick="keyPress('enter')">✓</button>
+    </div>
+    <div id="pinError"></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp">
+  <header>
+    <div>
+      <h1>IDY 2027 — Admin Portal</h1>
+      <p>Embassy of India, Bangkok</p>
+    </div>
+    <div class="admin-badge">ADMIN</div>
+  </header>
+
+  <div class="container">
+
+    <div class="search-wrap" style="margin-top:18px;">
+      <input id="searchInput" type="text" placeholder="Search by name, email, or #reg number…"
+        oninput="onSearch(this.value)" />
+      <span class="search-icon">🔍</span>
+    </div>
+    <div class="search-hint">Type 2+ characters to search · Use #1001 to jump directly to a reg number</div>
+
+    <div class="toolbar">
+      <button class="btn btn-navy" onclick="loadRecent()">📋 Recent 20</button>
+      <button class="btn btn-csv"  onclick="exportCSV()">⬇ Export CSV</button>
+      <div style="margin-left:auto;font-size:12px;color:var(--muted);align-self:center;" id="resultCount"></div>
+    </div>
+
+    <div id="resultsList">
+      <div class="list-msg">Search for a participant or click "Recent 20"</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div id="confirmModal" style="display:none;">
+  <div class="confirm-box">
+    <h3 id="confirmTitle">Are you sure?</h3>
+    <p id="confirmBody"></p>
+    <div class="confirm-btns">
+      <button class="btn btn-muted" onclick="closeConfirm()">Cancel</button>
+      <button class="btn" id="confirmOkBtn" onclick="runConfirm()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+<script>
+/* ═══════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════ */
+const ADMIN_PIN = '2027';
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyCJ31EusilYxaGWaorwYjqffVgV5crSecM",
+  authDomain:        "idy2027-dba28.firebaseapp.com",
+  databaseURL:       "https://idy2027-dba28-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "idy2027-dba28",
+  storageBucket:     "idy2027-dba28.firebasestorage.app",
+  messagingSenderId: "29018221908",
+  appId:             "1:29018221908:web:9d2871f91ed3f441e82cc1"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* ═══════════════════════════════════════
+   PIN GATE
+═══════════════════════════════════════ */
+let pinVal = '';
+
+function keyPress(k) {
+  if (k === 'del')   { pinVal = pinVal.slice(0,-1); }
+  else if (k === 'enter') { checkPin(); return; }
+  else if (pinVal.length < 6) { pinVal += k; }
+  updatePinDisplay();
+}
+
+function updatePinDisplay() {
+  const d = document.getElementById('pinDisplay');
+  d.textContent = '●'.repeat(pinVal.length) + '—'.repeat(Math.max(0,4-pinVal.length));
+}
+
+function checkPin() {
+  if (pinVal === ADMIN_PIN) {
+    document.getElementById('pinGate').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    loadRecent();
+  } else {
+    document.getElementById('pinError').textContent = 'Incorrect PIN';
+    pinVal = '';
+    updatePinDisplay();
+    setTimeout(() => document.getElementById('pinError').textContent = '', 2000);
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (document.getElementById('pinGate').style.display === 'none') return;
+  if (e.key >= '0' && e.key <= '9') keyPress(e.key);
+  if (e.key === 'Backspace') keyPress('del');
+  if (e.key === 'Enter') keyPress('enter');
+});
+
+/* ═══════════════════════════════════════
+   SEARCH
+═══════════════════════════════════════ */
+let searchTimer = null;
+
+function onSearch(val) {
+  clearTimeout(searchTimer);
+  val = val.trim();
+
+  if (val === '') {
+    showMsg('Search for a participant or click "Recent 20"');
+    setCount('');
+    return;
+  }
+
+  // Direct reg number lookup
+  if (val.startsWith('#')) {
+    const num = val.slice(1);
+    if (num.length > 0) fetchByRegNum(num);
+    return;
+  }
+
+  if (val.length < 2) return;
+
+  searchTimer = setTimeout(() => searchByName(val), 300);
+}
+
+async function fetchByRegNum(regNum) {
+  showLoading();
+  const snap = await db.ref('participants/' + regNum).once('value');
+  if (snap.exists()) {
+    renderCards([{ key: regNum, ...snap.val() }]);
+    setCount('1 result');
+  } else {
+    showMsg('No participant found with reg #' + regNum);
+    setCount('');
+  }
+}
+
+async function searchByName(query) {
+  showLoading();
+  const q = query.toLowerCase();
+  const snap = await db.ref('participants').once('value');
+  const results = [];
+  snap.forEach(child => {
+    const p = child.val();
+    const name  = (p.name || '').toLowerCase();
+    const email = (p.email || '').toLowerCase();
+    if (name.includes(q) || email.includes(q)) {
+      results.push({ key: child.key, ...p });
+    }
+  });
+  results.sort((a,b) => (b.registeredAt||0) - (a.registeredAt||0));
+  if (results.length === 0) {
+    showMsg('No results for "' + query + '"');
+    setCount('');
+  } else {
+    renderCards(results.slice(0, 50));
+    setCount(results.length + ' result' + (results.length !== 1 ? 's' : ''));
+  }
+}
+
+async function loadRecent() {
+  showLoading();
+  document.getElementById('searchInput').value = '';
+  const snap = await db.ref('participants').orderByKey().limitToLast(20).once('value');
+  const items = [];
+  snap.forEach(child => items.push({ key: child.key, ...child.val() }));
+  items.reverse();
+  renderCards(items);
+  setCount('Last ' + items.length + ' registrations');
+}
+
+/* ═══════════════════════════════════════
+   RENDER
+═══════════════════════════════════════ */
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function fmtTime(ts) {
+  if (!ts) return '—';
+  return new Date(ts).toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+function renderCards(list) {
+  const el = document.getElementById('resultsList');
+  if (list.length === 0) { showMsg('No results'); return; }
+
+  el.innerHTML = '';
+  list.forEach(p => {
+    const regNum   = p.regNum || p.key;
+    const status   = p.status || 'registered';
+    const sbClass  = 'sb-' + status;
+    const sbLabel  = status === 'checked_in' ? '✓ Checked In' : status === 'cancelled' ? '✗ Cancelled' : '⏳ Registered';
+    const ciInfo   = status === 'checked_in' && p.checkIn
+      ? `Checked in at ${fmtTime(p.checkIn.timestamp)} · Counter: ${p.checkIn.counter||'—'} · By: ${p.checkIn.volunteerId||'—'}`
+      : '';
+    const issuedBadge = p.tshirtIssued ? ' 👕 T-shirt issued' : '';
+
+    const div = document.createElement('div');
+    div.className = 'p-card status-' + status;
+    div.id = 'card-' + regNum;
+    div.innerHTML = `
+      <div class="p-card-top">
+        <span class="p-reg">#${esc(regNum)}</span>
+        <span class="p-name">${esc(p.name || 'Unknown')}</span>
+        <span class="p-size">${esc(p.tshirtSize || '—')}</span>
+        <span class="status-badge ${sbClass}">${sbLabel}</span>
+      </div>
+      <div class="p-meta">
+        📧 ${esc(p.email || '—')} &nbsp;·&nbsp; Registered: ${fmtTime(p.registeredAt)}${issuedBadge}
+      </div>
+      ${ciInfo ? `<div class="p-ci-info">✅ ${esc(ciInfo)}</div>` : ''}
+      <div class="p-actions" id="actions-${regNum}">
+        ${actionsHTML(regNum, p)}
+      </div>`;
+    el.appendChild(div);
+  });
+}
+
+function actionsHTML(regNum, p) {
+  const status = p.status || 'registered';
+  let html = '';
+
+  if (status === 'registered') {
+    html += `<button class="btn btn-ok" onclick="doCheckIn('${regNum}')">✅ Check In</button>`;
+  }
+  if (status === 'checked_in') {
+    html += `<button class="btn btn-warn" onclick="doUndoCheckIn('${regNum}')">↩ Undo Check-in</button>`;
+  }
+  if (status === 'checked_in' && !p.tshirtIssued) {
+    html += `<button class="btn btn-navy" onclick="doIssueShirt('${regNum}')">👕 Issue T-Shirt</button>`;
+  }
+  if (status !== 'cancelled') {
+    html += `<button class="btn btn-danger" onclick="confirmCancel('${regNum}')">🚫 Cancel Reg</button>`;
+  }
+  if (status === 'cancelled') {
+    html += `<button class="btn btn-ok" onclick="doRestore('${regNum}')">↩ Restore</button>`;
+  }
+  html += `<button class="btn btn-muted" onclick="confirmDelete('${regNum}')">🗑 Delete (Test)</button>`;
+
+  return html;
+}
+
+/* ═══════════════════════════════════════
+   ACTIONS
+═══════════════════════════════════════ */
+async function doCheckIn(regNum) {
+  const snap = await db.ref('participants/' + regNum).once('value');
+  const p = snap.val();
+  if (!p) return toast('Participant not found', 'err');
+  if (p.status === 'checked_in') return toast('Already checked in', 'warn');
+
+  const txResult = await db.ref('participants/' + regNum).transaction(data => {
+    if (!data || data.status !== 'registered') return data;
+    data.status = 'checked_in';
+    data.checkIn = { done: true, timestamp: Date.now(), volunteerId: 'Admin', counter: 'Admin' };
+    return data;
+  });
+
+  if (txResult.committed) {
+    const today = new Date().toLocaleDateString('en-CA');
+    db.ref('dashboard/summary/checkedIn').transaction(n => (n||0)+1);
+    db.ref(`dashboard/summary/sizes/${p.tshirtSize}/checkedIn`).transaction(n => (n||0)+1);
+    db.ref(`dashboard/daily/${today}/checkedIn`).transaction(n => (n||0)+1);
+    db.ref('audit').push({ action:'ADMIN_CHECKIN', regNum, timestamp: Date.now() });
+    toast('✅ Checked in #' + regNum, 'ok');
+    refreshCard(regNum);
+  } else {
+    toast('Check-in failed — try again', 'err');
+  }
+}
+
+async function doUndoCheckIn(regNum) {
+  const snap = await db.ref('participants/' + regNum).once('value');
+  const p = snap.val();
+  if (!p) return toast('Participant not found', 'err');
+  if (p.status !== 'checked_in') return toast('Not currently checked in', 'warn');
+
+  const ciTs = p.checkIn?.timestamp;
+
+  const txResult = await db.ref('participants/' + regNum).transaction(data => {
+    if (!data || data.status !== 'checked_in') return data;
+    data.status = 'registered';
+    delete data.checkIn;
+    return data;
+  });
+
+  if (txResult.committed) {
+    db.ref('dashboard/summary/checkedIn').transaction(n => Math.max((n||0)-1, 0));
+    db.ref(`dashboard/summary/sizes/${p.tshirtSize}/checkedIn`).transaction(n => Math.max((n||0)-1, 0));
+    if (ciTs) {
+      const ciDate = new Date(ciTs).toLocaleDateString('en-CA');
+      db.ref(`dashboard/daily/${ciDate}/checkedIn`).transaction(n => Math.max((n||0)-1, 0));
+    }
+    db.ref('audit').push({ action:'ADMIN_UNDO_CHECKIN', regNum, timestamp: Date.now() });
+    toast('↩ Check-in reversed for #' + regNum, 'warn');
+    refreshCard(regNum);
+  } else {
+    toast('Undo failed — try again', 'err');
+  }
+}
+
+async function doIssueShirt(regNum) {
+  const snap = await db.ref('participants/' + regNum).once('value');
+  const p = snap.val();
+  if (!p) return toast('Participant not found', 'err');
+
+  await db.ref('participants/' + regNum).update({ tshirtIssued: true, tshirtIssuedAt: Date.now() });
+  db.ref('dashboard/summary/tshirtIssued').transaction(n => (n||0)+1);
+  db.ref(`dashboard/summary/sizes/${p.tshirtSize}/issued`).transaction(n => (n||0)+1);
+  db.ref('audit').push({ action:'TSHIRT_ISSUED', regNum, timestamp: Date.now() });
+  toast('👕 T-shirt issued for #' + regNum, 'ok');
+  refreshCard(regNum);
+}
+
+let _confirmFn = null;
+
+function confirmCancel(regNum) {
+  showConfirm('Cancel Registration', `Cancel #${regNum}? This marks them as cancelled but keeps the record.`,
+    'btn-danger', 'Cancel Registration',
+    () => doCancel(regNum));
+}
+
+function confirmDelete(regNum) {
+  showConfirm('Delete Record', `Permanently delete #${regNum}? Use only for test data.`,
+    'btn-danger', 'Delete',
+    () => doDelete(regNum));
+}
+
+async function doCancel(regNum) {
+  const snap = await db.ref('participants/' + regNum).once('value');
+  const p = snap.val();
+  if (!p) return toast('Not found', 'err');
+
+  const wasCI = p.status === 'checked_in';
+  await db.ref('participants/' + regNum).update({ status: 'cancelled' });
+
+  // Reverse counters
+  db.ref('dashboard/summary/totalParticipants').transaction(n => Math.max((n||0)-1, 0));
+  db.ref(`dashboard/summary/sizes/${p.tshirtSize}/registered`).transaction(n => Math.max((n||0)-1, 0));
+  if (wasCI) {
+    db.ref('dashboard/summary/checkedIn').transaction(n => Math.max((n||0)-1, 0));
+    db.ref(`dashboard/summary/sizes/${p.tshirtSize}/checkedIn`).transaction(n => Math.max((n||0)-1, 0));
+  }
+  db.ref('audit').push({ action:'ADMIN_CANCEL', regNum, timestamp: Date.now() });
+  toast('🚫 Registration cancelled for #' + regNum, 'warn');
+  refreshCard(regNum);
+}
+
+async function doRestore(regNum) {
+  const snap = await db.ref('participants/' + regNum).once('value');
+  const p = snap.val();
+  if (!p) return toast('Not found', 'err');
+
+  await db.ref('participants/' + regNum).update({ status: 'registered' });
+  db.ref('dashboard/summary/totalParticipants').transaction(n => (n||0)+1);
+  db.ref(`dashboard/summary/sizes/${p.tshirtSize}/registered`).transaction(n => (n||0)+1);
+  db.ref('audit').push({ action:'ADMIN_RESTORE', regNum, timestamp: Date.now() });
+  toast('✅ Restored #' + regNum, 'ok');
+  refreshCard(regNum);
+}
+
+async function doDelete(regNum) {
+  const snap = await db.ref('participants/' + regNum).once('value');
+  const p = snap.val();
+
+  await db.ref('participants/' + regNum).remove();
+
+  // Reverse all dashboard counters
+  if (p) {
+    db.ref('dashboard/summary/totalParticipants').transaction(n => Math.max((n||0)-1, 0));
+    db.ref(`dashboard/summary/sizes/${p.tshirtSize}/registered`).transaction(n => Math.max((n||0)-1, 0));
+    if (p.status === 'checked_in') {
+      db.ref('dashboard/summary/checkedIn').transaction(n => Math.max((n||0)-1, 0));
+      db.ref(`dashboard/summary/sizes/${p.tshirtSize}/checkedIn`).transaction(n => Math.max((n||0)-1, 0));
+    }
+    if (p.tshirtIssued) {
+      db.ref('dashboard/summary/tshirtIssued').transaction(n => Math.max((n||0)-1, 0));
+      db.ref(`dashboard/summary/sizes/${p.tshirtSize}/issued`).transaction(n => Math.max((n||0)-1, 0));
+    }
+    // Undo daily reg count
+    if (p.registeredAt) {
+      const regDate = new Date(p.registeredAt).toLocaleDateString('en-CA');
+      db.ref(`dashboard/daily/${regDate}/registered`).transaction(n => Math.max((n||0)-1, 0));
+    }
+    // Also remove registration email mapping (so email can re-register)
+    if (p.email) {
+      const emailKey = p.email.replace(/\./g,',').replace('@','_at_');
+      db.ref('registrations/' + emailKey).remove();
+      db.ref('dashboard/summary/totalRegistrations').transaction(n => Math.max((n||0)-1, 0));
+    }
+  }
+
+  db.ref('audit').push({ action:'ADMIN_DELETE', regNum, timestamp: Date.now() });
+  const card = document.getElementById('card-' + regNum);
+  if (card) card.remove();
+  toast('🗑 Deleted #' + regNum + ' (all counters reversed)', 'warn');
+  updateResultCount();
+}
+
+/* ═══════════════════════════════════════
+   EXPORT CSV
+═══════════════════════════════════════ */
+async function exportCSV() {
+  toast('Preparing CSV…', '');
+  const snap = await db.ref('participants').once('value');
+  const rows = [['Reg#','Name','Email','T-Shirt','Status','Registered At','Checked In At','Counter','Volunteer','T-Shirt Issued']];
+
+  snap.forEach(child => {
+    const p = child.val();
+    rows.push([
+      p.regNum || child.key,
+      p.name || '',
+      p.email || '',
+      p.tshirtSize || '',
+      p.status || '',
+      p.registeredAt ? new Date(p.registeredAt).toISOString() : '',
+      p.checkIn?.timestamp ? new Date(p.checkIn.timestamp).toISOString() : '',
+      p.checkIn?.counter || '',
+      p.checkIn?.volunteerId || '',
+      p.tshirtIssued ? 'Yes' : 'No'
+    ]);
+  });
+
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'IDY2027_Participants_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('✅ CSV downloaded (' + (rows.length-1) + ' participants)', 'ok');
+}
+
+/* ═══════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════ */
+async function refreshCard(regNum) {
+  const snap = await db.ref('participants/' + regNum).once('value');
+  const card = document.getElementById('card-' + regNum);
+  if (!snap.exists() || !card) return;
+  const p = { key: regNum, ...snap.val() };
+
+  const status   = p.status || 'registered';
+  const sbClass  = 'sb-' + status;
+  const sbLabel  = status === 'checked_in' ? '✓ Checked In' : status === 'cancelled' ? '✗ Cancelled' : '⏳ Registered';
+  const ciInfo   = status === 'checked_in' && p.checkIn
+    ? `Checked in at ${fmtTime(p.checkIn.timestamp)} · Counter: ${p.checkIn.counter||'—'} · By: ${p.checkIn.volunteerId||'—'}`
+    : '';
+  const issuedBadge = p.tshirtIssued ? ' 👕 T-shirt issued' : '';
+
+  card.className = 'p-card status-' + status;
+  card.querySelector('.status-badge').className = 'status-badge ' + sbClass;
+  card.querySelector('.status-badge').textContent = sbLabel;
+  card.querySelector('.p-meta').innerHTML =
+    `📧 ${esc(p.email||'—')} &nbsp;·&nbsp; Registered: ${fmtTime(p.registeredAt)}${issuedBadge}`;
+
+  const ciEl = card.querySelector('.p-ci-info');
+  if (ciEl) ciEl.remove();
+  if (ciInfo) {
+    const d = document.createElement('div');
+    d.className = 'p-ci-info';
+    d.textContent = '✅ ' + ciInfo;
+    card.querySelector('.p-actions').before(d);
+  }
+
+  document.getElementById('actions-' + regNum).innerHTML = actionsHTML(regNum, p);
+}
+
+function showConfirm(title, body, btnClass, btnLabel, fn) {
+  _confirmFn = fn;
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmBody').textContent  = body;
+  const btn = document.getElementById('confirmOkBtn');
+  btn.className = 'btn ' + btnClass;
+  btn.textContent = btnLabel;
+  document.getElementById('confirmModal').style.display = 'flex';
+}
+
+function runConfirm() {
+  closeConfirm();
+  if (_confirmFn) _confirmFn();
+}
+
+function closeConfirm() {
+  document.getElementById('confirmModal').style.display = 'none';
+  _confirmFn = null;
+}
+
+document.getElementById('confirmModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('confirmModal')) closeConfirm();
+});
+
+let toastTimer = null;
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className   = 'show ' + (type || '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = '', 3000);
+}
+
+function showLoading() {
+  document.getElementById('resultsList').innerHTML = '<div class="list-msg"><span class="spinner"></span>Searching…</div>';
+}
+
+function showMsg(msg) {
+  document.getElementById('resultsList').innerHTML = `<div class="list-msg">${esc(msg)}</div>`;
+}
+
+function setCount(txt) {
+  document.getElementById('resultCount').textContent = txt;
+}
+
+function updateResultCount() {
+  const cards = document.querySelectorAll('.p-card');
+  setCount(cards.length + ' result' + (cards.length !== 1 ? 's' : ''));
+}
+</script>
+</body>
+</html>
