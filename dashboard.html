@@ -547,15 +547,17 @@ function updateDailyStats(daily) {
 
 /* ═══════════════════════════════════════════════════════
    REAL-TIME LISTENER — LIVE REGISTRATIONS FEED
+   Reads from dedicated recentRegistrations node (not
+   a query on participants) for reliable real-time updates
 ═══════════════════════════════════════════════════════ */
-db.ref('participants').orderByKey().limitToLast(10).on('value', snap => {
+db.ref('dashboard/recentRegistrations').orderByKey().limitToLast(10).on('value', snap => {
   const list = el('feedList');
   const items = [];
-  snap.forEach(child => items.push({ key: child.key, ...child.val() }));
+  snap.forEach(child => items.push(child.val()));
   items.reverse(); // newest first
 
   if (items.length === 0) {
-    list.innerHTML = '<li class="feed-empty">No registrations yet</li>';
+    list.innerHTML = '<li class="feed-empty">No registrations yet — feed updates live as people register.</li>';
     return;
   }
 
@@ -563,13 +565,11 @@ db.ref('participants').orderByKey().limitToLast(10).on('value', snap => {
   items.forEach(p => {
     const li = document.createElement('li');
     li.className = 'feed-item';
-    const name = p.name || p.fullName || p.participants?.[0]?.name || 'Participant';
-    const size = p.tshirtSize || p.size || '—';
-    const ts   = p.registeredAt ? timeAgo(p.registeredAt) : '';
+    const ts = p.registeredAt ? timeAgo(p.registeredAt) : '';
     li.innerHTML = `
-      <span class="feed-reg">#${p.regNum || p.key}</span>
-      <span class="feed-name">${escHtml(name)}</span>
-      <span class="feed-size">${size}</span>
+      <span class="feed-reg">#${p.regNum}</span>
+      <span class="feed-name">${escHtml(p.name || 'Participant')}</span>
+      <span class="feed-size">${escHtml(p.tshirtSize || '—')}</span>
       <span class="feed-time">${ts}</span>`;
     list.appendChild(li);
   });
