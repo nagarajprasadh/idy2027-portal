@@ -16,8 +16,8 @@
     },
 
     "participants": {
+      ".read": true,
       "$regNum": {
-        ".read": true,
         ".write": true
       }
     },
