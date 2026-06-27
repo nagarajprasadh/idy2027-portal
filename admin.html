@@ -478,9 +478,7 @@ function renderCards(list) {
     const ciInfo   = status === 'checked_in' && p.checkIn
       ? `Checked in at ${fmtTime(p.checkIn.timestamp)} · Counter: ${p.checkIn.counter||'—'} · By: ${p.checkIn.volunteerId||'—'}`
       : '';
-    const issuedBadge = status === 'checked_in'
-      ? (p.tshirtIssued ? ' · 👕 T-shirt issued' : ' · ⚠️ T-shirt NOT issued')
-      : '';
+    const issuedBadge = '';
 
     const div = document.createElement('div');
     div.className = 'p-card status-' + status;
@@ -516,11 +514,6 @@ function actionsHTML(regNum, p) {
   }
   if (status === 'checked_in') {
     html += `<button class="btn btn-warn" onclick="doUndoCheckIn('${regNum}')">↩ Undo Check-in</button>`;
-    if (p.tshirtIssued) {
-      html += `<button class="btn btn-muted" onclick="doUndoShirt('${regNum}')" title="Mark as T-shirt not issued">👕 No T-Shirt</button>`;
-    } else {
-      html += `<button class="btn btn-navy" onclick="doIssueShirt('${regNum}')">👕 Re-issue T-Shirt</button>`;
-    }
   }
   if (status !== 'cancelled' && status !== 'no_show') {
     html += `<button class="btn btn-danger" onclick="confirmCancel('${regNum}')">🚫 Cancel Reg</button>`;
@@ -544,12 +537,8 @@ async function doCheckIn(regNum) {
 
   const txResult = await db.ref('participants/' + regNum).transaction(data => {
     if (!data || data.status !== 'registered') return data;
-    data.status        = 'checked_in';
-    data.checkIn       = { done: true, timestamp: Date.now(), volunteerId: 'Admin', counter: 'Admin' };
-    data.tshirtIssued  = true;
-    data.tshirtIssuedAt= Date.now();
-    data.tshirtDesk    = 'Admin';
-    data.tshirtIssuedBy= 'Admin';
+    data.status  = 'checked_in';
+    data.checkIn = { done: true, timestamp: Date.now(), volunteerId: 'Admin', counter: 'Admin' };
     return data;
   });
 
@@ -558,11 +547,8 @@ async function doCheckIn(regNum) {
     db.ref('dashboard/summary/checkedIn').transaction(n => (n||0)+1);
     db.ref(`dashboard/summary/sizes/${p.tshirtSize}/checkedIn`).transaction(n => (n||0)+1);
     db.ref(`dashboard/daily/${today}/checkedIn`).transaction(n => (n||0)+1);
-    db.ref('dashboard/summary/tshirtIssued').transaction(n => (n||0)+1);
-    db.ref(`dashboard/summary/sizes/${p.tshirtSize}/issued`).transaction(n => (n||0)+1);
-    db.ref(`dashboard/daily/${today}/tshirtIssued`).transaction(n => (n||0)+1);
     db.ref('audit').push({ action:'ADMIN_CHECKIN', regNum, timestamp: Date.now() });
-    toast('✅ Checked in & T-shirt issued #' + regNum, 'ok');
+    toast('✅ Checked in #' + regNum, 'ok');
     refreshCard(regNum);
   } else {
     toast('Check-in failed — try again', 'err');
@@ -577,15 +563,10 @@ async function doUndoCheckIn(regNum) {
 
   const ciTs = p.checkIn?.timestamp;
 
-  const hadShirt = p.tshirtIssued;
   const txResult = await db.ref('participants/' + regNum).transaction(data => {
     if (!data || data.status !== 'checked_in') return data;
     data.status = 'registered';
     delete data.checkIn;
-    delete data.tshirtIssued;
-    delete data.tshirtIssuedAt;
-    delete data.tshirtDesk;
-    delete data.tshirtIssuedBy;
     return data;
   });
 
@@ -596,10 +577,6 @@ async function doUndoCheckIn(regNum) {
       const ciDate = new Date(ciTs).toLocaleDateString('en-CA');
       db.ref(`dashboard/daily/${ciDate}/checkedIn`).transaction(n => Math.max((n||0)-1, 0));
     }
-    if (hadShirt) {
-      db.ref('dashboard/summary/tshirtIssued').transaction(n => Math.max((n||0)-1, 0));
-      db.ref(`dashboard/summary/sizes/${p.tshirtSize}/issued`).transaction(n => Math.max((n||0)-1, 0));
-    }
     db.ref('audit').push({ action:'ADMIN_UNDO_CHECKIN', regNum, timestamp: Date.now() });
     toast('↩ Check-in reversed for #' + regNum, 'warn');
     refreshCard(regNum);
@@ -608,32 +585,6 @@ async function doUndoCheckIn(regNum) {
   }
 }
 
-async function doIssueShirt(regNum) {
-  const snap = await db.ref('participants/' + regNum).once('value');
-  const p = snap.val();
-  if (!p) return toast('Participant not found', 'err');
-
-  await db.ref('participants/' + regNum).update({ tshirtIssued: true, tshirtIssuedAt: Date.now(), tshirtIssuedBy: 'Admin' });
-  db.ref('dashboard/summary/tshirtIssued').transaction(n => (n||0)+1);
-  db.ref(`dashboard/summary/sizes/${p.tshirtSize}/issued`).transaction(n => (n||0)+1);
-  db.ref('audit').push({ action:'TSHIRT_ISSUED', regNum, timestamp: Date.now() });
-  toast('👕 T-shirt re-issued for #' + regNum, 'ok');
-  refreshCard(regNum);
-}
-
-async function doUndoShirt(regNum) {
-  const snap = await db.ref('participants/' + regNum).once('value');
-  const p = snap.val();
-  if (!p) return toast('Participant not found', 'err');
-  if (!p.tshirtIssued) return toast('T-shirt not marked as issued', 'warn');
-
-  await db.ref('participants/' + regNum).update({ tshirtIssued: false });
-  db.ref('dashboard/summary/tshirtIssued').transaction(n => Math.max((n||0)-1, 0));
-  db.ref(`dashboard/summary/sizes/${p.tshirtSize}/issued`).transaction(n => Math.max((n||0)-1, 0));
-  db.ref('audit').push({ action:'TSHIRT_NOT_ISSUED', regNum, timestamp: Date.now(), reason: 'Admin override' });
-  toast('👕 T-shirt marked as NOT issued for #' + regNum, 'warn');
-  refreshCard(regNum);
-}
 
 let _confirmFn = null;
 
@@ -719,10 +670,6 @@ async function doDelete(regNum) {
     db.ref('dashboard/summary/checkedIn').transaction(n => Math.max((n||0)-1, 0));
     db.ref(`dashboard/summary/sizes/${p.tshirtSize}/checkedIn`).transaction(n => Math.max((n||0)-1, 0));
   }
-  if (p.tshirtIssued) {
-    db.ref('dashboard/summary/tshirtIssued').transaction(n => Math.max((n||0)-1, 0));
-    db.ref(`dashboard/summary/sizes/${p.tshirtSize}/issued`).transaction(n => Math.max((n||0)-1, 0));
-  }
   if (p.registeredAt) {
     const regDate = new Date(p.registeredAt).toLocaleDateString('en-CA');
     db.ref(`dashboard/daily/${regDate}/registered`).transaction(n => Math.max((n||0)-1, 0));
@@ -791,14 +738,14 @@ async function recalcCounters(silent = false) {
   const snap = await db.ref('participants').once('value');
   const sizes = {};
   const daily = {}; // { 'YYYY-MM-DD': { registered, checkedIn } }
-  let total = 0, checkedIn = 0, tshirtIssued = 0;
+  let total = 0, checkedIn = 0;
 
   snap.forEach(child => {
     const p = child.val();
     if (!p || p.status === 'deleted') return;
     total++;
     const sz = p.tshirtSize || 'UNK';
-    if (!sizes[sz]) sizes[sz] = { registered: 0, checkedIn: 0, issued: 0 };
+    if (!sizes[sz]) sizes[sz] = { registered: 0, checkedIn: 0 };
     sizes[sz].registered++;
 
     // Daily registration count
@@ -817,10 +764,6 @@ async function recalcCounters(silent = false) {
         daily[d].checkedIn++;
       }
     }
-    if (p.tshirtIssued) {
-      tshirtIssued++;
-      sizes[sz].issued++;
-    }
   });
 
   // Wipe old size data first, then rewrite clean
@@ -830,12 +773,10 @@ async function recalcCounters(silent = false) {
   const updates = {
     'dashboard/summary/totalParticipants': total,
     'dashboard/summary/checkedIn':         checkedIn,
-    'dashboard/summary/tshirtIssued':      tshirtIssued,
   };
   Object.entries(sizes).forEach(([sz, v]) => {
     updates[`dashboard/summary/sizes/${sz}/registered`] = v.registered;
     updates[`dashboard/summary/sizes/${sz}/checkedIn`]  = v.checkedIn;
-    updates[`dashboard/summary/sizes/${sz}/issued`]     = v.issued;
   });
   Object.entries(daily).forEach(([date, v]) => {
     if (v.registered) updates[`dashboard/daily/${date}/registered`] = v.registered;
@@ -843,7 +784,7 @@ async function recalcCounters(silent = false) {
   });
 
   await db.ref().update(updates);
-  db.ref('audit').push({ action:'ADMIN_RECALC', timestamp: Date.now(), result: { total, checkedIn, tshirtIssued } });
+  db.ref('audit').push({ action:'ADMIN_RECALC', timestamp: Date.now(), result: { total, checkedIn } });
   toast(`✅ Dashboard synced — ${total} participants, ${checkedIn} checked in`, 'ok');
 }
 
@@ -964,8 +905,7 @@ async function exportCSV() {
       p.registeredAt ? new Date(p.registeredAt).toISOString() : '',
       p.checkIn?.timestamp ? new Date(p.checkIn.timestamp).toISOString() : '',
       p.checkIn?.counter || '',
-      p.checkIn?.volunteerId || '',
-      p.tshirtIssued ? 'Yes' : 'No'
+      p.checkIn?.volunteerId || ''
     ]);
   });
 
