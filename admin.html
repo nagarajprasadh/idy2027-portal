@@ -114,6 +114,8 @@
     .p-card.status-registered  { border-left-color: var(--saffron); }
     .p-card.status-checked_in  { border-left-color: var(--ok); }
     .p-card.status-cancelled   { border-left-color: var(--danger); opacity: .65; }
+    .p-card.status-no_show     { border-left-color: #94A3B8; opacity: .7; }
+    .p-card.status-deleted     { border-left-color: #CBD5E1; opacity: .5; }
 
     .p-card-top {
       display: flex; align-items: flex-start; gap: 14px; flex-wrap: wrap;
@@ -136,6 +138,8 @@
     .sb-registered { background: #FEF3C7; color: var(--warn); }
     .sb-checked_in { background: #DCFCE7; color: var(--ok); }
     .sb-cancelled  { background: #FEE2E2; color: var(--danger); }
+    .sb-no_show    { background: #F1F5F9; color: #64748B; }
+    .sb-deleted    { background: #F1F5F9; color: #94A3B8; }
 
     .p-meta { font-size: 12px; color: var(--muted); margin-top: 6px; }
     .p-ci-info { font-size: 12px; color: var(--ok); margin-top: 4px; font-weight: 600; }
@@ -233,6 +237,7 @@
     <div class="toolbar">
       <button class="btn btn-navy" onclick="loadRecent()">📋 Recent 20</button>
       <button class="btn btn-csv"  onclick="exportCSV()">⬇ Export CSV</button>
+      <button class="btn btn-warn" onclick="recalcCounters()">🔄 Recalc Counters</button>
       <div style="margin-left:auto;font-size:12px;color:var(--muted);align-self:center;" id="resultCount"></div>
     </div>
 
@@ -456,6 +461,10 @@ function actionsHTML(regNum, p) {
 
   if (status === 'registered') {
     html += `<button class="btn btn-ok" onclick="doCheckIn('${regNum}')">✅ Check In</button>`;
+    html += `<button class="btn btn-muted" onclick="doNoShow('${regNum}')">🚶 No-Show</button>`;
+  }
+  if (status === 'no_show') {
+    html += `<button class="btn btn-ok" onclick="doUndoNoShow('${regNum}')">↩ Undo No-Show</button>`;
   }
   if (status === 'checked_in') {
     html += `<button class="btn btn-warn" onclick="doUndoCheckIn('${regNum}')">↩ Undo Check-in</button>`;
@@ -463,10 +472,10 @@ function actionsHTML(regNum, p) {
   if (status === 'checked_in' && !p.tshirtIssued) {
     html += `<button class="btn btn-navy" onclick="doIssueShirt('${regNum}')">👕 Issue T-Shirt</button>`;
   }
-  if (status !== 'cancelled') {
+  if (status !== 'cancelled' && status !== 'no_show') {
     html += `<button class="btn btn-danger" onclick="confirmCancel('${regNum}')">🚫 Cancel Reg</button>`;
   }
-  if (status === 'cancelled') {
+  if (status === 'cancelled' || status === 'no_show') {
     html += `<button class="btn btn-ok" onclick="doRestore('${regNum}')">↩ Restore</button>`;
   }
   html += `<button class="btn btn-muted" onclick="confirmDelete('${regNum}')">🗑 Delete (Test)</button>`;
@@ -593,42 +602,108 @@ async function doRestore(regNum) {
   refreshCard(regNum);
 }
 
-async function doDelete(regNum) {
+async function doNoShow(regNum) {
   const snap = await db.ref('participants/' + regNum).once('value');
   const p = snap.val();
+  if (!p) return toast('Not found', 'err');
+  if (p.status !== 'registered') return toast('Can only mark registered participants as no-show', 'err');
 
-  await db.ref('participants/' + regNum).remove();
+  await db.ref('participants/' + regNum).update({ status: 'no_show', noShowAt: Date.now() });
+  db.ref('audit').push({ action:'ADMIN_NO_SHOW', regNum, timestamp: Date.now() });
+  toast('🚶 #' + regNum + ' marked as no-show', 'warn');
+  refreshCard(regNum);
+}
+
+async function doUndoNoShow(regNum) {
+  const snap = await db.ref('participants/' + regNum).once('value');
+  const p = snap.val();
+  if (!p) return toast('Not found', 'err');
+
+  await db.ref('participants/' + regNum).update({ status: 'registered', noShowAt: null });
+  db.ref('audit').push({ action:'ADMIN_UNDO_NO_SHOW', regNum, timestamp: Date.now() });
+  toast('✅ #' + regNum + ' restored to registered', 'ok');
+  refreshCard(regNum);
+}
+
+async function doDelete(regNum) {
+  // NOTE: Firebase rules block hard deletion — we soft-delete with status:'deleted'
+  // This keeps the record for audit but removes it from active counts.
+  const snap = await db.ref('participants/' + regNum).once('value');
+  const p = snap.val();
+  if (!p) return toast('Not found', 'err');
+
+  await db.ref('participants/' + regNum).update({ status: 'deleted', deletedAt: Date.now() });
 
   // Reverse all dashboard counters
-  if (p) {
-    db.ref('dashboard/summary/totalParticipants').transaction(n => Math.max((n||0)-1, 0));
-    db.ref(`dashboard/summary/sizes/${p.tshirtSize}/registered`).transaction(n => Math.max((n||0)-1, 0));
-    if (p.status === 'checked_in') {
-      db.ref('dashboard/summary/checkedIn').transaction(n => Math.max((n||0)-1, 0));
-      db.ref(`dashboard/summary/sizes/${p.tshirtSize}/checkedIn`).transaction(n => Math.max((n||0)-1, 0));
-    }
-    if (p.tshirtIssued) {
-      db.ref('dashboard/summary/tshirtIssued').transaction(n => Math.max((n||0)-1, 0));
-      db.ref(`dashboard/summary/sizes/${p.tshirtSize}/issued`).transaction(n => Math.max((n||0)-1, 0));
-    }
-    // Undo daily reg count
-    if (p.registeredAt) {
-      const regDate = new Date(p.registeredAt).toLocaleDateString('en-CA');
-      db.ref(`dashboard/daily/${regDate}/registered`).transaction(n => Math.max((n||0)-1, 0));
-    }
-    // Also remove registration email mapping (so email can re-register)
-    if (p.email) {
-      const emailKey = p.email.replace(/\./g,',').replace('@','_at_');
-      db.ref('registrations/' + emailKey).remove();
-      db.ref('dashboard/summary/totalRegistrations').transaction(n => Math.max((n||0)-1, 0));
-    }
+  db.ref('dashboard/summary/totalParticipants').transaction(n => Math.max((n||0)-1, 0));
+  db.ref(`dashboard/summary/sizes/${p.tshirtSize}/registered`).transaction(n => Math.max((n||0)-1, 0));
+  if (p.status === 'checked_in') {
+    db.ref('dashboard/summary/checkedIn').transaction(n => Math.max((n||0)-1, 0));
+    db.ref(`dashboard/summary/sizes/${p.tshirtSize}/checkedIn`).transaction(n => Math.max((n||0)-1, 0));
+  }
+  if (p.tshirtIssued) {
+    db.ref('dashboard/summary/tshirtIssued').transaction(n => Math.max((n||0)-1, 0));
+    db.ref(`dashboard/summary/sizes/${p.tshirtSize}/issued`).transaction(n => Math.max((n||0)-1, 0));
+  }
+  if (p.registeredAt) {
+    const regDate = new Date(p.registeredAt).toLocaleDateString('en-CA');
+    db.ref(`dashboard/daily/${regDate}/registered`).transaction(n => Math.max((n||0)-1, 0));
+  }
+  // Also remove the email mapping so person can re-register
+  if (p.email) {
+    const emailKey = p.email.replace(/\./g,',').replace('@','_at_');
+    db.ref('registrations/' + emailKey).remove();
+    db.ref('dashboard/summary/totalRegistrations').transaction(n => Math.max((n||0)-1, 0));
   }
 
   db.ref('audit').push({ action:'ADMIN_DELETE', regNum, timestamp: Date.now() });
-  const card = document.getElementById('card-' + regNum);
-  if (card) card.remove();
-  toast('🗑 Deleted #' + regNum + ' (all counters reversed)', 'warn');
+  toast('🗑 #' + regNum + ' soft-deleted (hidden from active list)', 'warn');
+  refreshCard(regNum);
   updateResultCount();
+}
+
+/* ═══════════════════════════════════════
+   RECALCULATE COUNTERS FROM SOURCE
+═══════════════════════════════════════ */
+async function recalcCounters() {
+  if (!confirm('Recompute ALL dashboard counters from actual participant records?\n\nThis fixes any drift. Takes a few seconds.')) return;
+  toast('Recalculating…', '');
+
+  const snap = await db.ref('participants').once('value');
+  const sizes = {};
+  let total = 0, checkedIn = 0, tshirtIssued = 0;
+
+  snap.forEach(child => {
+    const p = child.val();
+    if (!p || p.status === 'deleted') return; // skip soft-deleted
+    total++;
+    const sz = p.tshirtSize || 'UNK';
+    if (!sizes[sz]) sizes[sz] = { registered: 0, checkedIn: 0, issued: 0 };
+    sizes[sz].registered++;
+    if (p.status === 'checked_in') {
+      checkedIn++;
+      sizes[sz].checkedIn++;
+    }
+    if (p.tshirtIssued) {
+      tshirtIssued++;
+      sizes[sz].issued++;
+    }
+  });
+
+  const updates = {
+    'dashboard/summary/totalParticipants': total,
+    'dashboard/summary/checkedIn': checkedIn,
+    'dashboard/summary/tshirtIssued': tshirtIssued,
+  };
+  Object.entries(sizes).forEach(([sz, v]) => {
+    updates[`dashboard/summary/sizes/${sz}/registered`] = v.registered;
+    updates[`dashboard/summary/sizes/${sz}/checkedIn`]  = v.checkedIn;
+    updates[`dashboard/summary/sizes/${sz}/issued`]     = v.issued;
+  });
+
+  await db.ref().update(updates);
+  db.ref('audit').push({ action:'ADMIN_RECALC', timestamp: Date.now(), result: { total, checkedIn, tshirtIssued } });
+  toast(`✅ Done — ${total} participants, ${checkedIn} checked in, ${tshirtIssued} shirts issued`, 'ok');
 }
 
 /* ═══════════════════════════════════════
