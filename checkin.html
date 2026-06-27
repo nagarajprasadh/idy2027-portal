@@ -489,9 +489,7 @@
       <div class="detail-grid">
         <div class="detail-row"><span class="d-lbl">Registration #</span> <span class="d-val" id="gRegNum"></span></div>
       </div>
-      <button class="btn btn-green" id="btnCheckin" onclick="confirmCheckin()">
-        ✓ CHECK IN &amp; ISSUE T-SHIRT
-      </button>
+      <div class="countdown" id="greenCountdown"></div>
     </div>
     <button class="btn btn-ghost" onclick="cancelResult()" style="margin-top:8px;">Cancel — Scan Next</button>
   </div>
@@ -826,7 +824,7 @@ async function processQR(qrText, isManual = false) {
     currentParticipant = p;
 
     if (p.status === 'registered') {
-      showGreen(p);
+      confirmCheckin(); // auto-confirm immediately — no button press needed
     } else {
       showRed(p);
     }
@@ -841,13 +839,12 @@ async function processQR(qrText, isManual = false) {
    RESULT SCREENS
 ═══════════════════════════════════════════════════════ */
 function showGreen(p) {
-  el('gName').textContent   = p.name;
-  el('gReg').textContent    = 'Registration #' + p.regNum;
-  el('gRegNum').textContent = p.regNum;
-  el('gSize').textContent   = p.tshirtSize;
-  el('btnCheckin').disabled = false;
-  el('btnCheckin').innerHTML = '✓ CONFIRM CHECK-IN';
+  el('gName').textContent    = p.name;
+  el('gReg').textContent     = '✓ Checked In &amp; T-Shirt Issued';
+  el('gRegNum').textContent  = p.regNum;
+  el('gSize').textContent    = p.tshirtSize;
   showOnly('screenGreen');
+  startCountdown('greenCountdown', 4, cancelResult);
 }
 
 function showRed(p) {
@@ -888,15 +885,9 @@ function cancelResult() {
 ═══════════════════════════════════════════════════════ */
 async function confirmCheckin() {
   if (!currentParticipant) return;
-  const p   = currentParticipant;
-  const btn = el('btnCheckin');
-
-  btn.disabled  = true;
-  btn.innerHTML = '<span class="spinner"></span>Checking in…';
+  const p = currentParticipant;
 
   try {
-    const now = firebase.database.ServerValue.TIMESTAMP;
-
     // Atomic transaction — prevents duplicate check-in even under concurrent scans
     const txResult = await db.ref('participants/' + p.regNum).transaction(data => {
       if (!data) return data;
@@ -941,17 +932,12 @@ async function confirmCheckin() {
     db.ref(`dashboard/summary/sizes/${p.tshirtSize}/issued`).transaction(n => (n || 0) + 1);
     db.ref(`dashboard/daily/${today}/tshirtIssued`).transaction(n => (n || 0) + 1);
 
-    // Flash green then auto-return
-    btn.innerHTML = '✓ Checked In &amp; T-Shirt Issued!';
-    btn.style.background = '#15803D';
-    startCountdown('', 2, cancelResult);
-    setTimeout(cancelResult, 2000);
+    // Show green screen with t-shirt size — auto-return in 4s
+    showGreen(p);
 
   } catch (err) {
     console.error(err);
-    btn.disabled  = false;
-    btn.innerHTML = '✓ CONFIRM CHECK-IN';
-    alert('Check-in failed. Please try again.');
+    showWarn('Check-in Failed', 'Could not complete check-in. Please try again.');
   }
 }
 
