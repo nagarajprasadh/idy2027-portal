@@ -29,7 +29,7 @@
       status:    'IDY 2027 · Always here to help',
       ph:        'Ask me anything…',
       switch:    'ภาษาไทย',
-      greet:     'Hi! I\'m <b>Ananda</b> 🙏 Your assistant for the 13th International Day of Yoga 2027.<br><br>I can retrieve your <b>QR code</b> right here, or answer questions about T-shirts, mats, hydration, and the event.',
+      greet:     'Your guide for the 13th International Day of Yoga 2027.<br><br>I can retrieve your QR code right here, or answer questions about T-shirts, mats, hydration, and the event.',
       topics:    [
         { id:'qr',     icon:'🔍', text:'Get my QR code'      },
         { id:'reg',    icon:'🔢', text:'Registration number'  },
@@ -72,7 +72,7 @@
       status:    'IDY 2027 · พร้อมช่วยเหลือเสมอ',
       ph:        'พิมพ์คำถาม…',
       switch:    'English',
-      greet:     'สวัสดีค่ะ! ฉันคือ <b>อานันดา</b> 🙏 ผู้ช่วยงานวันโยคะสากล 2027 ครั้งที่ 13<br><br>ฉันช่วยดึง <b>QR code</b> ของคุณได้ทันที หรือตอบคำถามเรื่องเสื้อ เสื่อ น้ำ และรายละเอียดงาน',
+      greet:     'ผู้ช่วยงานวันโยคะสากล 2027 ครั้งที่ 13<br><br>ฉันช่วยดึง QR code ของคุณได้ทันที หรือตอบคำถามเรื่องเสื้อ เสื่อ น้ำ และรายละเอียดงานได้เลยค่ะ',
       topics:    [
         { id:'qr',     icon:'🔍', text:'ดู QR code ของฉัน'    },
         { id:'reg',    icon:'🔢', text:'เลขลงทะเบียน'         },
@@ -251,17 +251,19 @@
     white-space:normal;
   }
   ._an_bbl b { font-weight:700; }
-  ._an_row.bot ._an_bbl b { color:#002D6E; }
+  ._an_row.bot  ._an_bbl b { color:#002D6E; }
   ._an_row.user ._an_bbl b { color:#ffd080; }
+  ._an_greet b  { color:#ffd080 !important; }
 
   /* Greeting card inside bot bubble */
   ._an_greet {
-    background:linear-gradient(135deg,#002D6E,#1a3a8c);
+    background:linear-gradient(135deg,#001845,#002D6E);
     border-radius:12px; padding:14px 15px; color:#fff;
     word-wrap:break-word; overflow-wrap:break-word;
   }
-  ._an_greet ._an_gt { font-size:15px; font-weight:700; margin-bottom:6px; }
-  ._an_greet ._an_gb { font-size:13px; line-height:1.58; color:rgba(255,255,255,.82); }
+  ._an_greet ._an_gt { font-size:15px; font-weight:700; margin-bottom:7px; color:#fff; }
+  ._an_greet ._an_gb { font-size:13px; line-height:1.62; color:rgba(255,255,255,.85); }
+  ._an_greet b { color:#ffd080; font-weight:700; }
 
   /* Typing indicator */
   ._an_typing { display:flex; gap:5px; padding:12px 14px;
