@@ -196,11 +196,19 @@
       vertical-align: middle; margin-right: 6px;
     }
 
+    /* ── Two-feed row ── */
+    .feeds-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 520px) { .feeds-row { grid-template-columns: 1fr; } }
+    .feed-card { padding: 14px 16px; }
+    .feed-hdr  { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .feed-hdr-title { font-size: 12px; font-weight: 700; color: var(--navy); }
+    .live-pill { font-size: 10px; font-weight: 700; color: var(--ok); }
+
     /* ── Live feed ── */
     .feed-list { list-style: none; display: flex; flex-direction: column; gap: 0; }
     .feed-item {
-      display: flex; align-items: center; gap: 12px;
-      padding: 10px 0;
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 0;
       border-bottom: 1px solid var(--border);
       animation: slideIn .35s ease;
     }
@@ -287,19 +295,27 @@
     <div class="loading"><span class="spinner-sm"></span>Loading…</div>
   </div>
 
-  <!-- ── LIVE REGISTRATIONS FEED ── -->
-  <div class="section-lbl">Latest Registrations — Live Feed</div>
-  <div class="card" style="padding:18px 20px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <div style="font-size:13px;font-weight:700;color:var(--navy);">Most Recent 10</div>
-      <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ok);font-weight:700;">
-        <div class="live-dot" style="width:7px;height:7px;background:var(--ok);border-radius:50%;animation:pulse 1.5s infinite;"></div>
-        Real-time
+  <!-- ── LIVE FEEDS ── -->
+  <div class="section-lbl">Live Activity</div>
+  <div class="feeds-row">
+    <div class="card feed-card">
+      <div class="feed-hdr">
+        <span class="feed-hdr-title">Recent Registrations</span>
+        <span class="live-pill">🔴 Live</span>
       </div>
+      <ul class="feed-list" id="feedList">
+        <li class="feed-empty"><span class="spinner-sm"></span>Connecting…</li>
+      </ul>
     </div>
-    <ul class="feed-list" id="feedList">
-      <li class="feed-empty"><span class="spinner-sm"></span>Connecting…</li>
-    </ul>
+    <div class="card feed-card">
+      <div class="feed-hdr">
+        <span class="feed-hdr-title">Recent Check-ins</span>
+        <span class="live-pill">🔴 Live</span>
+      </div>
+      <ul class="feed-list" id="ciList">
+        <li class="feed-empty"><span class="spinner-sm"></span>Connecting…</li>
+      </ul>
+    </div>
   </div>
 
 
@@ -436,6 +452,44 @@ fetch(`${DB_REST}/dashboard/recentRegistrations.json`)
 const feedRef = db.ref('dashboard/recentRegistrations');
 feedRef.on('child_added',   snap => { feedCache[snap.key] = snap.val(); renderFeed(); });
 feedRef.on('child_removed', snap => { delete feedCache[snap.key];       renderFeed(); });
+
+/* ── Recent Check-ins feed ── */
+const ciCache = {};
+
+function renderCIFeed() {
+  const list  = el('ciList');
+  const items = Object.values(ciCache);
+  items.sort((a, b) => (b.checkedInAt || 0) - (a.checkedInAt || 0));
+  const recent = items.slice(0, 10);
+  if (recent.length === 0) {
+    list.innerHTML = '<li class="feed-empty">No check-ins yet.</li>';
+    return;
+  }
+  list.innerHTML = '';
+  recent.forEach(p => {
+    const li = document.createElement('li');
+    li.className = 'feed-item';
+    li.innerHTML = `
+      <span class="feed-reg">#${p.regNum}</span>
+      <span class="feed-name">${escHtml(p.name || 'Participant')}</span>
+      <span class="feed-size">${escHtml(p.tshirtSize || '—')}</span>
+      <span class="feed-time">${timeAgo(p.checkedInAt)}</span>`;
+    list.appendChild(li);
+  });
+}
+
+fetch(`${DB_REST}/dashboard/recentCheckIns.json`)
+  .then(r => r.json())
+  .then(data => {
+    if (data && typeof data === 'object') {
+      Object.entries(data).forEach(([k, v]) => { ciCache[k] = v; });
+    }
+    renderCIFeed();
+  }).catch(() => { el('ciList').innerHTML = '<li class="feed-empty">No check-ins yet.</li>'; });
+
+const ciRef = db.ref('dashboard/recentCheckIns');
+ciRef.on('child_added',   snap => { ciCache[snap.key] = snap.val(); renderCIFeed(); });
+ciRef.on('child_removed', snap => { delete ciCache[snap.key];       renderCIFeed(); });
 
 function timeAgo(ts) {
   const diff = Math.floor((Date.now() - ts) / 1000);
