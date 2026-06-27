@@ -320,10 +320,16 @@ document.addEventListener('keydown', e => {
 /* ═══════════════════════════════════════
    SEARCH
 ═══════════════════════════════════════ */
-let searchTimer = null;
+let searchTimer  = null;
+let recentRef    = null; // holds active real-time listener so we can detach it
+
+function detachRecentListener() {
+  if (recentRef) { recentRef.off('value'); recentRef = null; }
+}
 
 function onSearch(val) {
   clearTimeout(searchTimer);
+  detachRecentListener(); // stop live updates when user starts searching
   val = val.trim();
 
   if (val === '') {
@@ -379,15 +385,19 @@ async function searchByName(query) {
   }
 }
 
-async function loadRecent() {
+function loadRecent() {
+  detachRecentListener();
   showLoading();
   document.getElementById('searchInput').value = '';
-  const snap = await db.ref('participants').orderByKey().limitToLast(20).once('value');
-  const items = [];
-  snap.forEach(child => items.push({ key: child.key, ...child.val() }));
-  items.reverse();
-  renderCards(items);
-  setCount('Last ' + items.length + ' registrations');
+
+  recentRef = db.ref('participants').orderByKey().limitToLast(20);
+  recentRef.on('value', snap => {
+    const items = [];
+    snap.forEach(child => items.push({ key: child.key, ...child.val() }));
+    items.reverse();
+    renderCards(items);
+    setCount('Last ' + items.length + ' registrations — live 🔴');
+  });
 }
 
 /* ═══════════════════════════════════════
