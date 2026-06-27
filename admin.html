@@ -145,14 +145,17 @@
       font-size: 12px; font-weight: 700;
     }
     .status-badge {
-      border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 800;
-      text-transform: uppercase; letter-spacing: .5px;
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 700;
     }
-    .sb-registered { background: #FEF3C7; color: var(--warn); }
-    .sb-checked_in { background: #DCFCE7; color: var(--ok); }
-    .sb-cancelled  { background: #FEE2E2; color: var(--danger); }
-    .sb-no_show    { background: #F1F5F9; color: #64748B; }
-    .sb-deleted    { background: #F1F5F9; color: #94A3B8; }
+    .status-dot {
+      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    }
+    .sb-registered .status-dot { background: #EF4444; }
+    .sb-checked_in .status-dot { background: #22C55E; box-shadow: 0 0 0 3px #DCFCE7; }
+    .sb-cancelled  .status-dot { background: #94A3B8; }
+    .sb-no_show    .status-dot { background: #CBD5E1; }
+    .sb-deleted    .status-dot { background: #E2E8F0; }
 
     .p-meta { font-size: 12px; color: var(--muted); margin-top: 6px; }
     .p-ci-info { font-size: 12px; color: var(--ok); margin-top: 4px; font-weight: 600; }
@@ -474,7 +477,7 @@ function renderCards(list) {
     const regNum   = p.regNum || p.key;
     const status   = p.status || 'registered';
     const sbClass  = 'sb-' + status;
-    const sbLabel  = status === 'checked_in' ? '✓ Checked In' : status === 'cancelled' ? '✗ Cancelled' : '⏳ Registered';
+    const sbLabel  = status === 'checked_in' ? 'Checked In' : status === 'cancelled' ? 'Cancelled' : status === 'no_show' ? 'No Show' : 'Registered';
     const ciInfo   = status === 'checked_in' && p.checkIn
       ? `Checked in at ${fmtTime(p.checkIn.timestamp)} · Counter: ${p.checkIn.counter||'—'} · By: ${p.checkIn.volunteerId||'—'}`
       : '';
@@ -488,7 +491,7 @@ function renderCards(list) {
         <span class="p-reg">#${esc(regNum)}</span>
         <span class="p-name">${esc(p.name || 'Unknown')}</span>
         <span class="p-size">${esc(p.tshirtSize || '—')}</span>
-        <span class="status-badge ${sbClass}">${sbLabel}</span>
+        <span class="status-badge ${sbClass}"><span class="status-dot"></span>${sbLabel}</span>
       </div>
       <div class="p-meta">
         📧 ${esc(p.email || '—')} &nbsp;·&nbsp; Registered: ${fmtTime(p.registeredAt)}${issuedBadge}
