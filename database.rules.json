@@ -32,13 +32,6 @@
       }
     },
 
-    "phones": {
-      "$phone": {
-        ".read": true,
-        ".write": true
-      }
-    },
-
     "audit": {
       ".read": false,
       ".write": true
