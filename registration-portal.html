@@ -514,7 +514,6 @@
     .tab-btn.tab-active { background: var(--navy); color: #fff; }
 
     /* ── Retrieve section ── */
-    .or-divider { text-align: center; color: var(--muted); margin: 10px 0; font-size: 13px; }
     .retrieve-hit {
       background: #fff; border-radius: 14px; border: 1.5px solid var(--border);
       padding: 20px 16px; margin-bottom: 14px; text-align: center;
@@ -587,28 +586,24 @@
   <div id="retrieveSection" class="hidden">
     <div class="card">
       <div class="card-title"    id="retTitle">Retrieve Your Registration Pass</div>
-      <div class="card-subtitle" id="retSub">Enter any one of the following to find your pass.</div>
+      <div class="card-subtitle" id="retSub">Enter your email address, mobile number, or registration number.</div>
 
-      <div class="form-group">
-        <label id="retLblEmail">Email Address</label>
-        <input type="email" id="rEmail" placeholder="your@email.com" autocomplete="email">
+      <div class="form-group" style="margin-top:4px;">
+        <label id="retLblSearch" style="font-weight:600;font-size:14px;color:var(--navy);">Email / Mobile / Registration #</label>
+        <div style="position:relative;">
+          <input type="text" id="rSearch"
+            placeholder="e.g.  your@email.com  ·  0812345678  ·  1007"
+            autocomplete="off"
+            style="padding-left:40px;font-size:14px;"
+            onkeydown="if(event.key==='Enter') doRetrieve()">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:18px;pointer-events:none;">🔍</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;" id="retHint">
+          Your email address used at registration can also be used here.
+        </div>
       </div>
 
-      <div class="or-divider">— or —</div>
-
-      <div class="form-group">
-        <label id="retLblPhone">Mobile Number</label>
-        <input type="tel" id="rPhone" placeholder="0812345678">
-      </div>
-
-      <div class="or-divider">— or —</div>
-
-      <div class="form-group">
-        <label id="retLblReg">Registration Number</label>
-        <input type="number" id="rRegNum" placeholder="e.g. 1007" min="1000">
-      </div>
-
-      <button class="btn btn-navy btn-full" id="btnRetrieve" onclick="doRetrieve()"><span id="retBtnLbl">🔍 Find My Pass</span></button>
+      <button class="btn btn-navy btn-full" id="btnRetrieve" onclick="doRetrieve()" style="margin-top:6px;"><span id="retBtnLbl">Find My Pass</span></button>
       <div class="field-err" id="retrieveErr" style="margin-top:10px;"></div>
     </div>
     <div id="retrieveResults"></div>
@@ -776,11 +771,10 @@ const STR = {
     tabReg:      'Register',
     tabRet:      'Retrieve My Pass',
     retTitle:    'Retrieve Your Registration Pass',
-    retSub:      'Enter any one of the following to find your pass.',
-    retLblEmail: 'Email Address',
-    retLblPhone: 'Mobile Number',
-    retLblReg:   'Registration Number',
-    retBtn:      '🔍 Find My Pass',
+    retSub:      'Enter your email address, mobile number, or registration number.',
+    retLblSearch:'Email / Mobile / Registration #',
+    retHint:     'Your registration email address can also be used here.',
+    retBtn:      'Find My Pass',
     errInvalid:  'Please enter a valid email address.',
     errMismatch: 'Email addresses do not match.',
     bS1:         'Continue',
@@ -802,7 +796,7 @@ const STR = {
     bSubmit:     'Complete Registration',
     okTitle:     'Registration Successful!',
     okSub:       'Your registration pass is ready. Download or print it now.',
-    okAlert:     '⚠  Important: No email confirmation will be sent. Save or print this pass now. You will need this QR code on event day for entry and T-shirt collection.',
+    okAlert:     '⚠  Important: No email confirmation will be sent. Save or print this pass now. You will need this QR code on event day for entry and T-shirt collection. If you lose this pass, use the "Retrieve My Pass" tab on this page with your email address or mobile number to get it back.',
     actTitle:    'Download & Share',
     bJPEG:       'Download All Passes (JPEG)',
     bPrint:      'Print Pass',
@@ -857,11 +851,10 @@ const STR = {
     tabReg:      'ลงทะเบียน',
     tabRet:      'ค้นหาบัตรลงทะเบียน',
     retTitle:    'ค้นหาบัตรลงทะเบียนของท่าน',
-    retSub:      'กรอกข้อมูลอย่างใดอย่างหนึ่งเพื่อค้นหาบัตร',
-    retLblEmail: 'ที่อยู่อีเมล',
-    retLblPhone: 'หมายเลขโทรศัพท์มือถือ',
-    retLblReg:   'หมายเลขการลงทะเบียน',
-    retBtn:      '🔍 ค้นหาบัตรของฉัน',
+    retSub:      'กรอกอีเมล หมายเลขโทรศัพท์ หรือหมายเลขการลงทะเบียน',
+    retLblSearch:'อีเมล / มือถือ / หมายเลขลงทะเบียน',
+    retHint:     'สามารถใช้ที่อยู่อีเมลที่ใช้ลงทะเบียนเพื่อค้นหาได้เช่นกัน',
+    retBtn:      'ค้นหาบัตรของฉัน',
     errInvalid:  'กรุณากรอกที่อยู่อีเมลที่ถูกต้อง',
     errMismatch: 'ที่อยู่อีเมลไม่ตรงกัน',
     bS1:         'ถัดไป',
@@ -983,7 +976,7 @@ function applyLang() {
     'okTitle','okSub','actTitle','bJPEG','bPrint',
     'sl1','sl2','sl3','sl4',
     'tabRegLbl','tabRetLbl',
-    'retTitle','retSub','retLblEmail','retLblPhone','retLblReg','retBtnLbl'
+    'retTitle','retSub','retLblSearch','retHint','retBtnLbl'
   ];
   ids.forEach(id => setText(id, s(id)));
   setAttr('email',  'placeholder', s('emailPH'));
@@ -1604,9 +1597,7 @@ function showTab(tab) {
     el(id).classList.toggle('hidden', isRetrieve);
   });
   if (isRetrieve) {
-    el('rEmail').value = '';
-    el('rPhone').value = '';
-    el('rRegNum').value = '';
+    el('rSearch').value = '';
     el('retrieveResults').innerHTML = '';
     el('retrieveErr').classList.remove('show');
   } else {
@@ -1621,18 +1612,27 @@ function showTab(tab) {
    RETRIEVE MY PASS
 ═══════════════════════════════════════════════════════ */
 async function doRetrieve() {
-  const emailRaw = (el('rEmail').value || '').trim().toLowerCase();
-  const phone    = normalizePhone(el('rPhone').value || '');
-  const regNum   = parseInt(el('rRegNum').value || '0');
-  const err      = el('retrieveErr');
-  const res      = el('retrieveResults');
-  const btn      = el('btnRetrieve');
+  const raw  = (el('rSearch').value || '').trim();
+  const err  = el('retrieveErr');
+  const res  = el('retrieveResults');
+  const btn  = el('btnRetrieve');
 
   err.classList.remove('show');
-  if (!emailRaw && !phone && !regNum) {
-    err.textContent = lang === 'th' ? 'กรุณากรอกข้อมูลอย่างน้อยหนึ่งช่อง' : 'Please fill in at least one field.';
+  if (!raw) {
+    err.textContent = lang === 'th' ? 'กรุณากรอกข้อมูล' : 'Please enter your email, mobile number, or registration number.';
     err.classList.add('show');
     return;
+  }
+
+  // Auto-detect type
+  const digitsOnly = raw.replace(/[\s\-\+\(\)]/g, '').replace(/[^0-9]/g, '');
+  let mode = 'email';
+  if (raw.includes('@')) {
+    mode = 'email';
+  } else if (digitsOnly.length <= 6) {
+    mode = 'regnum'; // short number = registration number
+  } else {
+    mode = 'phone';  // longer digit string = phone
   }
 
   btn.disabled = true;
@@ -1642,16 +1642,18 @@ async function doRetrieve() {
     let participantIds = [];
     let foundEmail = '';
 
-    if (regNum >= 1000) {
-      // Direct reg number lookup
-      const snap = await db.ref('participants/' + regNum).once('value');
-      if (snap.exists()) { participantIds = [regNum]; foundEmail = snap.val().email; }
-
-    } else if (emailRaw) {
+    if (mode === 'regnum') {
+      const regNum = parseInt(digitsOnly);
+      if (regNum >= 1000) {
+        const snap = await db.ref('participants/' + regNum).once('value');
+        if (snap.exists()) { participantIds = [regNum]; foundEmail = snap.val().email; }
+      }
+    } else if (mode === 'email') {
+      const emailRaw = raw.toLowerCase();
       const snap = await db.ref('registrations/' + emailToKey(emailRaw)).once('value');
       if (snap.exists()) { participantIds = snap.val().participantIds || []; foundEmail = emailRaw; }
-
-    } else if (phone) {
+    } else {
+      const phone = normalizePhone(raw);
       const idxSnap = await db.ref('phones/' + phone).once('value');
       if (idxSnap.exists()) {
         const regSnap = await db.ref('registrations/' + idxSnap.val()).once('value');
