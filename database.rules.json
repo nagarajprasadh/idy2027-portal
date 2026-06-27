@@ -24,7 +24,11 @@
 
     "dashboard": {
       ".read": true,
-      ".write": true
+      ".write": true,
+      "recentRegistrations": {
+        ".read": true,
+        ".write": true
+      }
     },
 
     "audit": {
