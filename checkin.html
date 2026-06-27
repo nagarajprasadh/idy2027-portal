@@ -851,9 +851,7 @@ function showRed(p) {
   el('rName').textContent       = p.name;
   el('rReg').textContent        = 'Registration #' + p.regNum;
   el('rRegNum').textContent     = p.regNum;
-  el('rShirtStatus').textContent = p.tshirtIssued
-    ? `✅ ${p.tshirtSize} — already issued`
-    : `⚠️ ${p.tshirtSize} — NOT yet issued`;
+  el('rShirtStatus').textContent = p.tshirtSize || '—';
   el('rTime').textContent       = p.checkIn?.timestamp ? fmtTime(p.checkIn.timestamp) : '—';
   el('rCounter').textContent    = p.checkIn?.counter    || '—';
   el('rVol').textContent        = p.checkIn?.volunteerId || '—';
@@ -899,10 +897,6 @@ async function confirmCheckin() {
         volunteerId: volunteerName,
         counter:     selectedCounter
       };
-      data.tshirtIssued    = true;
-      data.tshirtIssuedAt  = Date.now();
-      data.tshirtDesk      = selectedCounter;
-      data.tshirtIssuedBy  = volunteerName;
       return data;
     });
 
@@ -928,9 +922,6 @@ async function confirmCheckin() {
     db.ref('dashboard/summary/checkedIn').transaction(n => (n || 0) + 1);
     db.ref(`dashboard/summary/sizes/${p.tshirtSize}/checkedIn`).transaction(n => (n || 0) + 1);
     db.ref(`dashboard/daily/${today}/checkedIn`).transaction(n => (n || 0) + 1);
-    db.ref('dashboard/summary/tshirtIssued').transaction(n => (n || 0) + 1);
-    db.ref(`dashboard/summary/sizes/${p.tshirtSize}/issued`).transaction(n => (n || 0) + 1);
-    db.ref(`dashboard/daily/${today}/tshirtIssued`).transaction(n => (n || 0) + 1);
 
     // Show green screen with t-shirt size — auto-return in 4s
     showGreen(p);
