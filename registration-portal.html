@@ -572,21 +572,18 @@
     </button>
     <div class="card">
       <div class="card-title"    id="retTitle">Retrieve Your Registration Pass</div>
-      <div class="card-subtitle" id="retSub">Enter your email address, mobile number, or registration number.</div>
+      <div class="card-subtitle" id="retSub">Enter your email address and year of birth to retrieve your pass.</div>
 
-      <div class="form-group" style="margin-top:4px;">
-        <label id="retLblSearch" style="font-weight:600;font-size:14px;color:var(--navy);">Email / Mobile / Registration #</label>
-        <div style="position:relative;">
-          <input type="text" id="rSearch"
-            placeholder="e.g.  your@email.com  ·  0812345678  ·  1007"
-            autocomplete="off"
-            style="padding-left:40px;font-size:14px;"
-            onkeydown="if(event.key==='Enter') doRetrieve()">
-          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:18px;pointer-events:none;">🔍</span>
-        </div>
-        <div style="font-size:11px;color:var(--muted);margin-top:6px;" id="retHint">
-          Your email address used at registration can also be used here.
-        </div>
+      <div class="form-group">
+        <label id="retLblSearch">Email Address used at registration</label>
+        <input type="email" id="rSearch" placeholder="your@email.com" autocomplete="email"
+               onkeydown="if(event.key==='Enter') doRetrieve()">
+      </div>
+      <div class="form-group" style="margin-top:10px;">
+        <label id="retLblYOB">Year of Birth <span style="font-weight:400;font-size:12px;color:var(--muted);" id="retHint">(if provided at registration)</span></label>
+        <input type="text" id="rYOB" placeholder="e.g. 1985" maxlength="4" inputmode="numeric"
+               style="letter-spacing:4px;font-size:18px;font-weight:600;max-width:140px;"
+               onkeydown="if(event.key==='Enter') doRetrieve()">
       </div>
 
       <button class="btn btn-navy btn-full" id="btnRetrieve" onclick="doRetrieve()" style="margin-top:6px;"><span id="retBtnLbl">Find My Pass</span></button>
@@ -634,18 +631,27 @@
         <div class="field-err" id="emailCErr"></div>
       </div>
       <div class="form-group" style="margin-top:10px;">
-        <label for="phone"><span id="lPhone">Mobile Number</span> <span style="font-weight:400;font-size:12px;color:var(--muted);" id="lPhoneOpt">(optional — for pass retrieval)</span></label>
-        <input type="tel" id="phone" placeholder="0812345678" maxlength="20" autocomplete="tel">
+        <label for="regYOB"><span id="lYOB">Year of Birth</span> <span style="font-weight:400;font-size:12px;color:var(--muted);" id="lYOBOpt">(optional — needed to retrieve your pass later)</span></label>
+        <input type="text" id="regYOB" placeholder="e.g. 1985" maxlength="4" inputmode="numeric"
+               style="letter-spacing:4px;font-size:18px;font-weight:600;max-width:140px;">
       </div>
       <button class="btn btn-navy btn-full" id="btnS1" onclick="go(2)" disabled>
         <span id="bS1">Continue</span> →
       </button>
 
-      <div id="alreadyRegLink" class="no-print" style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border);text-align:center;">
-        <span id="alreadyRegTxt" style="font-size:13px;color:var(--muted);">Already registered?</span>
-        <button onclick="showTab('retrieve')" id="alreadyRegBtn"
-          style="background:none;border:none;color:var(--navy);font-size:13px;font-weight:600;cursor:pointer;margin-left:6px;padding:0;letter-spacing:0.01em;">
-          <span id="alreadyRegBtnLbl">Retrieve your pass</span>
+      <div id="alreadyRegLink" class="no-print" style="margin-top:20px;padding-top:18px;border-top:1px solid var(--border);text-align:center;">
+        <button onclick="showTab('retrieve')" id="alreadyRegBtn" style="
+          display:inline-flex;align-items:center;gap:8px;
+          background:#EEF2FF;border:1.5px solid #C7D4F5;
+          color:var(--navy);border-radius:50px;
+          padding:9px 20px;font-size:13px;font-weight:600;
+          cursor:pointer;letter-spacing:0.01em;
+          transition:background .15s,border-color .15s;"
+          onmouseover="this.style.background='#E0E7FF'"
+          onmouseout="this.style.background='#EEF2FF'">
+          <span style="font-size:15px;">🔍</span>
+          <span id="alreadyRegTxt">Already registered?</span>
+          <strong id="alreadyRegBtnLbl">Retrieve your pass</strong>
         </button>
       </div>
     </div>
@@ -760,16 +766,17 @@ const STR = {
     lEmail:      'Email Address',
     lEmailC:     'Confirm Email Address',
     emailPH:     'your@email.com',
-    lPhone:      'Mobile Number',
-    lPhoneOpt:   '(optional — for pass retrieval)',
+    lYOB:        'Year of Birth',
+    lYOBOpt:     '(optional — needed to retrieve your pass later)',
     alreadyRegTxt:    'Already registered?',
     alreadyRegBtnLbl: 'Retrieve your pass →',
     backToRegLbl:     'Back to Registration',
     retTitle:    'Retrieve Your Registration Pass',
-    retSub:      'Enter your email address, mobile number, or registration number.',
-    retLblSearch:'Email / Mobile / Registration #',
-    retHint:     'Your registration email address can also be used here.',
-    retBtn:      'Find My Pass',
+    retSub:      'Enter your email address and year of birth to retrieve your pass.',
+    retLblSearch: 'Email Address used at registration',
+    retLblYOB:    'Year of Birth',
+    retHint:      '(if provided at registration)',
+    retBtn:       'Find My Pass',
     errInvalid:  'Please enter a valid email address.',
     errMismatch: 'Email addresses do not match.',
     bS1:         'Continue',
@@ -841,16 +848,17 @@ const STR = {
     lEmail:      'ที่อยู่อีเมล',
     lEmailC:     'ยืนยันที่อยู่อีเมล',
     emailPH:     'อีเมลของท่าน@example.com',
-    lPhone:      'หมายเลขโทรศัพท์มือถือ',
-    lPhoneOpt:   '(ไม่บังคับ — สำหรับค้นหาบัตรลงทะเบียน)',
+    lYOB:        'ปีเกิด',
+    lYOBOpt:     '(ไม่บังคับ — จำเป็นสำหรับการค้นหาบัตรในภายหลัง)',
     alreadyRegTxt:    'ลงทะเบียนแล้ว?',
     alreadyRegBtnLbl: 'ค้นหาบัตรของท่าน →',
     backToRegLbl:     'กลับไปหน้าลงทะเบียน',
     retTitle:    'ค้นหาบัตรลงทะเบียนของท่าน',
-    retSub:      'กรอกอีเมล หมายเลขโทรศัพท์ หรือหมายเลขการลงทะเบียน',
-    retLblSearch:'อีเมล / มือถือ / หมายเลขลงทะเบียน',
-    retHint:     'สามารถใช้ที่อยู่อีเมลที่ใช้ลงทะเบียนเพื่อค้นหาได้เช่นกัน',
-    retBtn:      'ค้นหาบัตรของฉัน',
+    retSub:       'กรอกอีเมลที่ใช้ลงทะเบียนและปีเกิดเพื่อค้นหาบัตรของท่าน',
+    retLblSearch: 'ที่อยู่อีเมลที่ใช้ลงทะเบียน',
+    retLblYOB:    'ปีเกิด',
+    retHint:      '(หากระบุไว้ตอนลงทะเบียน)',
+    retBtn:       'ค้นหาบัตรของฉัน',
     errInvalid:  'กรุณากรอกที่อยู่อีเมลที่ถูกต้อง',
     errMismatch: 'ที่อยู่อีเมลไม่ตรงกัน',
     bS1:         'ถัดไป',
@@ -964,7 +972,7 @@ function applyLang() {
   const ids = [
     'hTitle','hSub','langBtn',
     's1Title','s1Sub','lEmail','lEmailC','bS1',
-    'lPhone','lPhoneOpt',
+    'lYOB','lYOBOpt',
     'bk2','bk3','bk4',
     's2Title','s2Sub',
     's3Title','s3Sub','bS3',
@@ -972,7 +980,7 @@ function applyLang() {
     'okTitle','okSub','actTitle','bJPEG','bPrint',
     'sl1','sl2','sl3','sl4',
     'alreadyRegTxt','alreadyRegBtnLbl','backToRegLbl',
-    'retTitle','retSub','retLblSearch','retHint','retBtnLbl'
+    'retTitle','retSub','retLblSearch','retLblYOB','retHint','retBtnLbl'
   ];
   ids.forEach(id => setText(id, s(id)));
   setAttr('email',  'placeholder', s('emailPH'));
@@ -1324,18 +1332,15 @@ async function submit() {
 
     // Update registration index
     const existingIds = existingData ? (existingData.participantIds || []) : [];
-    const phone = normalizePhone(el('phone').value || '');
+    const yobRaw = (el('regYOB').value || '').trim();
+    const yearOfBirth = /^\d{4}$/.test(yobRaw) ? parseInt(yobRaw) : null;
     writes[`registrations/${emailKey}`] = {
       email,
       registeredAt:     existingData ? existingData.registeredAt : now,
       participantCount: existingCount + pCount,
       participantIds:   [...existingIds, ...participants.map(p => p.regNum)],
-      ...(phone ? { phone } : {})
+      ...(yearOfBirth ? { yearOfBirth } : {})
     };
-    // Phone → emailKey index for self-service retrieval
-    if (phone && !existingData) {
-      writes[`phones/${phone}`] = emailKey;
-    }
 
     // Update dashboard size tallies
     participants.forEach(p => {
@@ -1606,70 +1611,57 @@ function showTab(tab) {
    RETRIEVE MY PASS
 ═══════════════════════════════════════════════════════ */
 async function doRetrieve() {
-  const raw  = (el('rSearch').value || '').trim();
-  const err  = el('retrieveErr');
-  const res  = el('retrieveResults');
-  const btn  = el('btnRetrieve');
+  const emailRaw = (el('rSearch').value || '').trim().toLowerCase();
+  const yobInput = (el('rYOB').value || '').trim();
+  const err = el('retrieveErr');
+  const res = el('retrieveResults');
+  const btn = el('btnRetrieve');
 
   err.classList.remove('show');
-  if (!raw) {
-    err.textContent = lang === 'th' ? 'กรุณากรอกข้อมูล' : 'Please enter your email, mobile number, or registration number.';
+  if (!emailRaw || !emailRaw.includes('@')) {
+    err.textContent = lang === 'th' ? 'กรุณากรอกที่อยู่อีเมล' : 'Please enter the email address used at registration.';
     err.classList.add('show');
     return;
-  }
-
-  // Auto-detect type
-  const digitsOnly = raw.replace(/[\s\-\+\(\)]/g, '').replace(/[^0-9]/g, '');
-  let mode = 'email';
-  if (raw.includes('@')) {
-    mode = 'email';
-  } else if (digitsOnly.length <= 6) {
-    mode = 'regnum'; // short number = registration number
-  } else {
-    mode = 'phone';  // longer digit string = phone
   }
 
   btn.disabled = true;
   res.innerHTML = '<p style="text-align:center;color:var(--muted);padding:20px">Searching…</p>';
 
   try {
-    let participantIds = [];
-    let foundEmail = '';
+    const snap = await db.ref('registrations/' + emailToKey(emailRaw)).once('value');
 
-    if (mode === 'regnum') {
-      const regNum = parseInt(digitsOnly);
-      if (regNum >= 1000) {
-        const snap = await db.ref('participants/' + regNum).once('value');
-        if (snap.exists()) { participantIds = [regNum]; foundEmail = snap.val().email; }
-      }
-    } else if (mode === 'email') {
-      const emailRaw = raw.toLowerCase();
-      const snap = await db.ref('registrations/' + emailToKey(emailRaw)).once('value');
-      if (snap.exists()) { participantIds = snap.val().participantIds || []; foundEmail = emailRaw; }
-    } else {
-      const phone = normalizePhone(raw);
-      const idxSnap = await db.ref('phones/' + phone).once('value');
-      if (idxSnap.exists()) {
-        const regSnap = await db.ref('registrations/' + idxSnap.val()).once('value');
-        if (regSnap.exists()) { participantIds = regSnap.val().participantIds || []; foundEmail = regSnap.val().email; }
-      }
-    }
-
-    if (participantIds.length === 0) {
+    if (!snap.exists()) {
       res.innerHTML = '';
       err.textContent = lang === 'th'
-        ? 'ไม่พบข้อมูลการลงทะเบียน กรุณาตรวจสอบข้อมูลที่กรอก'
-        : 'No registration found. Please check the details and try again.';
+        ? 'ไม่พบข้อมูลการลงทะเบียน กรุณาตรวจสอบอีเมล'
+        : 'No registration found for this email. Please check and try again.';
       err.classList.add('show');
       btn.disabled = false;
       return;
     }
 
+    const reg = snap.val();
+
+    // Year of birth verification — only if stored at registration
+    if (reg.yearOfBirth) {
+      const yobEntered = parseInt(yobInput);
+      if (!yobInput || yobEntered !== reg.yearOfBirth) {
+        res.innerHTML = '';
+        err.textContent = lang === 'th'
+          ? 'ปีเกิดไม่ถูกต้อง กรุณาลองใหม่'
+          : 'Year of birth does not match. Please check and try again.';
+        err.classList.add('show');
+        btn.disabled = false;
+        return;
+      }
+    }
+
+    const participantIds = reg.participantIds || [];
     const passes = (await Promise.all(
       participantIds.map(id => db.ref('participants/' + id).once('value').then(s => s.val()))
     )).filter(Boolean);
 
-    renderRetrievedPasses(passes, foundEmail);
+    renderRetrievedPasses(passes, emailRaw);
 
   } catch(e) {
     console.error(e);
