@@ -342,9 +342,18 @@ document.addEventListener('keydown', e => {
 ═══════════════════════════════════════ */
 let searchTimer  = null;
 let recentRef    = null; // holds active real-time listener so we can detach it
+let allParticipants = {}; // local mirror for live updates
+
+const DB_REST = 'https://idy2027-dba28-default-rtdb.asia-southeast1.firebasedatabase.app';
 
 function detachRecentListener() {
-  if (recentRef) { recentRef.off('value'); recentRef = null; }
+  if (recentRef) {
+    recentRef.off('child_added');
+    recentRef.off('child_changed');
+    recentRef.off('child_removed');
+    recentRef = null;
+  }
+  allParticipants = {};
 }
 
 function onSearch(val) {
@@ -405,23 +414,45 @@ async function searchByName(query) {
   }
 }
 
-function loadRecent() {
+async function loadRecent() {
   detachRecentListener();
   showLoading();
   document.getElementById('searchInput').value = '';
 
-  // Read all participants, sort by regNum descending, show last 20
-  // (avoids orderByKey SDK query reliability issues)
+  // ── Step 1: REST API fetch — guaranteed to return ALL records ──────
+  try {
+    const r = await fetch(`${DB_REST}/participants.json`);
+    const data = await r.json();
+    if (data && typeof data === 'object') {
+      Object.entries(data).forEach(([k, v]) => { allParticipants[k] = { key: k, ...v }; });
+    }
+  } catch(e) {
+    console.warn('REST fetch failed, will rely on SDK listener', e);
+  }
+  renderRecent();
+
+  // ── Step 2: Live child listeners for real-time updates ─────────────
   recentRef = db.ref('participants');
-  recentRef.on('value', snap => {
-    const items = [];
-    snap.forEach(child => items.push({ key: child.key, ...child.val() }));
-    // Sort by regNum descending (most recent first)
-    items.sort((a, b) => (parseInt(b.regNum || b.key) || 0) - (parseInt(a.regNum || a.key) || 0));
-    const recent = items.slice(0, 20);
-    renderCards(recent);
-    setCount('Last ' + recent.length + ' of ' + items.length + ' registrations — live 🔴');
+  recentRef.on('child_added', snap => {
+    allParticipants[snap.key] = { key: snap.key, ...snap.val() };
+    renderRecent();
   });
+  recentRef.on('child_changed', snap => {
+    allParticipants[snap.key] = { key: snap.key, ...snap.val() };
+    renderRecent();
+  });
+  recentRef.on('child_removed', snap => {
+    delete allParticipants[snap.key];
+    renderRecent();
+  });
+}
+
+function renderRecent() {
+  const items = Object.values(allParticipants);
+  items.sort((a, b) => (parseInt(b.regNum || b.key) || 0) - (parseInt(a.regNum || a.key) || 0));
+  const recent = items.slice(0, 20);
+  renderCards(recent);
+  setCount('Last ' + recent.length + ' of ' + items.length + ' registrations — live 🔴');
 }
 
 /* ═══════════════════════════════════════
