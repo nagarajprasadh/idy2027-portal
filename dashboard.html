@@ -453,10 +453,17 @@ const feedRef = db.ref('dashboard/recentRegistrations');
 feedRef.on('child_added',   snap => { feedCache[snap.key] = snap.val(); renderFeed(); });
 feedRef.on('child_removed', snap => { delete feedCache[snap.key];       renderFeed(); });
 
-/* ── Recent Check-ins feed — live query directly on participants ── */
-function renderCIFeed(items) {
-  const list = el('ciList');
-  if (!items || items.length === 0) {
+/* ── Recent Check-ins feed ── */
+const ciMap = {}; // regNum → participant
+
+function renderCIFeed() {
+  const list  = el('ciList');
+  const items = Object.values(ciMap)
+    .filter(p => p.status === 'checked_in' && p.checkIn?.timestamp)
+    .sort((a, b) => b.checkIn.timestamp - a.checkIn.timestamp)
+    .slice(0, 10);
+
+  if (items.length === 0) {
     list.innerHTML = '<li class="feed-empty">No check-ins yet.</li>';
     return;
   }
@@ -473,19 +480,29 @@ function renderCIFeed(items) {
   });
 }
 
-// Ordered by checkIn/timestamp — only last 10, updates live on every check-in
-db.ref('participants')
-  .orderByChild('checkIn/timestamp')
-  .limitToLast(10)
-  .on('value', snap => {
-    const items = [];
-    snap.forEach(child => {
-      const p = child.val();
-      if (p && p.status === 'checked_in' && p.checkIn?.timestamp) items.push(p);
-    });
-    items.sort((a, b) => b.checkIn.timestamp - a.checkIn.timestamp);
-    renderCIFeed(items);
-  });
+// Initial load — REST fetch all participants, filter for checked-in
+fetch(`${DB_REST}/participants.json`)
+  .then(r => r.json())
+  .then(data => {
+    if (data && typeof data === 'object') {
+      Object.values(data).forEach(p => {
+        if (p && p.status === 'checked_in') ciMap[p.regNum] = p;
+      });
+    }
+    renderCIFeed();
+  }).catch(() => {});
+
+// Live updates — fires whenever any participant record changes
+db.ref('participants').on('child_changed', snap => {
+  const p = snap.val();
+  if (!p) return;
+  if (p.status === 'checked_in') {
+    ciMap[p.regNum] = p;
+  } else {
+    delete ciMap[p.regNum];
+  }
+  renderCIFeed();
+});
 
 function timeAgo(ts) {
   const diff = Math.floor((Date.now() - ts) / 1000);
