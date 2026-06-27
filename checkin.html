@@ -446,13 +446,15 @@
       <div class="result-icon">✓</div>
       <div class="result-name" id="gName"></div>
       <div class="result-reg"  id="gReg"></div>
+      <div style="margin:14px 0 18px;text-align:center;">
+        <div style="font-size:12px;font-weight:700;color:#166534;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Hand Over T-Shirt Size</div>
+        <div id="gSize" style="display:inline-block;background:#002D6E;color:#fff;font-size:36px;font-weight:900;padding:12px 36px;border-radius:14px;letter-spacing:3px;"></div>
+      </div>
       <div class="detail-grid">
         <div class="detail-row"><span class="d-lbl">Registration #</span> <span class="d-val" id="gRegNum"></span></div>
-        <div class="detail-row"><span class="d-lbl">T-Shirt Size</span>   <span class="tsize" id="gSize"></span></div>
-        <div class="detail-row"><span class="d-lbl">Status</span>         <span class="d-val" style="color:#16A34A;">✓ Ready for check-in</span></div>
       </div>
       <button class="btn btn-green" id="btnCheckin" onclick="confirmCheckin()">
-        ✓ CONFIRM CHECK-IN
+        ✓ CHECK IN &amp; ISSUE T-SHIRT
       </button>
     </div>
     <button class="btn btn-ghost" onclick="cancelResult()" style="margin-top:8px;">Cancel — Scan Next</button>
@@ -467,7 +469,7 @@
       <div class="result-reg"  id="rReg"></div>
       <div class="detail-grid">
         <div class="detail-row"><span class="d-lbl">Registration #</span> <span class="d-val" id="rRegNum"></span></div>
-        <div class="detail-row"><span class="d-lbl">T-Shirt Size</span>   <span class="tsize" id="rSize"></span></div>
+        <div class="detail-row"><span class="d-lbl">T-Shirt</span>        <span class="d-val" id="rShirtStatus"></span></div>
         <div class="detail-row"><span class="d-lbl">Checked In At</span>  <span class="d-val" id="rTime"></span></div>
         <div class="detail-row"><span class="d-lbl">Counter</span>        <span class="d-val" id="rCounter"></span></div>
         <div class="detail-row"><span class="d-lbl">Volunteer</span>      <span class="d-val" id="rVol"></span></div>
@@ -762,13 +764,15 @@ function showGreen(p) {
 }
 
 function showRed(p) {
-  el('rName').textContent    = p.name;
-  el('rReg').textContent     = 'Registration #' + p.regNum;
-  el('rRegNum').textContent  = p.regNum;
-  el('rSize').textContent    = p.tshirtSize;
-  el('rTime').textContent    = p.checkIn?.timestamp ? fmtTime(p.checkIn.timestamp) : '—';
-  el('rCounter').textContent = p.checkIn?.counter    || '—';
-  el('rVol').textContent     = p.checkIn?.volunteerId || '—';
+  el('rName').textContent       = p.name;
+  el('rReg').textContent        = 'Registration #' + p.regNum;
+  el('rRegNum').textContent     = p.regNum;
+  el('rShirtStatus').textContent = p.tshirtIssued
+    ? `✅ ${p.tshirtSize} — already issued`
+    : `⚠️ ${p.tshirtSize} — NOT yet issued`;
+  el('rTime').textContent       = p.checkIn?.timestamp ? fmtTime(p.checkIn.timestamp) : '—';
+  el('rCounter').textContent    = p.checkIn?.counter    || '—';
+  el('rVol').textContent        = p.checkIn?.volunteerId || '—';
   showOnly('screenRed');
   startCountdown('redCountdown', 6, cancelResult);
 }
@@ -812,6 +816,10 @@ async function confirmCheckin() {
         volunteerId: volunteerName,
         counter:     selectedCounter
       };
+      data.tshirtIssued    = true;
+      data.tshirtIssuedAt  = Date.now();
+      data.tshirtDesk      = selectedCounter;
+      data.tshirtIssuedBy  = volunteerName;
       return data;
     });
 
@@ -832,14 +840,17 @@ async function confirmCheckin() {
       device:      navigator.userAgent.substring(0, 80)
     });
 
-    // Increment dashboard counter
+    // Increment dashboard counters — check-in + t-shirt together
     const today = new Date().toLocaleDateString('en-CA');
     db.ref('dashboard/summary/checkedIn').transaction(n => (n || 0) + 1);
     db.ref(`dashboard/summary/sizes/${p.tshirtSize}/checkedIn`).transaction(n => (n || 0) + 1);
     db.ref(`dashboard/daily/${today}/checkedIn`).transaction(n => (n || 0) + 1);
+    db.ref('dashboard/summary/tshirtIssued').transaction(n => (n || 0) + 1);
+    db.ref(`dashboard/summary/sizes/${p.tshirtSize}/issued`).transaction(n => (n || 0) + 1);
+    db.ref(`dashboard/daily/${today}/tshirtIssued`).transaction(n => (n || 0) + 1);
 
     // Flash green then auto-return
-    btn.innerHTML = '✓ Checked In!';
+    btn.innerHTML = '✓ Checked In &amp; T-Shirt Issued!';
     btn.style.background = '#15803D';
     startCountdown('', 2, cancelResult);
     setTimeout(cancelResult, 2000);
