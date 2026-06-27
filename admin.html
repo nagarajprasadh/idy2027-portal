@@ -252,6 +252,7 @@
       <button class="btn btn-csv"  onclick="exportCSV()">⬇ Export CSV</button>
       <button class="btn btn-warn" onclick="recalcCounters()">🔄 Recalc Counters</button>
       <button class="btn btn-dupe" onclick="findDuplicates()">🔎 Find Duplicates</button>
+      <button class="btn btn-danger" onclick="purgeTestRecords()">🧹 Purge Test Data</button>
       <div style="margin-left:auto;font-size:12px;color:var(--muted);align-self:center;" id="resultCount"></div>
     </div>
 
@@ -640,13 +641,11 @@ async function doUndoNoShow(regNum) {
 }
 
 async function doDelete(regNum) {
-  // NOTE: Firebase rules block hard deletion — we soft-delete with status:'deleted'
-  // This keeps the record for audit but removes it from active counts.
   const snap = await db.ref('participants/' + regNum).once('value');
   const p = snap.val();
   if (!p) return toast('Not found', 'err');
 
-  await db.ref('participants/' + regNum).update({ status: 'deleted', deletedAt: Date.now() });
+  await db.ref('participants/' + regNum).remove();
 
   // Reverse all dashboard counters
   db.ref('dashboard/summary/totalParticipants').transaction(n => Math.max((n||0)-1, 0));
@@ -671,16 +670,54 @@ async function doDelete(regNum) {
   }
 
   db.ref('audit').push({ action:'ADMIN_DELETE', regNum, timestamp: Date.now() });
-  toast('🗑 #' + regNum + ' soft-deleted (hidden from active list)', 'warn');
-  refreshCard(regNum);
+  const card = document.getElementById('card-' + regNum);
+  if (card) card.remove();
+  toast('🗑 #' + regNum + ' permanently deleted', 'warn');
   updateResultCount();
+}
+
+/* ═══════════════════════════════════════
+   PURGE TEST RECORDS
+═══════════════════════════════════════ */
+async function purgeTestRecords() {
+  const cutoffStr = prompt('Delete ALL registrations with reg number UP TO and including:\n(e.g. enter 1010 to wipe #1001–1010)\n\nLeave blank to cancel.');
+  if (!cutoffStr) return;
+  const cutoff = parseInt(cutoffStr);
+  if (isNaN(cutoff) || cutoff < 1000) return toast('Invalid number', 'err');
+
+  const snap = await db.ref('participants').once('value');
+  const toDelete = [];
+  snap.forEach(child => {
+    if (parseInt(child.key) <= cutoff) toDelete.push({ key: child.key, ...child.val() });
+  });
+
+  if (toDelete.length === 0) return toast('No records found up to #' + cutoff, 'warn');
+
+  const names = toDelete.map(p => '#' + p.regNum + ' ' + p.name).join('\n');
+  if (!confirm(`Permanently delete ${toDelete.length} record(s)?\n\n${names}\n\nThis CANNOT be undone.`)) return;
+
+  toast('Purging…', '');
+  for (const p of toDelete) {
+    await db.ref('participants/' + p.key).remove();
+    if (p.email) {
+      const emailKey = p.email.replace(/\./g, ',').replace('@', '_at_');
+      await db.ref('registrations/' + emailKey).remove();
+    }
+  }
+
+  db.ref('audit').push({ action: 'ADMIN_PURGE_TEST', cutoff, count: toDelete.length, timestamp: Date.now() });
+  toast(`🧹 Purged ${toDelete.length} test record(s)`, 'warn');
+
+  // Recalc counters automatically after purge
+  await recalcCounters(true);
+  loadRecent();
 }
 
 /* ═══════════════════════════════════════
    RECALCULATE COUNTERS FROM SOURCE
 ═══════════════════════════════════════ */
-async function recalcCounters() {
-  if (!confirm('Recompute ALL dashboard counters from actual participant records?\n\nThis fixes any drift. Takes a few seconds.')) return;
+async function recalcCounters(silent = false) {
+  if (!silent && !confirm('Recompute ALL dashboard counters from actual participant records?\n\nThis fixes any drift. Takes a few seconds.')) return;
   toast('Recalculating…', '');
 
   const snap = await db.ref('participants').once('value');
