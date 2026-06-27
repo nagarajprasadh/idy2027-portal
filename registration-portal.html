@@ -1172,7 +1172,10 @@ async function submit() {
     await db.ref().update(writes);
 
     // ── 5. Increment dashboard counters (non-blocking) ─────────────
+    const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
     db.ref('dashboard/summary/totalParticipants')
+      .transaction(n => (n || 0) + pCount);
+    db.ref(`dashboard/daily/${today}/registered`)
       .transaction(n => (n || 0) + pCount);
     if (!existingData) {
       db.ref('dashboard/summary/totalRegistrations')

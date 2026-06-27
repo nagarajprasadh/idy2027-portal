@@ -823,8 +823,10 @@ async function confirmCheckin() {
     });
 
     // Increment dashboard counter
+    const today = new Date().toLocaleDateString('en-CA');
     db.ref('dashboard/summary/checkedIn').transaction(n => (n || 0) + 1);
     db.ref(`dashboard/summary/sizes/${p.tshirtSize}/checkedIn`).transaction(n => (n || 0) + 1);
+    db.ref(`dashboard/daily/${today}/checkedIn`).transaction(n => (n || 0) + 1);
 
     // Flash green then auto-return
     btn.innerHTML = '✓ Checked In!';
