@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ananda — IDY 2027 Assistant</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;600;700&family=Noto+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy:    #002D6E;
+      --saffron: #FF9933;
+      --green:   #138808;
+      --white:   #FFFFFF;
+      --bg:      #F4F6FB;
+      --border:  #DDE2EE;
+      --text:    #1A1A2E;
+      --muted:   #6B7280;
+      --bubble-user: #002D6E;
+      --bubble-bot:  #FFFFFF;
+      --card-shadow: 0 2px 12px rgba(0,45,110,0.10);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans', 'Noto Sans Thai', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Tricolor ── */
+    .tricolor { display: flex; height: 5px; flex-shrink: 0; }
+    .tricolor div { flex: 1; }
+    .tc-s { background: var(--saffron); }
+    .tc-w { background: var(--white); border-top: 1px solid #E8E0D0; border-bottom: 1px solid #E8E0D0; }
+    .tc-g { background: var(--green); }
+
+    /* ── Header ── */
+    header {
+      background: var(--navy);
+      padding: 14px 18px;
+      flex-shrink: 0;
+    }
+    .header-inner {
+      max-width: 700px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .avatar {
+      width: 46px; height: 46px;
+      background: linear-gradient(135deg, var(--saffron), #e07700);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 3px rgba(255,153,51,0.3);
+    }
+    .header-text h1 { color: #fff; font-size: 17px; font-weight: 700; }
+    .header-text p  { color: rgba(255,255,255,0.6); font-size: 12px; margin-top: 2px; }
+    .status-dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      background: #4ade80;
+      border-radius: 50%;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+
+    /* ── Main layout ── */
+    .chat-wrapper {
+      flex: 1;
+      max-width: 700px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      padding: 0 12px;
+      min-height: 0;
+    }
+
+    /* ── Event banner ── */
+    .event-banner {
+      background: linear-gradient(135deg, var(--navy) 0%, #1a4a9e 100%);
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin: 16px 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .event-banner .icon { font-size: 28px; }
+    .event-banner strong { font-size: 13px; font-weight: 700; display: block; }
+    .event-banner span  { font-size: 12px; color: rgba(255,255,255,0.7); }
+
+    /* ── Messages area ── */
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 0 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 200px;
+    }
+    .messages::-webkit-scrollbar { width: 4px; }
+    .messages::-webkit-scrollbar-track { background: transparent; }
+    .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* ── Message bubbles ── */
+    .msg { display: flex; align-items: flex-end; gap: 8px; max-width: 88%; }
+    .msg.bot  { align-self: flex-start; }
+    .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+
+    .msg-avatar {
+      width: 30px; height: 30px;
+      background: linear-gradient(135deg, var(--saffron), #e07700);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .bubble {
+      padding: 11px 15px;
+      border-radius: 18px;
+      font-size: 14px;
+      line-height: 1.55;
+      box-shadow: var(--card-shadow);
+    }
+    .msg.bot  .bubble {
+      background: var(--bubble-bot);
+      border-bottom-left-radius: 4px;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .msg.user .bubble {
+      background: var(--bubble-user);
+      border-bottom-right-radius: 4px;
+      color: #fff;
+    }
+
+    .bubble strong { color: var(--navy); }
+    .msg.user .bubble strong { color: var(--saffron); }
+
+    .bubble .tag {
+      display: inline-block;
+      background: #FFF3E0;
+      color: #c45a00;
+      border: 1px solid #FFD580;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 8px;
+      margin: 3px 3px 0 0;
+    }
+    .bubble .check { color: var(--green); font-weight: 700; }
+    .bubble .cross  { color: #DC2626; font-weight: 700; }
+    .bubble a { color: var(--saffron); text-decoration: underline; }
+    .bubble ol, .bubble ul { padding-left: 18px; margin-top: 6px; }
+    .bubble li { margin-bottom: 4px; }
+    .bubble hr { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+
+    /* ── Typing indicator ── */
+    .typing { display: flex; align-items: center; gap: 5px; padding: 11px 15px; }
+    .typing span {
+      width: 7px; height: 7px;
+      background: var(--muted);
+      border-radius: 50%;
+      animation: bounce 1.2s infinite;
+    }
+    .typing span:nth-child(2) { animation-delay: .2s; }
+    .typing span:nth-child(3) { animation-delay: .4s; }
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-6px); }
+    }
+
+    /* ── Quick replies ── */
+    .quick-replies {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      padding: 10px 0 4px;
+      flex-shrink: 0;
+    }
+    .qr-btn {
+      background: var(--white);
+      border: 1.5px solid var(--navy);
+      color: var(--navy);
+      border-radius: 20px;
+      padding: 7px 14px;
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all .18s;
+      font-weight: 500;
+    }
+    .qr-btn:hover { background: var(--navy); color: #fff; }
+
+    /* ── Input bar ── */
+    .input-area {
+      display: flex;
+      gap: 8px;
+      padding: 12px 0 16px;
+      flex-shrink: 0;
+      border-top: 1px solid var(--border);
+      margin-top: 4px;
+    }
+    .input-area input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 24px;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      background: var(--white);
+      color: var(--text);
+      transition: border-color .2s;
+    }
+    .input-area input:focus { border-color: var(--navy); }
+    .input-area input::placeholder { color: var(--muted); }
+    .send-btn {
+      width: 46px; height: 46px;
+      background: var(--navy);
+      border: none;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .18s, transform .1s;
+      flex-shrink: 0;
+    }
+    .send-btn:hover  { background: #1a4a9e; }
+    .send-btn:active { transform: scale(.93); }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+      padding: 8px 16px 14px;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="tricolor"><div class="tc-s"></div><div class="tc-w"></div><div class="tc-g"></div></div>
+
+<header>
+  <div class="header-inner">
+    <div class="avatar">🧘</div>
+    <div class="header-text">
+      <h1>Ananda</h1>
+      <p><span class="status-dot"></span>Your IDY 2027 Assistant · Always here to help</p>
+    </div>
+  </div>
+</header>
+
+<div class="chat-wrapper">
+
+  <div class="event-banner">
+    <div class="icon">🪷</div>
+    <div>
+      <strong>13th International Day of Yoga 2027</strong>
+      <span>📅 Sunday, 20 June 2027 &nbsp;·&nbsp; 📍 Chulalongkorn University, Bangkok</span>
+    </div>
+  </div>
+
+  <div class="messages" id="messages"></div>
+
+  <div class="quick-replies" id="quickReplies">
+    <button class="qr-btn" onclick="sendQuick('How do I get my QR code?')">🔍 Get my QR code</button>
+    <button class="qr-btn" onclick="sendQuick('How do I find my registration number?')">🔢 Registration number</button>
+    <button class="qr-btn" onclick="sendQuick('T-shirt collection')">👕 T-shirt info</button>
+    <button class="qr-btn" onclick="sendQuick('Do I need to bring a yoga mat?')">🧘 Yoga mat</button>
+    <button class="qr-btn" onclick="sendQuick('Water and hydration')">💧 Hydration</button>
+    <button class="qr-btn" onclick="sendQuick('Event details')">📅 Event details</button>
+  </div>
+
+  <div class="input-area">
+    <input type="text" id="userInput" placeholder="Type your question…" autocomplete="off" onkeydown="if(event.key==='Enter') sendMessage()">
+    <button class="send-btn" onclick="sendMessage()" title="Send">➤</button>
+  </div>
+</div>
+
+<footer>Ananda is an automated assistant for IDY 2027. For urgent matters contact the event helpdesk.</footer>
+
+<script>
+const KB = [
+  // ── QR Code retrieval ──
+  {
+    keys: ['qr','qr code','retrieve qr','find qr','get qr','my qr','where is my qr','show qr'],
+    answer: () => `
+      <strong>📲 How to Retrieve Your QR Code</strong><br><br>
+      <span class="cross">✘</span> <strong>No email confirmation is sent</strong> — the QR code is displayed on-screen immediately after registration and must be saved or printed at that time.<br><br>
+      <strong>If you didn't save it, here's how to get it back:</strong><br><br>
+      <ol>
+        <li>Go to the <strong>Registration Portal</strong>.</li>
+        <li>Click the <strong>"Retrieve My Pass"</strong> tab.</li>
+        <li>Enter your <strong>registered email address</strong> and <strong>year of birth</strong>.</li>
+        <li>Your QR code will be displayed — <strong>save or screenshot it immediately</strong>.</li>
+      </ol>
+      <hr>
+      <span class="tag">⚠️ Important</span> Each QR code is unique and tied to one participant. You need it for both entry and T-shirt collection on event day.`
+  },
+
+  // ── Registration Number ──
+  {
+    keys: ['registration number','reg number','reg no','registration no','find registration','where is my registration','my number'],
+    answer: () => `
+      <strong>🔢 Finding Your Registration Number</strong><br><br>
+      Your registration number was issued when you completed sign-up:<br><br>
+      <ol>
+        <li>Look in your <strong>registration confirmation email</strong> — the number appears near the top, e.g. <span class="tag">IDY2027-XXXXX</span></li>
+        <li>Log in to the <strong>Registration Portal</strong> — your number is shown on your profile/dashboard.</li>
+        <li>If you registered on-site, check the printed receipt given to you at registration.</li>
+      </ol>
+      <hr>
+      Your registration number is needed to collect your <strong>T-shirt</strong> and to check in on the day. Please keep it handy!`
+  },
+
+  // ── T-shirt ──
+  {
+    keys: ['tshirt','t-shirt','t shirt','shirt','collect shirt','collect tshirt','tee'],
+    answer: () => `
+      <strong>👕 T-Shirt Collection Policy</strong><br><br>
+      <span class="check">✔</span> <strong>1 T-shirt per participant</strong> — each registered participant receives one T-shirt.<br>
+      <span class="check">✔</span> Present your <strong>QR code</strong> at the collection counter to claim your T-shirt.<br>
+      <span class="cross">✘</span> <strong>No bulk collection</strong> — you cannot collect T-shirts on behalf of others. Each person must be present and show their own QR code.<br>
+      <span class="cross">✘</span> Unclaimed T-shirts will <strong>not</strong> be held after the collection window closes.<br><br>
+      <span class="tag">📍 Collection Counter</span> Located at the event entrance — follow signage on the day.`
+  },
+
+  // ── Yoga Mat ──
+  {
+    keys: ['mat','yoga mat','bring mat','need mat','own mat','mats provided','mats laid'],
+    answer: () => `
+      <strong>🧘 Yoga Mats</strong><br><br>
+      <span class="check">✔</span> <strong>Yoga mats will be laid out</strong> for all participants — you do <strong>not</strong> need to bring your own mat.<br><br>
+      The organizers will set up mats on the practice area before the session begins. Simply arrive, check in, and find your spot.<br><br>
+      <span class="tag">Tip</span> If you prefer your personal mat for hygiene or comfort reasons, you are welcome to bring it along.`
+  },
+
+  // ── Hydration ──
+  {
+    keys: ['water','hydration','drink','hydrate','thirsty','bottle','beverages'],
+    answer: () => `
+      <strong>💧 Hydration at IDY 2027</strong><br><br>
+      <span class="check">✔</span> Please <strong>bring your own water bottle</strong> — staying hydrated during yoga is essential, especially in Bangkok's June heat.<br>
+      <span class="check">✔</span> Drinking water stations will be available at the venue for refills.<br><br>
+      <strong>Recommendations:</strong><br>
+      <ul>
+        <li>Carry at least <strong>500 ml – 1 litre</strong> of water.</li>
+        <li>Avoid heavy meals 1–2 hours before the session.</li>
+        <li>Wear light, breathable clothing.</li>
+      </ul>`
+  },
+
+  // ── Event Details ──
+  {
+    keys: ['event details','date','venue','where','when','location','chula','chulalongkorn','time','schedule','programme'],
+    answer: () => `
+      <strong>📅 Event Details — 13th International Day of Yoga 2027</strong><br><br>
+      <span class="tag">Date</span> Sunday, <strong>20 June 2027</strong><br>
+      <span class="tag">Venue</span> <strong>Chulalongkorn University</strong>, Bangkok, Thailand<br><br>
+      <strong>On the Day:</strong><br>
+      <ul>
+        <li>Arrive early to allow time for check-in and T-shirt collection.</li>
+        <li>Bring your <strong>QR code</strong> (digital or printed).</li>
+        <li>Yoga mats will be provided — no need to bring your own.</li>
+        <li>Wear comfortable yoga attire.</li>
+        <li>Bring a water bottle.</li>
+      </ul>`
+  },
+
+  // ── What to wear ──
+  {
+    keys: ['wear','attire','dress','clothing','outfit','what to bring'],
+    answer: () => `
+      <strong>👗 What to Wear & Bring</strong><br><br>
+      <ul>
+        <li>Comfortable, breathable <strong>yoga / sportswear</strong></li>
+        <li>Flat, non-slip footwear (you may practice barefoot)</li>
+        <li>Your <strong>QR code</strong> for check-in and T-shirt collection</li>
+        <li>A <strong>water bottle</strong> to stay hydrated</li>
+      </ul>
+      <hr>
+      <span class="cross">✘</span> No need to bring a yoga mat — they will be laid out for you.`
+  },
+
+  // ── Bulk collection ──
+  {
+    keys: ['bulk','collect for','on behalf','pick up for','others','friend','family','group collection'],
+    answer: () => `
+      <strong>🚫 No Bulk Collection</strong><br><br>
+      Each participant must collect their own T-shirt <strong>in person</strong>.<br><br>
+      <span class="cross">✘</span> You <strong>cannot</strong> collect T-shirts on behalf of friends, family, or colleagues.<br>
+      <span class="check">✔</span> Every participant must present their <strong>own QR code</strong> at the counter.<br><br>
+      This policy ensures fairness and prevents fraud. Thank you for your understanding! 🙏`
+  },
+
+  // ── Registration portal ──
+  {
+    keys: ['portal','register','sign up','registration link','how to register','not registered'],
+    answer: () => `
+      <strong>📋 Registration</strong><br><br>
+      If you haven't registered yet, please visit the <strong>IDY 2027 Registration Portal</strong> to sign up.<br><br>
+      Once registered, your <strong>QR code and Registration Number</strong> are displayed on-screen — <strong>save or screenshot them immediately</strong>. No email confirmation is sent.<br><br>
+      If you didn't save your QR code, use the <strong>"Retrieve My Pass"</strong> tab on the portal with your email and year of birth.`
+  },
+
+  // ── Check-in ──
+  {
+    keys: ['check in','checkin','check-in','entry','enter','gate','arrive','arrival'],
+    answer: () => `
+      <strong>✅ Check-in on Event Day</strong><br><br>
+      <ol>
+        <li>Arrive at <strong>Chulalongkorn University</strong> on 20 June 2027.</li>
+        <li>Proceed to the <strong>Check-in Counter</strong> (follow event signage).</li>
+        <li>Present your <strong>QR code</strong> — digital (phone) or printed.</li>
+        <li>Staff will scan your code and grant entry.</li>
+        <li>Head to the <strong>T-shirt Counter</strong> to collect your shirt (same QR code used).</li>
+      </ol>
+      <hr>
+      <span class="tag">Tip</span> Have your QR code ready before joining the queue to keep lines moving quickly!`
+  },
+
+  // ── Lost / not received email ──
+  {
+    keys: ['no email','didn\'t receive','not received','lost','resend','confirmation not received','email not received','lost qr','lost pass','lost my qr'],
+    answer: () => `
+      <strong>🔎 Lost Your QR Code?</strong><br><br>
+      <span class="cross">✘</span> No confirmation email is sent by the system — the QR code is only shown on-screen at the time of registration.<br><br>
+      <strong>To retrieve it:</strong><br>
+      <ol>
+        <li>Go to the <strong>Registration Portal</strong>.</li>
+        <li>Click <strong>"Retrieve My Pass"</strong>.</li>
+        <li>Enter your <strong>registered email</strong> and <strong>year of birth</strong>.</li>
+        <li>Your pass will reappear — save or screenshot it right away.</li>
+      </ol>
+      <hr>
+      <span class="tag">Tip</span> Next time, screenshot or download your QR code as soon as registration is complete!`
+  },
+
+  // ── Parking ──
+  {
+    keys: ['parking','park','car','motorbike','motorcycle','transport','bts','mrt','how to get'],
+    answer: () => `
+      <strong>🚗 Getting to the Venue</strong><br><br>
+      <strong>Public Transport (Recommended):</strong><br>
+      <ul>
+        <li><strong>BTS</strong> — Sala Daeng or National Stadium stations</li>
+        <li><strong>MRT</strong> — Sam Yan station (short walk to Chulalongkorn University)</li>
+      </ul>
+      <strong>By Car:</strong><br>
+      <ul>
+        <li>Limited parking is available on campus — arrive early.</li>
+        <li>Paid parking nearby on Phayathai Road and Henri Dunant Road.</li>
+      </ul>
+      <hr>
+      <span class="tag">Tip</span> Public transport is strongly recommended given expected large attendance.`
+  },
+
+  // ── Thank you / bye ──
+  {
+    keys: ['thank','thanks','thank you','bye','goodbye','see you','great','awesome','perfect','ok','okay','got it'],
+    answer: () => `
+      You're welcome! 🙏 Wishing you a wonderful and peaceful International Day of Yoga 2027.<br><br>
+      <em>"Yoga is the journey of the self, through the self, to the self."</em> — Bhagavad Gita<br><br>
+      See you on <strong>20 June 2027</strong> at Chulalongkorn University! 🪷`
+  },
+
+  // ── Greeting ──
+  {
+    keys: ['hi','hello','hey','namaste','good morning','good afternoon','good evening','hola','sawadee'],
+    answer: () => `
+      Namaste! 🙏 I'm <strong>Ananda</strong>, your assistant for the <strong>13th International Day of Yoga 2027</strong>.<br><br>
+      I can help you with:<br>
+      <ul>
+        <li>🔍 Retrieving your <strong>QR code</strong></li>
+        <li>🔢 Finding your <strong>registration number</strong></li>
+        <li>👕 <strong>T-shirt</strong> collection policy</li>
+        <li>🧘 <strong>Yoga mat</strong> information</li>
+        <li>💧 <strong>Hydration</strong> tips</li>
+        <li>📅 <strong>Event details</strong></li>
+      </ul>
+      What would you like to know?`
+  },
+];
+
+const FALLBACK = `I'm sorry, I didn't quite catch that. 🙏<br><br>
+Try asking me about:<br>
+<ul>
+  <li>🔍 How to retrieve your <strong>QR code</strong></li>
+  <li>🔢 Your <strong>registration number</strong></li>
+  <li>👕 <strong>T-shirt</strong> collection</li>
+  <li>🧘 <strong>Yoga mats</strong></li>
+  <li>💧 <strong>Hydration</strong></li>
+  <li>📅 <strong>Event details</strong></li>
+</ul>
+Or use the quick-reply buttons below!`;
+
+function findAnswer(text) {
+  const t = text.toLowerCase();
+  for (const item of KB) {
+    if (item.keys.some(k => t.includes(k))) return item.answer();
+  }
+  return FALLBACK;
+}
+
+function appendMsg(html, side) {
+  const msgs = document.getElementById('messages');
+  const wrapper = document.createElement('div');
+  wrapper.className = `msg ${side}`;
+
+  if (side === 'bot') {
+    const av = document.createElement('div');
+    av.className = 'msg-avatar';
+    av.textContent = '🧘';
+    wrapper.appendChild(av);
+  }
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.innerHTML = html;
+  wrapper.appendChild(bubble);
+  msgs.appendChild(wrapper);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping() {
+  const msgs = document.getElementById('messages');
+  const wrapper = document.createElement('div');
+  wrapper.className = 'msg bot';
+  wrapper.id = 'typing-indicator';
+
+  const av = document.createElement('div');
+  av.className = 'msg-avatar';
+  av.textContent = '🧘';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble typing';
+  bubble.innerHTML = '<span></span><span></span><span></span>';
+
+  wrapper.appendChild(av);
+  wrapper.appendChild(bubble);
+  msgs.appendChild(wrapper);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTyping() {
+  const el = document.getElementById('typing-indicator');
+  if (el) el.remove();
+}
+
+function sendMessage() {
+  const input = document.getElementById('userInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  appendMsg(text, 'user');
+  document.getElementById('quickReplies').style.display = 'none';
+
+  showTyping();
+  setTimeout(() => {
+    removeTyping();
+    const answer = findAnswer(text);
+    appendMsg(answer, 'bot');
+  }, 700 + Math.random() * 400);
+}
+
+function sendQuick(text) {
+  document.getElementById('userInput').value = text;
+  sendMessage();
+}
+
+// Initial greeting
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    appendMsg(`Namaste! 🙏 I'm <strong>Ananda</strong>, your assistant for the <strong>13th International Day of Yoga 2027</strong>.<br><br>
+I can help you retrieve your QR code, find your registration number, learn about T-shirt collection, yoga mats, hydration, and more.<br><br>
+<em>Use the quick-reply buttons below or type your question!</em>`, 'bot');
+  }, 400);
+});
+</script>
+
+</body>
+</html>
