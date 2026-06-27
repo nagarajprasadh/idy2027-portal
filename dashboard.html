@@ -244,6 +244,34 @@
       border-radius: 50%; animation: spin .7s linear infinite;
       vertical-align: middle; margin-right: 6px;
     }
+
+    /* ── Live feed ── */
+    .feed-list { list-style: none; display: flex; flex-direction: column; gap: 0; }
+    .feed-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      animation: slideIn .35s ease;
+    }
+    .feed-item:last-child { border-bottom: none; }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .feed-reg {
+      background: var(--navy); color: #fff;
+      border-radius: 6px; padding: 3px 8px;
+      font-size: 11px; font-weight: 800;
+      white-space: nowrap; min-width: 44px; text-align: center;
+    }
+    .feed-name { font-size: 13px; font-weight: 600; flex: 1; }
+    .feed-size {
+      background: #FFF3E0; color: #B45309;
+      border-radius: 20px; padding: 2px 8px;
+      font-size: 11px; font-weight: 700;
+    }
+    .feed-time { font-size: 11px; color: var(--muted); white-space: nowrap; }
+    .feed-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 24px 0; }
   </style>
 </head>
 <body>
@@ -306,6 +334,21 @@
   <div class="section-lbl">T-Shirt Sizes — Registration &amp; Check-in</div>
   <div class="size-grid" id="sizeGrid">
     <div class="loading"><span class="spinner-sm"></span>Loading…</div>
+  </div>
+
+  <!-- ── LIVE REGISTRATIONS FEED ── -->
+  <div class="section-lbl">Latest Registrations — Live Feed</div>
+  <div class="card" style="padding:18px 20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div style="font-size:13px;font-weight:700;color:var(--navy);">Most Recent 10</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ok);font-weight:700;">
+        <div class="live-dot" style="width:7px;height:7px;background:var(--ok);border-radius:50%;animation:pulse 1.5s infinite;"></div>
+        Real-time
+      </div>
+    </div>
+    <ul class="feed-list" id="feedList">
+      <li class="feed-empty"><span class="spinner-sm"></span>Connecting…</li>
+    </ul>
   </div>
 
   <!-- ── TODAY vs YESTERDAY + DAILY TREND ── -->
@@ -500,6 +543,48 @@ function updateDailyStats(daily) {
   } else {
     tb.innerHTML = '';
   }
+}
+
+/* ═══════════════════════════════════════════════════════
+   REAL-TIME LISTENER — LIVE REGISTRATIONS FEED
+═══════════════════════════════════════════════════════ */
+db.ref('participants').orderByKey().limitToLast(10).on('value', snap => {
+  const list = el('feedList');
+  const items = [];
+  snap.forEach(child => items.push({ key: child.key, ...child.val() }));
+  items.reverse(); // newest first
+
+  if (items.length === 0) {
+    list.innerHTML = '<li class="feed-empty">No registrations yet</li>';
+    return;
+  }
+
+  list.innerHTML = '';
+  items.forEach(p => {
+    const li = document.createElement('li');
+    li.className = 'feed-item';
+    const name = p.name || p.fullName || p.participants?.[0]?.name || 'Participant';
+    const size = p.tshirtSize || p.size || '—';
+    const ts   = p.registeredAt ? timeAgo(p.registeredAt) : '';
+    li.innerHTML = `
+      <span class="feed-reg">#${p.regNum || p.key}</span>
+      <span class="feed-name">${escHtml(name)}</span>
+      <span class="feed-size">${size}</span>
+      <span class="feed-time">${ts}</span>`;
+    list.appendChild(li);
+  });
+});
+
+function timeAgo(ts) {
+  const diff = Math.floor((Date.now() - ts) / 1000);
+  if (diff < 60)    return diff + 's ago';
+  if (diff < 3600)  return Math.floor(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  return Math.floor(diff / 86400) + 'd ago';
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 function updateBarChart(daily) {
