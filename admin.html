@@ -438,6 +438,7 @@ db.ref('participants').on('child_added', snap => {
   if (!allRows.find(x => x.regNum === key)) {
     allRows.push(rowFromFirebase(p, key));
     renderStats();
+    applyFilters(); // rebuild table so newly-registered participants appear
   }
 });
 
