@@ -994,6 +994,22 @@ function startCountdown(elId, seconds, callback) {
     // Ignore modifier-only keys
     if (e.ctrlKey || e.altKey || e.metaKey) return;
 
+    // ── Manual keyboard mode: route physical keys to on-screen keypad ──
+    if (scanMode === 'kb' && !el('screenScan').classList.contains('hidden')) {
+      if (e.key >= '0' && e.key <= '9') {
+        e.preventDefault();
+        kbPress(e.key);
+      } else if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault();
+        kbPress('⌫');
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        kbPress('↵'); // Enter = search
+      }
+      return; // don't fall through to USB scanner logic
+    }
+
+    // ── USB / Bluetooth scanner: rapid burst of chars then Enter ──
     // Buffer printable characters (scanner sends all chars in <50ms)
     if (e.key.length === 1) {
       buf += e.key;
