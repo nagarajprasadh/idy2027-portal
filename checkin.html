@@ -965,89 +965,105 @@ function startCountdown(elId, seconds, callback) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   USB / BLUETOOTH HANDHELD SCANNER SUPPORT
-   Scanners behave like a keyboard: rapid keystrokes → Enter
-   This listener buffers that input and fires processQR()
+   KEYBOARD + SCANNER HANDLER
+   Strategy: use TIMING to distinguish scanner from manual.
+   - Scanner burst: chars arrive < BURST_MS apart → all go to scanBuf
+   - Manual typing:  chars arrive > BURST_MS apart → go to kbPress (KB mode)
+   - First character is held for BURST_MS before deciding which path.
 ═══════════════════════════════════════════════════════ */
-(function initUsbScanner() {
-  let buf   = '';
-  let timer = null;
+(function initKeyboardHandler() {
+  const BURST_MS = 80;   // gap smaller than this = scanner burst
+  const IDLE_MS  = 350;  // silence after last scanner char = scan complete
 
-  function tryProcess() {
-    clearTimeout(timer);
-    const data = buf.trim();
-    buf = '';
-    if (data.length < 3) return; // too short to be a valid QR
+  let scanBuf      = '';
+  let idleTimer    = null;
+  let lastKeyAt    = 0;
+  let pending      = null; // first char held briefly while we decide
+  let pendingTimer = null;
 
-    // If on a result screen, dismiss it first
+  function dispatchPending() {
+    /* Timer fired with no second char — it was a manual keypress */
+    const c = pending; pending = null;
+    if (!c) return;
+    if (scanMode === 'kb' && !el('screenScan').classList.contains('hidden')) {
+      if (c >= '0' && c <= '9') kbPress(c);
+    }
+  }
+
+  function completeScan() {
+    clearTimeout(idleTimer);
+    const data = scanBuf.trim();
+    scanBuf = '';
+    if (!data || data.length < 3) return;
+
     const onResult = ['screenGreen','screenRed','screenWarn']
       .some(id => !el(id).classList.contains('hidden'));
-    if (onResult) {
-      clearTimeout(countdownTimer);
-      currentParticipant = null;
-    }
+    if (onResult) { clearTimeout(countdownTimer); currentParticipant = null; }
+    if (!onResult && el('screenScan').classList.contains('hidden')) return;
 
-    // Must be on scan screen (or result screen above)
-    const onScanOrResult = onResult || !el('screenScan').classList.contains('hidden');
-    if (!onScanOrResult) return;
-
+    // Clear any leftover manual input so it doesn't confuse next entry
+    kbBuf = ''; updateKbDisplay();
     pauseScanner();
     processQR(data);
   }
 
   document.addEventListener('keydown', e => {
-    // Ignore modifier-only keys
     if (e.ctrlKey || e.altKey || e.metaKey) return;
 
-    // ── Manual keyboard mode: route physical keys to on-screen keypad ──
-    if (scanMode === 'kb' && !el('screenScan').classList.contains('hidden')) {
-      if (e.key >= '0' && e.key <= '9') {
-        e.preventDefault();
-        kbPress(e.key);
-        return;
-      }
-      if (e.key === 'Backspace' || e.key === 'Delete') {
-        e.preventDefault();
-        kbPress('⌫');
-        return;
-      }
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        if (buf.length > 0) tryProcess(); // scanner was mid-stream
-        else kbPress('↵');               // manual entry submit
-        return;
-      }
-      // Non-digit char (e.g. '|' from a scanner): flush kbBuf → scanner buffer
-      if (e.key.length === 1) {
-        if (kbBuf.length > 0) {
-          buf = kbBuf; // carry over digits already typed
-          kbBuf = '';
-          updateKbDisplay();
-        }
-        buf += e.key;
-        clearTimeout(timer);
-        timer = setTimeout(tryProcess, 150);
-        return;
-      }
-      return;
-    }
+    const now   = Date.now();
+    const gap   = now - lastKeyAt;
+    lastKeyAt   = now;
 
-    // ── USB / Bluetooth scanner: rapid burst of chars then Enter ──
-    // Buffer printable characters (scanner sends all chars in <50ms)
+    const onScan = !el('screenScan').classList.contains('hidden');
+    const inKB   = scanMode === 'kb' && onScan;
+    const inBurst = scanBuf.length > 0 || gap < BURST_MS;
+
+    /* ── Printable character ─────────────────────────────── */
     if (e.key.length === 1) {
-      buf += e.key;
-      // Prevent char from appearing in any focused element while scanner streams
-      if (buf.length > 1) e.preventDefault();
-      clearTimeout(timer);
-      // Auto-process 150ms after last character — no Enter required
-      timer = setTimeout(tryProcess, 150);
+      e.preventDefault();
+
+      if (inBurst) {
+        /* Scanner burst in progress — rescue any pending char then accumulate */
+        if (pending !== null) {
+          clearTimeout(pendingTimer);
+          scanBuf = pending;   // first char was actually the start of this burst
+          pending = null;
+        }
+        scanBuf += e.key;
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(completeScan, IDLE_MS);
+
+      } else if (inKB) {
+        /* First char after a long gap in KB mode: hold to see if burst follows */
+        if (pending !== null) dispatchPending();
+        pending = e.key;
+        clearTimeout(pendingTimer);
+        pendingTimer = setTimeout(dispatchPending, BURST_MS + 10);
+
+      } else {
+        /* QR mode: any keyboard input must be from a scanner */
+        scanBuf += e.key;
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(completeScan, IDLE_MS);
+      }
       return;
     }
 
-    // Enter: process immediately (works for scanners that DO send Enter)
+    /* ── Enter ───────────────────────────────────────────── */
     if (e.key === 'Enter') {
       e.preventDefault();
-      tryProcess();
+      if (pending !== null) { clearTimeout(pendingTimer); dispatchPending(); }
+      if (scanBuf.length > 0) completeScan();
+      else if (inKB) kbPress('↵');
+      return;
+    }
+
+    /* ── Backspace / Delete ──────────────────────────────── */
+    if (e.key === 'Backspace' || e.key === 'Delete') {
+      e.preventDefault();
+      if (pending !== null) { clearTimeout(pendingTimer); pending = null; return; }
+      if (!inBurst && inKB) kbPress('⌫');
+      return;
     }
   });
 })();
