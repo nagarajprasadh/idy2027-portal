@@ -555,7 +555,10 @@ function renderTable() {
       : `<span class="chip chip-dash">—</span>`;
 
     const actionBtn = r.checkInDone
-      ? `<button class="act-btn done" disabled>✓ Done</button>`
+      ? `<span style="display:inline-flex;gap:6px;align-items:center;">
+           <button class="act-btn done" disabled>✓ Done</button>
+           <button class="act-btn undo-btn" onclick="doUncheck('${r.regNum}')" title="Undo check-in" style="border-color:#fca5a5;color:#b91c1c;background:#fff5f5;padding:7px 12px;">↩ Undo</button>
+         </span>`
       : `<button class="act-btn checkin-btn" onclick="doCheckIn('${r.regNum}')">Check In</button>`;
 
     return `<tr id="row-${r.regNum}">
@@ -586,6 +589,7 @@ function esc(s) {
 function doCheckIn(regNum) {
   const r = allRows.find(x => x.regNum === regNum);
   const name = r ? r.name : regNum;
+  const sz   = r ? r.tshirtSize : null;
   confirm2(
     'Confirm Check-in',
     `Check in <strong>${esc(name)}</strong> and hand over T-shirt?`,
@@ -601,10 +605,45 @@ function doCheckIn(regNum) {
           'tshirt/volunteerId': 'admin',
           status: 'checked_in'
         });
+        // Sync dashboard summary counters
+        await db.ref('dashboard/summary/checkedIn').transaction(n => (n || 0) + 1);
+        if (sz) await db.ref(`dashboard/summary/sizes/${sz}/checkedIn`).transaction(n => (n || 0) + 1);
+
         if (r) { r.checkInDone = true; r.tshirtDone = true; }
         applyFilters();
         renderStats();
         toast('✓ Checked in: ' + name, 'ok');
+      } catch(e) { toast('Error: ' + e.message, 'err'); }
+    }
+  );
+}
+
+function doUncheck(regNum) {
+  const r = allRows.find(x => x.regNum === regNum);
+  const name = r ? r.name : regNum;
+  const sz   = r ? r.tshirtSize : null;
+  confirm2(
+    'Undo Check-in',
+    `Reverse check-in for <strong>${esc(name)}</strong>?`,
+    async () => {
+      try {
+        await db.ref(`participants/${regNum}`).update({
+          'checkIn/done': false,
+          'checkIn/timestamp': null,
+          'checkIn/volunteerId': null,
+          'tshirt/done': false,
+          'tshirt/timestamp': null,
+          'tshirt/volunteerId': null,
+          status: 'registered'
+        });
+        // Sync dashboard summary counters
+        await db.ref('dashboard/summary/checkedIn').transaction(n => Math.max(0, (n || 0) - 1));
+        if (sz) await db.ref(`dashboard/summary/sizes/${sz}/checkedIn`).transaction(n => Math.max(0, (n || 0) - 1));
+
+        if (r) { r.checkInDone = false; r.tshirtDone = false; }
+        applyFilters();
+        renderStats();
+        toast('↩ Check-in reversed: ' + name, 'info');
       } catch(e) { toast('Error: ' + e.message, 'err'); }
     }
   );
