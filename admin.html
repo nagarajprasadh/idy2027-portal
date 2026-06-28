@@ -164,31 +164,39 @@
     .col-size  { font-weight: 800; font-size: 14px; color: var(--text); }
     .col-reg   { color: var(--muted); font-size: 12px; }
 
-    /* Status chips */
-    .chip {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 5px 12px; border-radius: 100px;
-      font-size: 12px; font-weight: 600; white-space: nowrap;
+    /* ── Pulsing status buttons ── */
+    @keyframes pulse-red {
+      0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,.5); }
+      60%      { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
     }
-    .chip-in    { background: var(--ok-bg); color: var(--ok-text); }
-    .chip-dash  { background: #f0ebe0; color: #b0a890; font-size: 14px; font-weight: 400; padding: 4px 14px; }
-    .chip-given { background: var(--amber-bg); color: var(--amber-text); }
-    .chip-pend  { background: #f0ebe0; color: #8a7a68; }
-
-    /* Action buttons */
-    .act-btn {
-      padding: 7px 16px; border-radius: 100px;
-      border: 1.5px solid var(--border);
-      font-size: 12px; font-weight: 600; font-family: inherit;
-      cursor: pointer; background: var(--surface); color: var(--text);
-      white-space: nowrap; transition: all .15s;
+    @keyframes pulse-green {
+      0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,.4); }
+      60%      { box-shadow: 0 0 0 8px rgba(34,197,94,0); }
     }
-    .act-btn:hover:not(:disabled) { border-color: var(--teal); color: var(--teal); background: #f0faf7; }
-    .act-btn.done { background: #f0ebe0; color: #b0a890; border-color: #e4dfd3; cursor: default; font-weight: 500; }
-    .act-btn.checkin-btn { border-color: #b0d4c8; color: var(--teal-dark); background: #f0faf7; }
-    .act-btn.checkin-btn:hover { background: #dcf5ec; }
-    .act-btn.shirt-btn { border-color: #e8c88a; color: var(--amber-text); background: #fef9ee; }
-    .act-btn.shirt-btn:hover { background: #fef3c7; }
+    .status-btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 8px 18px; border-radius: 100px; border: none;
+      font-size: 13px; font-weight: 700; font-family: inherit;
+      cursor: pointer; white-space: nowrap; transition: transform .1s, opacity .15s;
+    }
+    .status-btn:active { transform: scale(.96); }
+    .status-pending {
+      background: #fee2e2; color: #b91c1c;
+      animation: pulse-red 1.8s ease-in-out infinite;
+    }
+    .status-pending:hover { background: #fecaca; }
+    .status-done {
+      background: #dcfce7; color: #15803d;
+      animation: pulse-green 2.4s ease-in-out infinite;
+      cursor: default;
+    }
+    .undo-link {
+      font-size: 11px; color: var(--muted); background: none; border: none;
+      cursor: pointer; font-family: inherit; font-weight: 600;
+      text-decoration: underline; padding: 0 2px; margin-left: 4px;
+      transition: color .15s;
+    }
+    .undo-link:hover { color: var(--red-text); }
 
     /* ── Table footer ── */
     .tbl-footer {
@@ -318,11 +326,10 @@
             <th onclick="sortBy('tshirtSize')" data-col="tshirtSize">Size <span class="sort-arrow"></span></th>
             <th onclick="sortBy('registeredAt')" data-col="registeredAt">Registered <span class="sort-arrow"></span></th>
             <th onclick="sortBy('checkIn')"  data-col="checkIn">Status <span class="sort-arrow"></span></th>
-            <th>Action</th>
           </tr>
         </thead>
         <tbody id="tableBody">
-          <tr><td colspan="7" class="tbl-msg"><span class="spinner-ring"></span> Loading…</td></tr>
+          <tr><td colspan="6" class="tbl-msg"><span class="spinner-ring"></span> Loading…</td></tr>
         </tbody>
       </table>
       <div class="tbl-footer" id="tblFooter" style="display:none;"></div>
@@ -478,23 +485,17 @@ function renderTable() {
   const slice = viewRows.slice(0, MAX);
 
   if (slice.length === 0) {
-    body.innerHTML = '<tr><td colspan="7" class="tbl-msg">No participants match your search.</td></tr>';
+    body.innerHTML = '<tr><td colspan="6" class="tbl-msg">No participants match your search.</td></tr>';
     document.getElementById('ctrlCount').textContent = '0 results';
     document.getElementById('tblFooter').style.display = 'none';
     return;
   }
 
   body.innerHTML = slice.map(r => {
-    const statusChip = r.checkInDone
-      ? `<span class="chip chip-in">✓ Checked In</span>`
-      : `<span class="chip chip-dash">—</span>`;
-
-    const actionBtn = r.checkInDone
-      ? `<span style="display:inline-flex;gap:6px;align-items:center;">
-           <button class="act-btn done" disabled>✓ Done</button>
-           <button class="act-btn undo-btn" onclick="doUncheck('${r.regNum}')" title="Undo check-in" style="border-color:#fca5a5;color:#b91c1c;background:#fff5f5;padding:7px 12px;">↩ Undo</button>
-         </span>`
-      : `<button class="act-btn checkin-btn" onclick="doCheckIn('${r.regNum}')">Check In</button>`;
+    const statusCell = r.checkInDone
+      ? `<button class="status-btn status-done">✓ Checked In</button>
+         <button class="undo-link" onclick="doUncheck('${r.regNum}')">undo</button>`
+      : `<button class="status-btn status-pending" onclick="doCheckIn('${r.regNum}')">● Check In</button>`;
 
     return `<tr id="row-${r.regNum}">
       <td class="col-id">${r.regNum}</td>
@@ -502,8 +503,7 @@ function renderTable() {
       <td class="col-email">${esc(r.email)}</td>
       <td class="col-size">${r.tshirtSize}</td>
       <td class="col-reg">${fmtDate(r.registeredAt)}</td>
-      <td>${statusChip}</td>
-      <td>${actionBtn}</td>
+      <td>${statusCell}</td>
     </tr>`;
   }).join('');
 
@@ -521,41 +521,39 @@ function esc(s) {
 /* ═══════════════════════════════
    ACTIONS
 ═══════════════════════════════ */
-async function doCheckIn(regNum) {
+function doCheckIn(regNum) {
   const r = allRows.find(x => x.regNum === regNum);
-  const name = r ? r.name : regNum;
-  const sz   = r ? r.tshirtSize : null;
-  try {
-    const ts = firebase.database.ServerValue.TIMESTAMP;
-    await db.ref(`participants/${regNum}`).update({
-      'checkIn/done': true, 'checkIn/timestamp': ts, 'checkIn/volunteerId': 'admin',
-      'tshirt/done': true,  'tshirt/timestamp': ts,  'tshirt/volunteerId': 'admin',
-      status: 'checked_in'
-    });
-    await db.ref('dashboard/summary/checkedIn').transaction(n => (n || 0) + 1);
-    if (sz) await db.ref(`dashboard/summary/sizes/${sz}/checkedIn`).transaction(n => (n || 0) + 1);
-    if (r) { r.checkInDone = true; r.tshirtDone = true; }
-    applyFilters(); renderStats();
-    toast('✓ ' + name, 'ok');
-  } catch(e) { toast('Error: ' + e.message, 'err'); }
+  if (!r || r.checkInDone) return;
+  // Instant optimistic update
+  r.checkInDone = true; r.tshirtDone = true;
+  applyFilters(); renderStats();
+  toast('✓ ' + r.name, 'ok');
+  // Background Firebase writes (no await = non-blocking)
+  const ts = firebase.database.ServerValue.TIMESTAMP;
+  db.ref(`participants/${regNum}`).update({
+    'checkIn/done': true, 'checkIn/timestamp': ts, 'checkIn/volunteerId': 'admin',
+    'tshirt/done': true,  'tshirt/timestamp': ts,  'tshirt/volunteerId': 'admin',
+    status: 'checked_in'
+  }).catch(e => { r.checkInDone = false; r.tshirtDone = false; applyFilters(); renderStats(); toast('Write failed: ' + e.message, 'err'); });
+  db.ref('dashboard/summary/checkedIn').transaction(n => (n || 0) + 1);
+  if (r.tshirtSize) db.ref(`dashboard/summary/sizes/${r.tshirtSize}/checkedIn`).transaction(n => (n || 0) + 1);
 }
 
-async function doUncheck(regNum) {
+function doUncheck(regNum) {
   const r = allRows.find(x => x.regNum === regNum);
-  const name = r ? r.name : regNum;
-  const sz   = r ? r.tshirtSize : null;
-  try {
-    await db.ref(`participants/${regNum}`).update({
-      'checkIn/done': false, 'checkIn/timestamp': null, 'checkIn/volunteerId': null,
-      'tshirt/done': false,  'tshirt/timestamp': null,  'tshirt/volunteerId': null,
-      status: 'registered'
-    });
-    await db.ref('dashboard/summary/checkedIn').transaction(n => Math.max(0, (n || 0) - 1));
-    if (sz) await db.ref(`dashboard/summary/sizes/${sz}/checkedIn`).transaction(n => Math.max(0, (n || 0) - 1));
-    if (r) { r.checkInDone = false; r.tshirtDone = false; }
-    applyFilters(); renderStats();
-    toast('↩ Undone: ' + name, 'info');
-  } catch(e) { toast('Error: ' + e.message, 'err'); }
+  if (!r || !r.checkInDone) return;
+  // Instant optimistic update
+  r.checkInDone = false; r.tshirtDone = false;
+  applyFilters(); renderStats();
+  toast('↩ Undone: ' + r.name, 'info');
+  // Background Firebase writes
+  db.ref(`participants/${regNum}`).update({
+    'checkIn/done': false, 'checkIn/timestamp': null, 'checkIn/volunteerId': null,
+    'tshirt/done': false,  'tshirt/timestamp': null,  'tshirt/volunteerId': null,
+    status: 'registered'
+  }).catch(e => { r.checkInDone = true; r.tshirtDone = true; applyFilters(); renderStats(); toast('Write failed: ' + e.message, 'err'); });
+  db.ref('dashboard/summary/checkedIn').transaction(n => Math.max(0, (n || 0) - 1));
+  if (r.tshirtSize) db.ref(`dashboard/summary/sizes/${r.tshirtSize}/checkedIn`).transaction(n => Math.max(0, (n || 0) - 1));
 }
 
 /* ═══════════════════════════════
