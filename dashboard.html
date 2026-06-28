@@ -361,23 +361,14 @@ db.ref('dashboard/summary').on('value', snap => {
 });
 
 function updateSummary(s) {
-  const total   = s.totalParticipants  || 0;
-  const emails  = s.totalRegistrations || 0;
-  const ci      = s.checkedIn          || 0;
-  const pending = total - ci;
-
-  el('statTotal').textContent   = fmt(total);
-  el('statEmails').textContent  = fmt(emails) + ' email registrations';
-  el('statCI').textContent      = fmt(ci);
-  el('statCIPct').textContent   = pct(ci, total) + '% of registered';
-  el('statPending').textContent = fmt(pending);
-
-  // Progress bar
-  const p = pct(ci, total);
-  el('ciBar').style.width        = p + '%';
-  el('ciBarLabel').textContent   = p + '%';
-  el('ciCheckedSub').textContent = fmt(ci);
-  el('ciPendingSub').textContent = fmt(pending);
+  const total  = s.totalParticipants  || 0;
+  const emails = s.totalRegistrations || 0;
+  // Total + email count come from summary (accurate — set on registration)
+  el('statTotal').textContent  = fmt(total);
+  el('statEmails').textContent = fmt(emails) + ' email registrations';
+  // Check-in counts are computed live from participants node (recomputeCI)
+  // so we don't overwrite them here
+  recomputeCI();
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -480,29 +471,45 @@ function renderCIFeed() {
   });
 }
 
-// Initial load — REST fetch all participants, filter for checked-in
+// Participant map — used for both check-in feed and live counter
+const ptMap = {};
+
+function recomputeCI() {
+  const all = Object.values(ptMap);
+  const total = all.length || (parseInt(el('statTotal').textContent) || 0);
+  const ci = all.filter(p => p.checkIn && p.checkIn.done).length;
+  const pending = total - ci;
+  const p = total > 0 ? Math.round(ci / total * 100) : 0;
+  el('statCI').textContent      = ci;
+  el('statCIPct').textContent   = p + '% of registered';
+  el('statPending').textContent = pending;
+  el('ciBar').style.width       = p + '%';
+  el('ciBarLabel').textContent  = p + '%';
+  el('ciCheckedSub').textContent = ci;
+  el('ciPendingSub').textContent = pending;
+}
+
+function ptChanged(p) {
+  if (!p) return;
+  ptMap[p.regNum] = p;
+  if (p.checkIn && p.checkIn.done) ciMap[p.regNum] = p;
+  else delete ciMap[p.regNum];
+  recomputeCI();
+  renderCIFeed();
+}
+
+// Load all participants once for accurate counts + feed
 fetch(`${DB_REST}/participants.json`)
   .then(r => r.json())
   .then(data => {
     if (data && typeof data === 'object') {
-      Object.values(data).forEach(p => {
-        if (p && p.status === 'checked_in') ciMap[p.regNum] = p;
-      });
+      Object.values(data).forEach(p => { if (p) ptChanged(p); });
     }
-    renderCIFeed();
   }).catch(() => {});
 
-// Live updates — fires whenever any participant record changes
-db.ref('participants').on('child_changed', snap => {
-  const p = snap.val();
-  if (!p) return;
-  if (p.status === 'checked_in') {
-    ciMap[p.regNum] = p;
-  } else {
-    delete ciMap[p.regNum];
-  }
-  renderCIFeed();
-});
+// Live updates — fires for any participant add or change (covers admin & QR check-ins)
+db.ref('participants').on('child_added',   snap => { ptChanged(snap.val()); });
+db.ref('participants').on('child_changed', snap => { ptChanged(snap.val()); });
 
 function timeAgo(ts) {
   const diff = Math.floor((Date.now() - ts) / 1000);
