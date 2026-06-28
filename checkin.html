@@ -792,9 +792,18 @@ async function manualLookup() {
 }
 
 async function processQR(qrText, isManual = false) {
-  const parts  = qrText.split('|');
-  const regNum = parseInt(parts[0]);
-  const token  = parts[1] || '';
+  // Some scanners strip the '|' separator — handle both "1007|A3F9" and "1007A3F9"
+  let rawReg, token;
+  if (qrText.includes('|')) {
+    const parts = qrText.split('|');
+    rawReg = parts[0];
+    token  = parts[1] || '';
+  } else {
+    const m = qrText.match(/^(\d{4,5})(.*)/);
+    rawReg = m ? m[1] : qrText;
+    token  = m ? m[2] : '';
+  }
+  const regNum = parseInt(rawReg);
 
   if (!regNum || regNum < 1000) {
     showWarn('Invalid QR Code', 'This QR code format is not recognised.');
