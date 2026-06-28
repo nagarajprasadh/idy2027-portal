@@ -770,11 +770,7 @@ function kbPress(key) {
     if (kbBuf.length >= 6) return; // cap at 6 digits
     kbBuf += key;
     updateKbDisplay();
-    // Auto-submit 1.5s after last key press — no ↵ needed
-    clearTimeout(kbAutoTimer);
-    if (kbBuf.length >= 3) {
-      kbAutoTimer = setTimeout(kbSubmit, 1500);
-    }
+    // No auto-submit — user must press ↵ / Enter explicitly
   }
 }
 
