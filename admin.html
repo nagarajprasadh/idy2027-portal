@@ -4,214 +4,279 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IDY 2027 — Admin</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --navy:    #002D6E;
-      --saffron: #FF9933;
-      --green:   #138808;
-      --white:   #FFFFFF;
-      --bg:      #F0F2F8;
-      --border:  #DDE2EE;
-      --text:    #1A1A2E;
-      --muted:   #6B7280;
-      --ok:      #16A34A;
-      --warn:    #D97706;
-      --danger:  #DC2626;
+      --bg:        #f5f2ec;
+      --surface:   #ffffff;
+      --border:    #e4dfd3;
+      --text:      #1e1e1e;
+      --muted:     #8a8070;
+      --teal:      #2a9272;
+      --teal-dark: #1d7056;
+      --saffron:   #e8851c;
+      --green:     #138808;
+      --ok-bg:     #dcfce7;
+      --ok-text:   #15803d;
+      --amber-bg:  #fef3c7;
+      --amber-text:#92400e;
+      --red-bg:    #fee2e2;
+      --red-text:  #b91c1c;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Noto Sans', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-    .tricolor { display: flex; height: 5px; }
+    /* ── Tricolor ── */
+    .tricolor { display: flex; height: 4px; }
     .tricolor div { flex: 1; }
     .tc-s { background: var(--saffron); }
-    .tc-w { background: #fff; border-top: 1px solid #E8E0D0; border-bottom: 1px solid #E8E0D0; }
+    .tc-w { background: #fff; border-top: 1px solid #e8e0d0; border-bottom: 1px solid #e8e0d0; }
     .tc-g { background: var(--green); }
 
-    header {
-      background: var(--navy); padding: 14px 24px;
-      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
-    }
-    header h1 { color: #fff; font-size: 16px; font-weight: 700; }
-    header p  { color: rgba(255,255,255,.5); font-size: 12px; margin-top: 2px; }
-    .admin-badge {
-      background: var(--saffron); color: var(--navy);
-      border-radius: 20px; padding: 4px 12px; font-size: 11px; font-weight: 800;
-      letter-spacing: .5px;
-    }
-
-    /* PIN GATE */
+    /* ── PIN Gate ── */
     #pinGate {
-      position: fixed; inset: 0; background: var(--bg);
-      display: none; align-items: center; justify-content: center; z-index: 100;
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center; z-index: 100;
     }
     .pin-box {
-      background: var(--white); border-radius: 20px; padding: 36px 32px;
-      width: 320px; text-align: center; box-shadow: 0 8px 40px rgba(0,0,0,.12);
+      background: var(--surface); border-radius: 24px; padding: 40px 36px;
+      width: 340px; text-align: center;
+      box-shadow: 0 8px 40px rgba(0,0,0,.10);
+      border: 1px solid var(--border);
     }
-    .pin-box h2 { color: var(--navy); font-size: 18px; margin-bottom: 4px; }
-    .pin-box p  { color: var(--muted); font-size: 13px; margin-bottom: 22px; }
+    .pin-logo { font-size: 36px; margin-bottom: 10px; }
+    .pin-box h2 { color: var(--teal); font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    .pin-box p  { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
     #pinDisplay {
-      font-size: 28px; letter-spacing: 12px; color: var(--navy); font-weight: 800;
-      height: 44px; margin-bottom: 20px;
+      font-size: 30px; letter-spacing: 14px; color: var(--text); font-weight: 800;
+      height: 48px; margin-bottom: 20px; font-family: monospace;
     }
     .keypad { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 14px; }
     .key {
-      background: var(--bg); border: none; border-radius: 12px; padding: 16px;
-      font-size: 18px; font-weight: 700; color: var(--navy); cursor: pointer;
+      background: var(--bg); border: 1.5px solid var(--border); border-radius: 14px; padding: 16px;
+      font-size: 20px; font-weight: 700; color: var(--text); cursor: pointer;
+      transition: background .12s, transform .1s; font-family: inherit;
+    }
+    .key:active { background: var(--border); transform: scale(.95); }
+    .key.del { color: var(--red-text); }
+    .key.go  { background: var(--teal); color: #fff; border-color: var(--teal); }
+    .key.go:active { background: var(--teal-dark); }
+    #pinError { color: var(--red-text); font-size: 13px; min-height: 20px; margin-top: 4px; }
+
+    /* ── Header ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 28px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    }
+    .hdr-left { display: flex; align-items: center; gap: 14px; }
+    .hdr-logo { font-size: 22px; }
+    .hdr-title { font-size: 15px; font-weight: 700; color: var(--text); }
+    .hdr-sub   { font-size: 12px; color: var(--muted); margin-top: 1px; }
+    .hdr-right { display: flex; align-items: center; gap: 10px; }
+    .badge { background: var(--teal); color: #fff; border-radius: 100px; padding: 4px 14px; font-size: 11px; font-weight: 800; letter-spacing: .5px; }
+    .hdr-btn {
+      padding: 7px 14px; border-radius: 100px; border: 1.5px solid var(--border);
+      font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
+      background: var(--surface); color: var(--muted); transition: border-color .15s, color .15s;
+    }
+    .hdr-btn:hover { border-color: var(--teal); color: var(--teal); }
+    .hdr-btn.csv   { border-color: #c4b5fd; color: #7c3aed; background: #f5f3ff; }
+    .hdr-btn.csv:hover { background: #ede9fe; }
+
+    /* ── Main ── */
+    .main { max-width: 1100px; margin: 0 auto; padding: 24px 20px 80px; }
+
+    /* ── Controls bar ── */
+    .controls {
+      display: flex; gap: 10px; margin-bottom: 20px; align-items: center; flex-wrap: wrap;
+    }
+    .search-box {
+      flex: 1; min-width: 240px;
+      padding: 12px 18px;
+      border: 1.5px solid var(--border); border-radius: 100px;
+      font-size: 14px; font-family: inherit; color: var(--text);
+      background: var(--surface); outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .search-box::placeholder { color: #b0a898; }
+    .search-box:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(42,146,114,.1); }
+    .filter-sel {
+      padding: 11px 16px; border-radius: 100px;
+      border: 1.5px solid var(--border);
+      font-size: 13px; font-family: inherit; color: var(--text);
+      background: var(--surface); cursor: pointer; outline: none;
+      appearance: none; -webkit-appearance: none;
+      padding-right: 32px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238a8070' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      transition: border-color .2s;
+    }
+    .filter-sel:focus { border-color: var(--teal); }
+    .ctrl-count { font-size: 12px; color: var(--muted); white-space: nowrap; padding: 0 4px; }
+    .reload-btn {
+      padding: 11px 16px; border-radius: 100px;
+      border: 1.5px solid var(--border);
+      font-size: 13px; font-family: inherit; color: var(--muted);
+      background: var(--surface); cursor: pointer;
+      transition: all .15s;
+    }
+    .reload-btn:hover { border-color: var(--teal); color: var(--teal); }
+
+    /* ── Table wrapper ── */
+    .tbl-wrap {
+      background: var(--surface);
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,.04);
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      padding: 14px 16px 12px;
+      text-align: left;
+      font-size: 11px; font-weight: 700; letter-spacing: .7px;
+      color: var(--muted); text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      user-select: none; cursor: pointer; white-space: nowrap;
+      transition: color .15s;
+    }
+    thead th:hover { color: var(--teal); }
+    thead th .sort-arrow { margin-left: 4px; opacity: .3; font-size: 9px; }
+    thead th.asc  .sort-arrow::after { content: '▲'; opacity: 1; }
+    thead th.desc .sort-arrow::after { content: '▼'; opacity: 1; }
+    thead th:not(.asc):not(.desc) .sort-arrow::after { content: '⇅'; }
+    tbody tr {
+      border-bottom: 1px solid #f0ebe0;
       transition: background .12s;
     }
-    .key:active { background: var(--border); }
-    .key.del { color: var(--danger); }
-    .key.enter { background: var(--navy); color: var(--white); }
-    .key.enter:active { background: #001a45; }
-    #pinError { color: var(--danger); font-size: 13px; min-height: 20px; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #faf8f3; }
+    tbody td { padding: 14px 16px; font-size: 13.5px; vertical-align: middle; }
 
-    /* MAIN */
-    #mainApp { display: block; }
-    .container { max-width: 900px; margin: 0 auto; padding: 20px 16px 60px; }
+    /* Column-specific */
+    .col-id    { font-family: 'Courier New', monospace; font-weight: 800; font-size: 13px; color: var(--teal-dark); letter-spacing: .5px; }
+    .col-name  { font-weight: 500; color: var(--text); }
+    .col-email { color: var(--muted); font-size: 12px; }
+    .col-size  { font-weight: 800; font-size: 14px; color: var(--text); }
+    .col-reg   { color: var(--muted); font-size: 12px; }
 
-    /* SEARCH */
-    .search-wrap {
-      position: relative; margin-bottom: 16px;
+    /* Status chips */
+    .chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 12px; border-radius: 100px;
+      font-size: 12px; font-weight: 600; white-space: nowrap;
     }
-    #searchInput {
-      width: 100%; padding: 14px 48px 14px 18px;
-      border: 2px solid var(--border); border-radius: 12px;
-      font-size: 15px; outline: none; background: var(--white);
-      transition: border-color .2s;
-    }
-    #searchInput:focus { border-color: var(--navy); }
-    .search-icon {
-      position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
-      color: var(--muted); font-size: 18px; pointer-events: none;
-    }
-    .search-hint { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+    .chip-in    { background: var(--ok-bg); color: var(--ok-text); }
+    .chip-dash  { background: #f0ebe0; color: #b0a890; font-size: 14px; font-weight: 400; padding: 4px 14px; }
+    .chip-given { background: var(--amber-bg); color: var(--amber-text); }
+    .chip-pend  { background: #f0ebe0; color: #8a7a68; }
 
-    /* TOOLBAR */
-    .toolbar { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
-    .btn {
-      padding: 9px 16px; border-radius: 10px; border: none;
-      font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity .15s;
+    /* Action buttons */
+    .act-btn {
+      padding: 7px 16px; border-radius: 100px;
+      border: 1.5px solid var(--border);
+      font-size: 12px; font-weight: 600; font-family: inherit;
+      cursor: pointer; background: var(--surface); color: var(--text);
+      white-space: nowrap; transition: all .15s;
     }
-    .btn:active { opacity: .75; }
-    .btn-navy   { background: var(--navy); color: #fff; }
-    .btn-ok     { background: #DCFCE7; color: var(--ok); }
-    .btn-warn   { background: #FEF3C7; color: var(--warn); }
-    .btn-danger { background: #FEE2E2; color: var(--danger); }
-    .btn-muted  { background: #F3F4F6; color: var(--muted); }
-    .btn-csv    { background: #EDE9FE; color: #7C3AED; }
-    .btn-dupe   { background: #FFF1F2; color: #BE123C; }
+    .act-btn:hover:not(:disabled) { border-color: var(--teal); color: var(--teal); background: #f0faf7; }
+    .act-btn.done { background: #f0ebe0; color: #b0a890; border-color: #e4dfd3; cursor: default; font-weight: 500; }
+    .act-btn.checkin-btn { border-color: #b0d4c8; color: var(--teal-dark); background: #f0faf7; }
+    .act-btn.checkin-btn:hover { background: #dcf5ec; }
+    .act-btn.shirt-btn { border-color: #e8c88a; color: var(--amber-text); background: #fef9ee; }
+    .act-btn.shirt-btn:hover { background: #fef3c7; }
 
-    /* Duplicate view */
-    .dupe-group { background: #FFF1F2; border: 1.5px solid #FECDD3; border-radius: 14px; padding: 16px; margin-bottom: 18px; }
-    .dupe-group-label { font-size: 11px; font-weight: 800; color: #BE123C; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 12px; }
-    .dupe-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    @media (max-width: 600px) { .dupe-cards { grid-template-columns: 1fr; } }
-    .dupe-card { background: #fff; border-radius: 10px; padding: 14px; border: 1.5px solid var(--border); font-size: 13px; }
-    .dupe-card .d-name { font-size: 15px; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
-    .dupe-card .d-row  { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #F3F4F6; color: var(--muted); }
-    .dupe-card .d-row:last-child { border-bottom: none; }
-    .dupe-card .d-val  { color: var(--text); font-weight: 600; text-align: right; max-width: 60%; word-break: break-all; }
-    .flagged-badge { display: inline-block; background: #FEF3C7; color: #92400E; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; margin-left: 6px; vertical-align: middle; }
-
-    /* RESULTS */
-    #resultsList { display: flex; flex-direction: column; gap: 10px; }
-
-    .p-card {
-      background: var(--white); border-radius: 14px; padding: 16px 18px;
-      box-shadow: 0 1px 4px rgba(0,45,110,.07);
-      border-left: 5px solid var(--border);
-      transition: border-color .2s;
+    /* ── Table footer ── */
+    .tbl-footer {
+      padding: 14px 20px;
+      font-size: 12px; color: var(--muted);
+      border-top: 1px solid var(--border);
+      background: #faf8f3;
+      border-radius: 0 0 20px 20px;
     }
-    .p-card.status-registered  { border-left-color: var(--saffron); }
-    .p-card.status-checked_in  { border-left-color: var(--ok); }
-    .p-card.status-cancelled   { border-left-color: var(--danger); opacity: .65; }
-    .p-card.status-no_show     { border-left-color: #94A3B8; opacity: .7; }
-    .p-card.status-deleted     { border-left-color: #CBD5E1; opacity: .5; }
 
-    .p-card-top {
-      display: flex; align-items: flex-start; gap: 14px; flex-wrap: wrap;
-    }
-    .p-reg {
-      background: var(--navy); color: #fff;
-      border-radius: 8px; padding: 4px 10px;
-      font-size: 13px; font-weight: 800; white-space: nowrap;
-    }
-    .p-name { font-size: 15px; font-weight: 700; flex: 1; }
-    .p-size {
-      background: #FFF3E0; color: #B45309;
-      border-radius: 20px; padding: 3px 10px;
-      font-size: 12px; font-weight: 700;
-    }
-    .status-badge {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-size: 11px; font-weight: 700;
-    }
-    .status-dot {
-      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
-    }
-    .sb-registered .status-dot { background: #EF4444; }
-    .sb-checked_in .status-dot { background: #22C55E; box-shadow: 0 0 0 3px #DCFCE7; }
-    .sb-cancelled  .status-dot { background: #94A3B8; }
-    .sb-no_show    .status-dot { background: #CBD5E1; }
-    .sb-deleted    .status-dot { background: #E2E8F0; }
-
-    .p-meta { font-size: 12px; color: var(--muted); margin-top: 6px; }
-    .p-ci-info { font-size: 12px; color: var(--ok); margin-top: 4px; font-weight: 600; }
-
-    .p-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-    .p-actions .btn { padding: 8px 14px; font-size: 12px; }
-
-    /* LOADING / EMPTY */
-    .list-msg { text-align: center; color: var(--muted); padding: 40px; font-size: 14px; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .spinner {
-      display: inline-block; width: 18px; height: 18px;
-      border: 2px solid var(--border); border-top-color: var(--navy);
+    /* ── Empty / loading ── */
+    .tbl-msg { padding: 52px 20px; text-align: center; color: var(--muted); font-size: 14px; }
+    .spinner-ring {
+      display: inline-block; width: 22px; height: 22px;
+      border: 2px solid var(--border); border-top-color: var(--teal);
       border-radius: 50%; animation: spin .7s linear infinite;
       vertical-align: middle; margin-right: 8px;
     }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* TOAST */
+    /* ── Stats row ── */
+    .stats-row {
+      display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .stat-chip {
+      padding: 8px 16px; border-radius: 100px;
+      font-size: 12px; font-weight: 600;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .stat-chip .s-num { font-size: 15px; font-weight: 800; color: var(--teal); }
+    .stat-chip .s-lbl { color: var(--muted); }
+
+    /* ── Toast ── */
     #toast {
       position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-      background: #1A1A2E; color: #fff; border-radius: 10px;
-      padding: 12px 22px; font-size: 13px; font-weight: 600;
-      opacity: 0; transition: opacity .25s; z-index: 999; pointer-events: none;
-      max-width: 340px; text-align: center;
+      padding: 12px 24px; border-radius: 100px;
+      font-size: 13px; font-weight: 600;
+      opacity: 0; transition: opacity .25s; z-index: 999;
+      pointer-events: none; max-width: 360px; text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,.15);
     }
     #toast.show { opacity: 1; }
-    #toast.ok   { background: var(--ok); }
-    #toast.err  { background: var(--danger); }
-    #toast.warn { background: var(--warn); }
+    #toast.ok   { background: #dcfce7; color: var(--ok-text); }
+    #toast.err  { background: #fee2e2; color: var(--red-text); }
+    #toast.info { background: #f5f2ec; color: var(--text); border: 1px solid var(--border); }
 
-    /* CONFIRM MODAL */
+    /* ── Confirm modal ── */
     #confirmModal {
       display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,.55); z-index: 200;
+      background: rgba(0,0,0,.4); z-index: 200;
       align-items: center; justify-content: center;
     }
     .confirm-box {
-      background: #fff; border-radius: 16px; padding: 28px 26px;
-      width: 300px; text-align: center;
+      background: var(--surface); border-radius: 20px; padding: 30px 28px;
+      width: 320px; text-align: center; box-shadow: 0 8px 40px rgba(0,0,0,.12);
     }
-    .confirm-box h3 { font-size: 16px; color: var(--navy); margin-bottom: 8px; }
-    .confirm-box p  { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+    .confirm-box h3 { font-size: 17px; color: var(--text); margin-bottom: 8px; }
+    .confirm-box p  { font-size: 13px; color: var(--muted); margin-bottom: 22px; line-height: 1.6; }
     .confirm-btns   { display: flex; gap: 10px; }
-    .confirm-btns .btn { flex: 1; padding: 11px; font-size: 14px; }
+    .confirm-btns button {
+      flex: 1; padding: 12px; border-radius: 100px; font-size: 14px; font-weight: 600;
+      font-family: inherit; cursor: pointer; border: none; transition: opacity .15s;
+    }
+    .confirm-btns button:first-child { background: var(--bg); color: var(--muted); }
+    .confirm-btns button:last-child  { background: var(--teal); color: #fff; }
+    .confirm-btns button:hover { opacity: .88; }
+
+    @media (max-width: 700px) {
+      .main { padding: 14px 10px 60px; }
+      table { font-size: 12px; }
+      tbody td { padding: 12px 10px; }
+      thead th  { padding: 12px 10px; }
+      .col-email, .col-reg { display: none; }
+    }
   </style>
 </head>
 <body>
 
 <div class="tricolor"><div class="tc-s"></div><div class="tc-w"></div><div class="tc-g"></div></div>
 
-<!-- PIN GATE -->
+<!-- ── PIN Gate ── -->
 <div id="pinGate">
   <div class="pin-box">
-    <div style="font-size:32px;margin-bottom:8px;">🛡️</div>
+    <div class="pin-logo">🛡️</div>
     <h2>Admin Portal</h2>
-    <p>13th International Day of Yoga 2027</p>
+    <p>13th International Day of Yoga 2027<br>Embassy of India, Bangkok</p>
     <div id="pinDisplay">——</div>
     <div class="keypad">
       <button class="key" onclick="keyPress('1')">1</button>
@@ -225,60 +290,88 @@
       <button class="key" onclick="keyPress('9')">9</button>
       <button class="key del" onclick="keyPress('del')">⌫</button>
       <button class="key" onclick="keyPress('0')">0</button>
-      <button class="key enter" onclick="keyPress('enter')">✓</button>
+      <button class="key go" onclick="keyPress('enter')">✓</button>
     </div>
     <div id="pinError"></div>
   </div>
 </div>
 
-<!-- MAIN APP -->
-<div id="mainApp">
+<!-- ── Main App ── -->
+<div id="mainApp" style="display:none;">
+
   <header>
-    <div>
-      <h1>IDY 2027 — Admin Portal</h1>
-      <p>Embassy of India, Bangkok</p>
+    <div class="hdr-left">
+      <div class="hdr-logo">🧘</div>
+      <div>
+        <div class="hdr-title">IDY 2027 — Admin Portal</div>
+        <div class="hdr-sub">Embassy of India, Bangkok</div>
+      </div>
     </div>
-    <div class="admin-badge">ADMIN</div>
+    <div class="hdr-right">
+      <span class="badge">ADMIN</span>
+      <button class="hdr-btn csv" onclick="exportCSV()">⬇ Export CSV</button>
+      <button class="hdr-btn" onclick="loadAll()">🔄 Refresh</button>
+    </div>
   </header>
 
-  <div class="container">
+  <div class="main">
 
-    <div class="search-wrap" style="margin-top:18px;">
-      <input id="searchInput" type="text" placeholder="Search by name, email, or #reg number…"
-        oninput="onSearch(this.value)" />
-      <span class="search-icon">🔍</span>
+    <!-- Stats -->
+    <div class="stats-row" id="statsRow" style="display:none;"></div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <input class="search-box" id="searchInput" type="text"
+        placeholder="Search by name, email or ID…"
+        oninput="applyFilters()">
+      <select class="filter-sel" id="filterSel" onchange="applyFilters()">
+        <option value="all">All participants</option>
+        <option value="not_in">Not checked in</option>
+        <option value="checked_in">Checked in</option>
+        <option value="shirt_pending">T-shirt pending</option>
+        <option value="fully_done">Fully done</option>
+      </select>
+      <span class="ctrl-count" id="ctrlCount"></span>
     </div>
-    <div class="search-hint">Type 2+ characters to search · Use #1001 to jump directly to a reg number</div>
 
-    <div class="toolbar">
-      <button class="btn btn-navy" onclick="loadRecent()">📋 Recent 20</button>
-      <button class="btn btn-csv"  onclick="exportCSV()">⬇ Export CSV</button>
-      <button class="btn btn-warn" onclick="recalcCounters()">🔄 Recalc Counters</button>
-      <button class="btn btn-dupe" onclick="findDuplicates()">🔎 Find Duplicates</button>
-      <button class="btn btn-danger" onclick="purgeTestRecords()">🧹 Purge Test Data</button>
-      <div style="margin-left:auto;font-size:12px;color:var(--muted);align-self:center;" id="resultCount"></div>
-    </div>
-
-    <div id="resultsList">
-      <div class="list-msg">Search for a participant or click "Recent 20"</div>
+    <!-- Table -->
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortBy('regNum')"   data-col="regNum">ID <span class="sort-arrow"></span></th>
+            <th onclick="sortBy('name')"     data-col="name">Name <span class="sort-arrow"></span></th>
+            <th onclick="sortBy('email')"    data-col="email">Email <span class="sort-arrow"></span></th>
+            <th onclick="sortBy('tshirtSize')" data-col="tshirtSize">Size <span class="sort-arrow"></span></th>
+            <th onclick="sortBy('registeredAt')" data-col="registeredAt">Registered <span class="sort-arrow"></span></th>
+            <th onclick="sortBy('checkIn')"  data-col="checkIn">Check-in <span class="sort-arrow"></span></th>
+            <th onclick="sortBy('tshirt')"   data-col="tshirt">T-Shirt <span class="sort-arrow"></span></th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="8" class="tbl-msg"><span class="spinner-ring"></span> Loading…</td></tr>
+        </tbody>
+      </table>
+      <div class="tbl-footer" id="tblFooter" style="display:none;"></div>
     </div>
 
   </div>
 </div>
 
-<!-- CONFIRM MODAL -->
-<div id="confirmModal" style="display:none;">
+<!-- Confirm modal -->
+<div id="confirmModal">
   <div class="confirm-box">
-    <h3 id="confirmTitle">Are you sure?</h3>
+    <h3 id="confirmTitle"></h3>
     <p id="confirmBody"></p>
     <div class="confirm-btns">
-      <button class="btn btn-muted" onclick="closeConfirm()">Cancel</button>
-      <button class="btn" id="confirmOkBtn" onclick="runConfirm()">Confirm</button>
+      <button onclick="closeConfirm()">Cancel</button>
+      <button id="confirmOkBtn" onclick="runConfirm()">Confirm</button>
     </div>
   </div>
 </div>
 
-<!-- TOAST -->
+<!-- Toast -->
 <div id="toast"></div>
 
 <!-- Firebase -->
@@ -286,9 +379,9 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
 <script>
-/* ═══════════════════════════════════════
+/* ═══════════════════════════════
    CONFIG
-═══════════════════════════════════════ */
+═══════════════════════════════ */
 const ADMIN_PIN = '2027';
 
 const firebaseConfig = {
@@ -297,746 +390,315 @@ const firebaseConfig = {
   databaseURL:       "https://idy2027-dba28-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId:         "idy2027-dba28",
   storageBucket:     "idy2027-dba28.firebasestorage.app",
-  messagingSenderId: "29018221908",
-  appId:             "1:29018221908:web:9d2871f91ed3f441e82cc1"
+  messagingSenderId: "1028981681741",
+  appId:             "1:1028981681741:web:c97fbbf0b92e86d7d01bea"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-/* ═══════════════════════════════════════
+/* ═══════════════════════════════
+   STATE
+═══════════════════════════════ */
+let allRows  = [];   // full dataset loaded from Firebase
+let viewRows = [];   // after filter+search
+let sortCol  = 'registeredAt';
+let sortDir  = 'desc';
+let confirmFn = null;
+
+/* ═══════════════════════════════
    PIN GATE
-═══════════════════════════════════════ */
-let pinVal = '';
+═══════════════════════════════ */
+let pinBuf = '';
+const pinDisplay = () => document.getElementById('pinDisplay');
+const pinError   = () => document.getElementById('pinError');
 
 function keyPress(k) {
-  if (k === 'del')   { pinVal = pinVal.slice(0,-1); }
+  if (k === 'del')   { pinBuf = pinBuf.slice(0,-1); }
   else if (k === 'enter') { checkPin(); return; }
-  else if (pinVal.length < 6) { pinVal += k; }
-  updatePinDisplay();
-}
-
-function updatePinDisplay() {
-  const d = document.getElementById('pinDisplay');
-  d.textContent = '●'.repeat(pinVal.length) + '—'.repeat(Math.max(0,4-pinVal.length));
+  else if (pinBuf.length < 6) { pinBuf += k; }
+  pinDisplay().textContent = '●'.repeat(pinBuf.length) || '——';
+  pinError().textContent = '';
 }
 
 function checkPin() {
-  if (pinVal === ADMIN_PIN) {
+  if (pinBuf === ADMIN_PIN) {
     document.getElementById('pinGate').style.display = 'none';
     document.getElementById('mainApp').style.display = 'block';
-    loadRecent();
+    loadAll();
   } else {
-    document.getElementById('pinError').textContent = 'Incorrect PIN';
-    pinVal = '';
-    updatePinDisplay();
-    setTimeout(() => document.getElementById('pinError').textContent = '', 2000);
+    pinError().textContent = 'Incorrect PIN — try again';
+    pinBuf = '';
+    pinDisplay().textContent = '——';
   }
 }
 
-document.addEventListener('keydown', e => {
-  if (document.getElementById('pinGate').style.display === 'none') return;
-  if (e.key >= '0' && e.key <= '9') keyPress(e.key);
-  if (e.key === 'Backspace') keyPress('del');
-  if (e.key === 'Enter') keyPress('enter');
-});
+/* ═══════════════════════════════
+   LOAD DATA
+═══════════════════════════════ */
+async function loadAll() {
+  const body = document.getElementById('tableBody');
+  body.innerHTML = '<tr><td colspan="8" class="tbl-msg"><span class="spinner-ring"></span> Loading all participants…</td></tr>';
+  document.getElementById('statsRow').style.display = 'none';
+  document.getElementById('tblFooter').style.display = 'none';
 
-/* ═══════════════════════════════════════
-   SEARCH
-═══════════════════════════════════════ */
-let searchTimer  = null;
-let recentRef    = null; // holds active real-time listener so we can detach it
-let allParticipants = {}; // local mirror for live updates
-
-const DB_REST = 'https://idy2027-dba28-default-rtdb.asia-southeast1.firebasedatabase.app';
-
-function detachRecentListener() {
-  if (recentRef) {
-    recentRef.off('child_added');
-    recentRef.off('child_changed');
-    recentRef.off('child_removed');
-    recentRef = null;
-  }
-  allParticipants = {};
-}
-
-function onSearch(val) {
-  clearTimeout(searchTimer);
-  detachRecentListener(); // stop live updates when user starts searching
-  val = val.trim();
-
-  if (val === '') {
-    showMsg('Search for a participant or click "Recent 20"');
-    setCount('');
-    return;
-  }
-
-  // Direct reg number lookup
-  if (val.startsWith('#')) {
-    const num = val.slice(1);
-    if (num.length > 0) fetchByRegNum(num);
-    return;
-  }
-
-  if (val.length < 2) return;
-
-  searchTimer = setTimeout(() => searchByName(val), 300);
-}
-
-async function fetchByRegNum(regNum) {
-  showLoading();
-  const snap = await db.ref('participants/' + regNum).once('value');
-  if (snap.exists()) {
-    renderCards([{ key: regNum, ...snap.val() }]);
-    setCount('1 result');
-  } else {
-    showMsg('No participant found with reg #' + regNum);
-    setCount('');
-  }
-}
-
-async function searchByName(query) {
-  showLoading();
-  const q = query.toLowerCase();
-  const snap = await db.ref('participants').once('value');
-  const results = [];
-  snap.forEach(child => {
-    const p = child.val();
-    const name  = (p.name || '').toLowerCase();
-    const email = (p.email || '').toLowerCase();
-    if (name.includes(q) || email.includes(q)) {
-      results.push({ key: child.key, ...p });
-    }
-  });
-  results.sort((a,b) => (b.registeredAt||0) - (a.registeredAt||0));
-  if (results.length === 0) {
-    showMsg('No results for "' + query + '"');
-    setCount('');
-  } else {
-    renderCards(results.slice(0, 50));
-    setCount(results.length + ' result' + (results.length !== 1 ? 's' : ''));
-  }
-}
-
-async function loadRecent() {
-  detachRecentListener();
-  showLoading();
-  document.getElementById('searchInput').value = '';
-
-  // ── Step 1: REST API fetch — guaranteed to return ALL records ──────
   try {
-    const r = await fetch(`${DB_REST}/participants.json`);
-    const data = await r.json();
-    if (data && typeof data === 'object') {
-      Object.entries(data).forEach(([k, v]) => { allParticipants[k] = { key: k, ...v }; });
-    }
+    const snap = await db.ref('participants').once('value');
+    allRows = [];
+    snap.forEach(child => {
+      const p = child.val();
+      allRows.push({
+        regNum:      p.regNum      || child.key,
+        name:        p.name        || '—',
+        email:       p.email       || '',
+        tshirtSize:  p.tshirtSize  || p.size || '—',
+        registeredAt: p.registeredAt || 0,
+        checkInDone: !!(p.checkIn && p.checkIn.done),
+        checkInTs:   p.checkIn && p.checkIn.timestamp ? p.checkIn.timestamp : null,
+        tshirtDone:  !!(p.tshirt  && p.tshirt.done),
+        tshirtTs:    p.tshirt  && p.tshirt.timestamp ? p.tshirt.timestamp : null,
+        status:      p.status || 'registered',
+      });
+    });
+    renderStats();
+    applyFilters();
   } catch(e) {
-    console.warn('REST fetch failed, will rely on SDK listener', e);
+    body.innerHTML = `<tr><td colspan="8" class="tbl-msg" style="color:#b91c1c;">Error loading data: ${e.message}</td></tr>`;
   }
-  renderRecent();
+}
 
-  // ── Step 2: Live child listeners for real-time updates ─────────────
-  recentRef = db.ref('participants');
-  recentRef.on('child_added', snap => {
-    allParticipants[snap.key] = { key: snap.key, ...snap.val() };
-    renderRecent();
+/* ═══════════════════════════════
+   STATS
+═══════════════════════════════ */
+function renderStats() {
+  const total     = allRows.length;
+  const checkedIn = allRows.filter(r => r.checkInDone).length;
+  const tshirted  = allRows.filter(r => r.tshirtDone).length;
+  const done      = allRows.filter(r => r.checkInDone && r.tshirtDone).length;
+  const pct = total ? Math.round(checkedIn/total*100) : 0;
+
+  const row = document.getElementById('statsRow');
+  row.style.display = 'flex';
+  row.innerHTML = `
+    <div class="stat-chip"><span class="s-num">${total}</span><span class="s-lbl">Total</span></div>
+    <div class="stat-chip"><span class="s-num" style="color:#15803d">${checkedIn}</span><span class="s-lbl">Checked in (${pct}%)</span></div>
+    <div class="stat-chip"><span class="s-num" style="color:#92400e">${tshirted}</span><span class="s-lbl">T-shirts given</span></div>
+    <div class="stat-chip"><span class="s-num" style="color:#7c3aed">${done}</span><span class="s-lbl">Fully done</span></div>`;
+}
+
+/* ═══════════════════════════════
+   FILTER + SEARCH
+═══════════════════════════════ */
+function applyFilters() {
+  const q   = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+  const fil = document.getElementById('filterSel').value;
+
+  viewRows = allRows.filter(r => {
+    // Filter
+    if (fil === 'not_in'       && r.checkInDone)              return false;
+    if (fil === 'checked_in'   && !r.checkInDone)             return false;
+    if (fil === 'shirt_pending' && (r.tshirtDone || !r.checkInDone)) return false;
+    if (fil === 'fully_done'   && !(r.checkInDone && r.tshirtDone))  return false;
+    // Search
+    if (q.length >= 1) {
+      const hay = (r.regNum + r.name + r.email).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
   });
-  recentRef.on('child_changed', snap => {
-    allParticipants[snap.key] = { key: snap.key, ...snap.val() };
-    renderRecent();
-  });
-  recentRef.on('child_removed', snap => {
-    delete allParticipants[snap.key];
-    renderRecent();
+
+  doSort();
+  renderTable();
+}
+
+/* ═══════════════════════════════
+   SORT
+═══════════════════════════════ */
+function sortBy(col) {
+  if (sortCol === col) { sortDir = sortDir === 'asc' ? 'desc' : 'asc'; }
+  else                 { sortCol = col; sortDir = 'asc'; }
+  doSort();
+  renderTable();
+  // update header arrows
+  document.querySelectorAll('thead th').forEach(th => {
+    th.classList.remove('asc','desc');
+    if (th.dataset.col === col) th.classList.add(sortDir);
   });
 }
 
-function renderRecent() {
-  const items = Object.values(allParticipants);
-  items.sort((a, b) => (parseInt(b.regNum || b.key) || 0) - (parseInt(a.regNum || a.key) || 0));
-  const recent = items.slice(0, 20);
-  renderCards(recent);
-  setCount('Last ' + recent.length + ' of ' + items.length + ' registrations — live 🔴');
+function doSort() {
+  const mul = sortDir === 'asc' ? 1 : -1;
+  viewRows.sort((a, b) => {
+    let av = a[sortCol], bv = b[sortCol];
+    // Boolean sort
+    if (typeof av === 'boolean') { av = av ? 1 : 0; bv = bv ? 1 : 0; }
+    if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * mul;
+    return String(av).localeCompare(String(bv)) * mul;
+  });
 }
 
-/* ═══════════════════════════════════════
-   RENDER
-═══════════════════════════════════════ */
-function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-function fmtTime(ts) {
+/* ═══════════════════════════════
+   RENDER TABLE
+═══════════════════════════════ */
+function fmtDate(ts) {
   if (!ts) return '—';
-  return new Date(ts).toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  const d = new Date(ts);
+  return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'2-digit' })
+       + ' ' + d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
 }
 
-function renderCards(list) {
-  const el = document.getElementById('resultsList');
-  if (list.length === 0) { showMsg('No results'); return; }
+function renderTable() {
+  const body = document.getElementById('tableBody');
+  const MAX  = 200;
+  const slice = viewRows.slice(0, MAX);
 
-  el.innerHTML = '';
-  list.forEach(p => {
-    const regNum   = p.regNum || p.key;
-    const status   = p.status || 'registered';
-    const sbClass  = 'sb-' + status;
-    const sbLabel  = status === 'checked_in' ? 'Checked In' : status === 'cancelled' ? 'Cancelled' : status === 'no_show' ? 'No Show' : 'Registered';
-    const ciInfo   = status === 'checked_in' && p.checkIn
-      ? `Checked in at ${fmtTime(p.checkIn.timestamp)} · Counter: ${p.checkIn.counter||'—'} · By: ${p.checkIn.volunteerId||'—'}`
-      : '';
-    const issuedBadge = '';
-
-    const div = document.createElement('div');
-    div.className = 'p-card status-' + status;
-    div.id = 'card-' + regNum;
-    div.innerHTML = `
-      <div class="p-card-top">
-        <span class="p-reg">#${esc(regNum)}</span>
-        <span class="p-name">${esc(p.name || 'Unknown')}</span>
-        <span class="p-size">${esc(p.tshirtSize || '—')}</span>
-        <span class="status-badge ${sbClass}"><span class="status-dot"></span>${sbLabel}</span>
-      </div>
-      <div class="p-meta">
-        📧 ${esc(p.email || '—')} &nbsp;·&nbsp; Registered: ${fmtTime(p.registeredAt)}${issuedBadge}
-      </div>
-      ${ciInfo ? `<div class="p-ci-info">✅ ${esc(ciInfo)}</div>` : ''}
-      <div class="p-actions" id="actions-${regNum}">
-        ${actionsHTML(regNum, p)}
-      </div>`;
-    el.appendChild(div);
-  });
-}
-
-function actionsHTML(regNum, p) {
-  const status = p.status || 'registered';
-  let html = '';
-
-  if (status === 'registered') {
-    html += `<button class="btn btn-ok" onclick="doCheckIn('${regNum}')">✅ Check In</button>`;
-    html += `<button class="btn btn-muted" onclick="doNoShow('${regNum}')">🚶 No-Show</button>`;
-  }
-  if (status === 'no_show') {
-    html += `<button class="btn btn-ok" onclick="doUndoNoShow('${regNum}')">↩ Undo No-Show</button>`;
-  }
-  if (status === 'checked_in') {
-    html += `<button class="btn btn-warn" onclick="doUndoCheckIn('${regNum}')">↩ Undo Check-in</button>`;
-  }
-  if (status !== 'cancelled' && status !== 'no_show') {
-    html += `<button class="btn btn-danger" onclick="confirmCancel('${regNum}')">🚫 Cancel Reg</button>`;
-  }
-  if (status === 'cancelled' || status === 'no_show') {
-    html += `<button class="btn btn-ok" onclick="doRestore('${regNum}')">↩ Restore</button>`;
-  }
-  html += `<button class="btn btn-muted" onclick="confirmDelete('${regNum}')">🗑 Delete (Test)</button>`;
-
-  return html;
-}
-
-/* ═══════════════════════════════════════
-   ACTIONS
-═══════════════════════════════════════ */
-async function doCheckIn(regNum) {
-  const snap = await db.ref('participants/' + regNum).once('value');
-  const p = snap.val();
-  if (!p) return toast('Participant not found', 'err');
-  if (p.status === 'checked_in') return toast('Already checked in', 'warn');
-
-  const txResult = await db.ref('participants/' + regNum).transaction(data => {
-    if (!data || data.status !== 'registered') return data;
-    data.status  = 'checked_in';
-    data.checkIn = { done: true, timestamp: Date.now(), volunteerId: 'Admin', counter: 'Admin' };
-    return data;
-  });
-
-  if (txResult.committed) {
-    const today = new Date().toLocaleDateString('en-CA');
-    db.ref('dashboard/summary/checkedIn').transaction(n => (n||0)+1);
-    db.ref(`dashboard/summary/sizes/${p.tshirtSize}/checkedIn`).transaction(n => (n||0)+1);
-    db.ref(`dashboard/daily/${today}/checkedIn`).transaction(n => (n||0)+1);
-    db.ref('audit').push({ action:'ADMIN_CHECKIN', regNum, timestamp: Date.now() });
-    toast('✅ Checked in #' + regNum, 'ok');
-    refreshCard(regNum);
-  } else {
-    toast('Check-in failed — try again', 'err');
-  }
-}
-
-async function doUndoCheckIn(regNum) {
-  const snap = await db.ref('participants/' + regNum).once('value');
-  const p = snap.val();
-  if (!p) return toast('Participant not found', 'err');
-  if (p.status !== 'checked_in') return toast('Not currently checked in', 'warn');
-
-  const ciTs = p.checkIn?.timestamp;
-
-  const txResult = await db.ref('participants/' + regNum).transaction(data => {
-    if (!data || data.status !== 'checked_in') return data;
-    data.status = 'registered';
-    delete data.checkIn;
-    return data;
-  });
-
-  if (txResult.committed) {
-    db.ref('dashboard/summary/checkedIn').transaction(n => Math.max((n||0)-1, 0));
-    db.ref(`dashboard/summary/sizes/${p.tshirtSize}/checkedIn`).transaction(n => Math.max((n||0)-1, 0));
-    if (ciTs) {
-      const ciDate = new Date(ciTs).toLocaleDateString('en-CA');
-      db.ref(`dashboard/daily/${ciDate}/checkedIn`).transaction(n => Math.max((n||0)-1, 0));
-    }
-    db.ref('audit').push({ action:'ADMIN_UNDO_CHECKIN', regNum, timestamp: Date.now() });
-    toast('↩ Check-in reversed for #' + regNum, 'warn');
-    refreshCard(regNum);
-  } else {
-    toast('Undo failed — try again', 'err');
-  }
-}
-
-
-let _confirmFn = null;
-
-function confirmCancel(regNum) {
-  showConfirm('Cancel Registration', `Cancel #${regNum}? This marks them as cancelled but keeps the record.`,
-    'btn-danger', 'Cancel Registration',
-    () => doCancel(regNum));
-}
-
-function confirmDelete(regNum) {
-  showConfirm('Delete Record', `Permanently delete #${regNum}? Use only for test data.`,
-    'btn-danger', 'Delete',
-    () => doDelete(regNum));
-}
-
-async function doCancel(regNum) {
-  const snap = await db.ref('participants/' + regNum).once('value');
-  const p = snap.val();
-  if (!p) return toast('Not found', 'err');
-
-  const wasCI = p.status === 'checked_in';
-  await db.ref('participants/' + regNum).update({ status: 'cancelled' });
-
-  // Reverse counters
-  db.ref('dashboard/summary/totalParticipants').transaction(n => Math.max((n||0)-1, 0));
-  db.ref(`dashboard/summary/sizes/${p.tshirtSize}/registered`).transaction(n => Math.max((n||0)-1, 0));
-  if (wasCI) {
-    db.ref('dashboard/summary/checkedIn').transaction(n => Math.max((n||0)-1, 0));
-    db.ref(`dashboard/summary/sizes/${p.tshirtSize}/checkedIn`).transaction(n => Math.max((n||0)-1, 0));
-  }
-  db.ref('audit').push({ action:'ADMIN_CANCEL', regNum, timestamp: Date.now() });
-  toast('🚫 Registration cancelled for #' + regNum, 'warn');
-  refreshCard(regNum);
-}
-
-async function doRestore(regNum) {
-  const snap = await db.ref('participants/' + regNum).once('value');
-  const p = snap.val();
-  if (!p) return toast('Not found', 'err');
-
-  await db.ref('participants/' + regNum).update({ status: 'registered' });
-  db.ref('dashboard/summary/totalParticipants').transaction(n => (n||0)+1);
-  db.ref(`dashboard/summary/sizes/${p.tshirtSize}/registered`).transaction(n => (n||0)+1);
-  db.ref('audit').push({ action:'ADMIN_RESTORE', regNum, timestamp: Date.now() });
-  toast('✅ Restored #' + regNum, 'ok');
-  refreshCard(regNum);
-}
-
-async function doNoShow(regNum) {
-  const snap = await db.ref('participants/' + regNum).once('value');
-  const p = snap.val();
-  if (!p) return toast('Not found', 'err');
-  if (p.status !== 'registered') return toast('Can only mark registered participants as no-show', 'err');
-
-  await db.ref('participants/' + regNum).update({ status: 'no_show', noShowAt: Date.now() });
-  db.ref('audit').push({ action:'ADMIN_NO_SHOW', regNum, timestamp: Date.now() });
-  toast('🚶 #' + regNum + ' marked as no-show', 'warn');
-  refreshCard(regNum);
-}
-
-async function doUndoNoShow(regNum) {
-  const snap = await db.ref('participants/' + regNum).once('value');
-  const p = snap.val();
-  if (!p) return toast('Not found', 'err');
-
-  await db.ref('participants/' + regNum).update({ status: 'registered', noShowAt: null });
-  db.ref('audit').push({ action:'ADMIN_UNDO_NO_SHOW', regNum, timestamp: Date.now() });
-  toast('✅ #' + regNum + ' restored to registered', 'ok');
-  refreshCard(regNum);
-}
-
-async function doDelete(regNum) {
-  const snap = await db.ref('participants/' + regNum).once('value');
-  const p = snap.val();
-  if (!p) return toast('Not found', 'err');
-
-  await db.ref('participants/' + regNum).remove();
-
-  // Reverse all dashboard counters
-  db.ref('dashboard/summary/totalParticipants').transaction(n => Math.max((n||0)-1, 0));
-  db.ref(`dashboard/summary/sizes/${p.tshirtSize}/registered`).transaction(n => Math.max((n||0)-1, 0));
-  if (p.status === 'checked_in') {
-    db.ref('dashboard/summary/checkedIn').transaction(n => Math.max((n||0)-1, 0));
-    db.ref(`dashboard/summary/sizes/${p.tshirtSize}/checkedIn`).transaction(n => Math.max((n||0)-1, 0));
-  }
-  if (p.registeredAt) {
-    const regDate = new Date(p.registeredAt).toLocaleDateString('en-CA');
-    db.ref(`dashboard/daily/${regDate}/registered`).transaction(n => Math.max((n||0)-1, 0));
-  }
-  // Also remove the email mapping so person can re-register
-  if (p.email) {
-    const emailKey = p.email.replace(/\./g,',').replace('@','_at_');
-    db.ref('registrations/' + emailKey).remove();
-    db.ref('dashboard/summary/totalRegistrations').transaction(n => Math.max((n||0)-1, 0));
-  }
-
-  db.ref('audit').push({ action:'ADMIN_DELETE', regNum, timestamp: Date.now() });
-  const card = document.getElementById('card-' + regNum);
-  if (card) card.remove();
-  toast('🗑 #' + regNum + ' permanently deleted', 'warn');
-  updateResultCount();
-}
-
-/* ═══════════════════════════════════════
-   PURGE TEST RECORDS
-═══════════════════════════════════════ */
-async function purgeTestRecords() {
-  const cutoffStr = prompt('Delete ALL registrations with reg number UP TO and including:\n(e.g. enter 1010 to wipe #1001–1010)\n\nLeave blank to cancel.');
-  if (!cutoffStr) return;
-  const cutoff = parseInt(cutoffStr);
-  if (isNaN(cutoff) || cutoff < 1000) return toast('Invalid number', 'err');
-
-  const snap = await db.ref('participants').once('value');
-  const toDelete = [];
-  snap.forEach(child => {
-    if (parseInt(child.key) <= cutoff) toDelete.push({ key: child.key, ...child.val() });
-  });
-
-  if (toDelete.length === 0) return toast('No records found up to #' + cutoff, 'warn');
-
-  const names = toDelete.map(p => '#' + p.regNum + ' ' + p.name).join('\n');
-  if (!confirm(`Permanently delete ${toDelete.length} record(s)?\n\n${names}\n\nThis CANNOT be undone.`)) return;
-
-  toast('Purging…', '');
-  for (const p of toDelete) {
-    await db.ref('participants/' + p.key).remove();
-    if (p.email) {
-      const emailKey = p.email.replace(/\./g, ',').replace('@', '_at_');
-      await db.ref('registrations/' + emailKey).remove();
-    }
-  }
-
-  db.ref('audit').push({ action: 'ADMIN_PURGE_TEST', cutoff, count: toDelete.length, timestamp: Date.now() });
-
-  // Clear the recent registrations feed entirely — will repopulate on next real registration
-  await db.ref('dashboard/recentRegistrations').remove();
-
-  // Recalc all counters + daily totals + rebuild feed from remaining participants
-  await recalcCounters(true);
-  toast(`🧹 Purged ${toDelete.length} test record(s) — dashboard cleared`, 'warn');
-  loadRecent();
-}
-
-/* ═══════════════════════════════════════
-   RECALCULATE COUNTERS FROM SOURCE
-═══════════════════════════════════════ */
-async function recalcCounters(silent = false) {
-  if (!silent && !confirm('Recompute ALL dashboard counters from actual participant records?\n\nThis fixes any drift. Takes a few seconds.')) return;
-  if (!silent) toast('Recalculating…', '');
-
-  const snap = await db.ref('participants').once('value');
-  const sizes = {};
-  const daily = {}; // { 'YYYY-MM-DD': { registered, checkedIn } }
-  let total = 0, checkedIn = 0;
-
-  snap.forEach(child => {
-    const p = child.val();
-    if (!p || p.status === 'deleted') return;
-    total++;
-    const sz = p.tshirtSize || 'UNK';
-    if (!sizes[sz]) sizes[sz] = { registered: 0, checkedIn: 0 };
-    sizes[sz].registered++;
-
-    // Daily registration count
-    if (p.registeredAt) {
-      const d = new Date(p.registeredAt).toLocaleDateString('en-CA');
-      if (!daily[d]) daily[d] = { registered: 0, checkedIn: 0 };
-      daily[d].registered++;
-    }
-
-    if (p.status === 'checked_in') {
-      checkedIn++;
-      sizes[sz].checkedIn++;
-      if (p.checkIn?.timestamp) {
-        const d = new Date(p.checkIn.timestamp).toLocaleDateString('en-CA');
-        if (!daily[d]) daily[d] = { registered: 0, checkedIn: 0 };
-        daily[d].checkedIn++;
-      }
-    }
-  });
-
-  // Wipe old size data first, then rewrite clean
-  await db.ref('dashboard/summary/sizes').remove();
-  await db.ref('dashboard/daily').remove();
-
-  const updates = {
-    'dashboard/summary/totalParticipants': total,
-    'dashboard/summary/checkedIn':         checkedIn,
-  };
-  Object.entries(sizes).forEach(([sz, v]) => {
-    updates[`dashboard/summary/sizes/${sz}/registered`] = v.registered;
-    updates[`dashboard/summary/sizes/${sz}/checkedIn`]  = v.checkedIn;
-  });
-  Object.entries(daily).forEach(([date, v]) => {
-    if (v.registered) updates[`dashboard/daily/${date}/registered`] = v.registered;
-    if (v.checkedIn)  updates[`dashboard/daily/${date}/checkedIn`]  = v.checkedIn;
-  });
-
-  await db.ref().update(updates);
-  db.ref('audit').push({ action:'ADMIN_RECALC', timestamp: Date.now(), result: { total, checkedIn } });
-  toast(`✅ Dashboard synced — ${total} participants, ${checkedIn} checked in`, 'ok');
-}
-
-/* ═══════════════════════════════════════
-   FIND DUPLICATES
-═══════════════════════════════════════ */
-async function findDuplicates() {
-  detachRecentListener();
-  setCount('Scanning for duplicates…');
-  document.getElementById('resultsList').innerHTML = '<div class="list-msg">Scanning all records…</div>';
-
-  const snap = await db.ref('participants').once('value');
-  const all = [];
-  snap.forEach(child => {
-    const p = child.val();
-    if (!p || p.status === 'deleted') return;
-    all.push({ key: child.key, ...p });
-  });
-
-  // Group by normalised email
-  const byEmail = {};
-  all.forEach(p => {
-    if (!p.email) return;
-    const k = p.email.trim().toLowerCase();
-    if (!byEmail[k]) byEmail[k] = [];
-    byEmail[k].push(p);
-  });
-
-  // Group by normalised full name
-  const byName = {};
-  all.forEach(p => {
-    if (!p.name) return;
-    const k = p.name.trim().toLowerCase().replace(/\s+/g, ' ');
-    if (!byName[k]) byName[k] = [];
-    byName[k].push(p);
-  });
-
-  // Collect groups with 2+ members, tag with reason
-  const groups = [];
-  Object.entries(byEmail).forEach(([email, members]) => {
-    if (members.length > 1) groups.push({ reason: '⚠️ Same email: ' + email, members });
-  });
-  Object.entries(byName).forEach(([name, members]) => {
-    if (members.length > 1) {
-      // skip if already caught by email group
-      const emails = [...new Set(members.map(m => (m.email||'').toLowerCase()))];
-      if (emails.length > 1 || !groups.find(g => g.members.every(m => members.includes(m)))) {
-        groups.push({ reason: '⚠️ Same name: ' + members[0].name, members });
-      }
-    }
-  });
-
-  if (groups.length === 0) {
-    document.getElementById('resultsList').innerHTML = '<div class="list-msg" style="color:var(--ok);">✅ No duplicates found across ' + all.length + ' records.</div>';
-    setCount('No duplicates');
+  if (slice.length === 0) {
+    body.innerHTML = '<tr><td colspan="8" class="tbl-msg">No participants match your search.</td></tr>';
+    document.getElementById('ctrlCount').textContent = '0 results';
+    document.getElementById('tblFooter').style.display = 'none';
     return;
   }
 
-  setCount(groups.length + ' duplicate group' + (groups.length !== 1 ? 's' : '') + ' found');
+  body.innerHTML = slice.map(r => {
+    const ciChip = r.checkInDone
+      ? `<span class="chip chip-in">✓ In</span>`
+      : `<span class="chip chip-dash">—</span>`;
 
-  const html = groups.map((g, gi) => `
-    <div class="dupe-group">
-      <div class="dupe-group-label">${g.reason}</div>
-      <div class="dupe-cards">
-        ${g.members.map(p => `
-          <div class="dupe-card" id="dupe-${p.regNum}">
-            <div class="d-name">
-              ${p.name}
-              ${p.duplicateFlag ? '<span class="flagged-badge">⚑ FLAGGED</span>' : ''}
-            </div>
-            <div class="d-row"><span>Reg #</span>     <span class="d-val">${p.regNum}</span></div>
-            <div class="d-row"><span>Email</span>     <span class="d-val">${p.email || '—'}</span></div>
-            <div class="d-row"><span>T-Shirt</span>   <span class="d-val">${p.tshirtSize || '—'}</span></div>
-            <div class="d-row"><span>Status</span>    <span class="d-val">${p.status}</span></div>
-            <div class="d-row"><span>Registered</span><span class="d-val">${p.registeredAt ? new Date(p.registeredAt).toLocaleString() : '—'}</span></div>
-            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
-              <button class="btn btn-warn" style="flex:1;padding:7px;font-size:12px;"
-                onclick="toggleFlag('${p.regNum}', ${!p.duplicateFlag})">
-                ${p.duplicateFlag ? '✓ Unflag' : '⚑ Flag'}
-              </button>
-              <button class="btn btn-navy" style="flex:1;padding:7px;font-size:12px;"
-                onclick="fetchByRegNum('${p.regNum}')">
-                Open
-              </button>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    </div>
-  `).join('');
+    const tsChip = r.tshirtDone
+      ? `<span class="chip chip-given">✓ Given</span>`
+      : (r.checkInDone
+          ? `<span class="chip chip-pend">Pending</span>`
+          : `<span class="chip chip-dash">—</span>`);
 
-  document.getElementById('resultsList').innerHTML = html;
+    let actionBtn = '';
+    if (!r.checkInDone) {
+      actionBtn = `<button class="act-btn checkin-btn" onclick="doCheckIn('${r.regNum}')">Check In</button>`;
+    } else if (!r.tshirtDone) {
+      actionBtn = `<button class="act-btn shirt-btn" onclick="doGiveTshirt('${r.regNum}')">Give T-shirt</button>`;
+    } else {
+      actionBtn = `<button class="act-btn done" disabled>✓ Done</button>`;
+    }
+
+    return `<tr id="row-${r.regNum}">
+      <td class="col-id">${r.regNum}</td>
+      <td class="col-name">${esc(r.name)}</td>
+      <td class="col-email">${esc(r.email)}</td>
+      <td class="col-size">${r.tshirtSize}</td>
+      <td class="col-reg">${fmtDate(r.registeredAt)}</td>
+      <td>${ciChip}</td>
+      <td>${tsChip}</td>
+      <td>${actionBtn}</td>
+    </tr>`;
+  }).join('');
+
+  const footer = document.getElementById('tblFooter');
+  footer.style.display = 'block';
+  footer.textContent = `Showing ${slice.length} of ${viewRows.length} participants${viewRows.length < allRows.length ? ` (filtered from ${allRows.length} total)` : ''} · max ${MAX} per view`;
+
+  document.getElementById('ctrlCount').textContent = `${viewRows.length} result${viewRows.length !== 1 ? 's' : ''}`;
 }
 
-async function toggleFlag(regNum, flagState) {
-  await db.ref('participants/' + regNum).update({ duplicateFlag: flagState || null });
-  db.ref('audit').push({ action: flagState ? 'ADMIN_FLAG_DUPE' : 'ADMIN_UNFLAG_DUPE', regNum, timestamp: Date.now() });
-  toast(flagState ? '⚑ #' + regNum + ' flagged as duplicate' : '✓ #' + regNum + ' unflagged', 'warn');
-  findDuplicates(); // refresh
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-/* ═══════════════════════════════════════
+/* ═══════════════════════════════
+   ACTIONS
+═══════════════════════════════ */
+function doCheckIn(regNum) {
+  confirm2(
+    'Confirm Check-in',
+    `Mark <strong>${regNum}</strong> as checked in?`,
+    async () => {
+      try {
+        await db.ref(`participants/${regNum}/checkIn`).update({
+          done: true,
+          timestamp: firebase.database.ServerValue.TIMESTAMP,
+          volunteerId: 'admin'
+        });
+        // Update local state
+        const r = allRows.find(x => x.regNum === regNum);
+        if (r) { r.checkInDone = true; r.checkInTs = Date.now(); }
+        applyFilters();
+        renderStats();
+        toast('✓ Checked in: ' + regNum, 'ok');
+      } catch(e) { toast('Error: ' + e.message, 'err'); }
+    }
+  );
+}
+
+function doGiveTshirt(regNum) {
+  confirm2(
+    'Give T-shirt',
+    `Mark T-shirt as given to <strong>${regNum}</strong>?`,
+    async () => {
+      try {
+        await db.ref(`participants/${regNum}/tshirt`).update({
+          done: true,
+          timestamp: firebase.database.ServerValue.TIMESTAMP,
+          volunteerId: 'admin'
+        });
+        const r = allRows.find(x => x.regNum === regNum);
+        if (r) { r.tshirtDone = true; r.tshirtTs = Date.now(); }
+        applyFilters();
+        renderStats();
+        toast('✓ T-shirt given: ' + regNum, 'ok');
+      } catch(e) { toast('Error: ' + e.message, 'err'); }
+    }
+  );
+}
+
+/* ═══════════════════════════════
    EXPORT CSV
-═══════════════════════════════════════ */
-async function exportCSV() {
-  toast('Preparing CSV…', '');
-  const snap = await db.ref('participants').once('value');
-  const rows = [['Reg#','Name','Email','T-Shirt','Status','Registered At','Checked In At','Counter','Volunteer','T-Shirt Issued']];
-
-  snap.forEach(child => {
-    const p = child.val();
-    rows.push([
-      p.regNum || child.key,
-      p.name || '',
-      p.email || '',
-      p.tshirtSize || '',
-      p.status || '',
-      p.registeredAt ? new Date(p.registeredAt).toISOString() : '',
-      p.checkIn?.timestamp ? new Date(p.checkIn.timestamp).toISOString() : '',
-      p.checkIn?.counter || '',
-      p.checkIn?.volunteerId || ''
-    ]);
-  });
-
-  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = 'IDY2027_Participants_' + new Date().toISOString().slice(0,10) + '.csv';
-  a.click();
-  URL.revokeObjectURL(url);
-  toast('✅ CSV downloaded (' + (rows.length-1) + ' participants)', 'ok');
+═══════════════════════════════ */
+function exportCSV() {
+  if (!allRows.length) { toast('No data to export', 'info'); return; }
+  const cols = ['regNum','name','email','tshirtSize','registeredAt','checkInDone','tshirtDone'];
+  const hdrs = ['Reg #','Name','Email','T-shirt Size','Registered At','Checked In','T-shirt Given'];
+  const rows = allRows.map(r => cols.map(c => {
+    let v = r[c];
+    if (c === 'registeredAt') v = v ? new Date(v).toISOString() : '';
+    if (typeof v === 'boolean') v = v ? 'Yes' : 'No';
+    return `"${String(v||'').replace(/"/g,'""')}"`;
+  }).join(','));
+  const csv = [hdrs.join(','), ...rows].join('\n');
+  const url = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  const a = Object.assign(document.createElement('a'), { href:url, download:`IDY2027_registrations_${Date.now()}.csv` });
+  a.click(); URL.revokeObjectURL(url);
+  toast('CSV downloaded (' + allRows.length + ' rows)', 'ok');
 }
 
-/* ═══════════════════════════════════════
-   HELPERS
-═══════════════════════════════════════ */
-async function refreshCard(regNum) {
-  const snap = await db.ref('participants/' + regNum).once('value');
-  const card = document.getElementById('card-' + regNum);
-  if (!snap.exists() || !card) return;
-  const p = { key: regNum, ...snap.val() };
-
-  const status   = p.status || 'registered';
-  const sbClass  = 'sb-' + status;
-  const sbLabel  = status === 'checked_in' ? '✓ Checked In' : status === 'cancelled' ? '✗ Cancelled' : '⏳ Registered';
-  const ciInfo   = status === 'checked_in' && p.checkIn
-    ? `Checked in at ${fmtTime(p.checkIn.timestamp)} · Counter: ${p.checkIn.counter||'—'} · By: ${p.checkIn.volunteerId||'—'}`
-    : '';
-  const issuedBadge = p.tshirtIssued ? ' 👕 T-shirt issued' : '';
-
-  card.className = 'p-card status-' + status;
-  card.querySelector('.status-badge').className = 'status-badge ' + sbClass;
-  card.querySelector('.status-badge').textContent = sbLabel;
-  card.querySelector('.p-meta').innerHTML =
-    `📧 ${esc(p.email||'—')} &nbsp;·&nbsp; Registered: ${fmtTime(p.registeredAt)}${issuedBadge}`;
-
-  const ciEl = card.querySelector('.p-ci-info');
-  if (ciEl) ciEl.remove();
-  if (ciInfo) {
-    const d = document.createElement('div');
-    d.className = 'p-ci-info';
-    d.textContent = '✅ ' + ciInfo;
-    card.querySelector('.p-actions').before(d);
-  }
-
-  document.getElementById('actions-' + regNum).innerHTML = actionsHTML(regNum, p);
-}
-
-function showConfirm(title, body, btnClass, btnLabel, fn) {
-  _confirmFn = fn;
+/* ═══════════════════════════════
+   CONFIRM MODAL
+═══════════════════════════════ */
+function confirm2(title, body, fn) {
   document.getElementById('confirmTitle').textContent = title;
-  document.getElementById('confirmBody').textContent  = body;
-  const btn = document.getElementById('confirmOkBtn');
-  btn.className = 'btn ' + btnClass;
-  btn.textContent = btnLabel;
+  document.getElementById('confirmBody').innerHTML = body;
   document.getElementById('confirmModal').style.display = 'flex';
+  confirmFn = fn;
 }
-
-function runConfirm() {
-  closeConfirm();
-  if (_confirmFn) _confirmFn();
-}
-
 function closeConfirm() {
   document.getElementById('confirmModal').style.display = 'none';
-  _confirmFn = null;
+  confirmFn = null;
+}
+function runConfirm() {
+  closeConfirm();
+  if (confirmFn) confirmFn();
 }
 
-document.getElementById('confirmModal').addEventListener('click', e => {
-  if (e.target === document.getElementById('confirmModal')) closeConfirm();
-});
-
-let toastTimer = null;
-function toast(msg, type) {
+/* ═══════════════════════════════
+   TOAST
+═══════════════════════════════ */
+let _toastTmr;
+function toast(msg, type='info') {
   const el = document.getElementById('toast');
   el.textContent = msg;
-  el.className   = 'show ' + (type || '');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.className = '', 3000);
+  el.className = 'show ' + type;
+  clearTimeout(_toastTmr);
+  _toastTmr = setTimeout(() => { el.className = ''; }, 3000);
 }
 
-function showLoading() {
-  document.getElementById('resultsList').innerHTML = '<div class="list-msg"><span class="spinner"></span>Searching…</div>';
-}
-
-function showMsg(msg) {
-  document.getElementById('resultsList').innerHTML = `<div class="list-msg">${esc(msg)}</div>`;
-}
-
-function setCount(txt) {
-  document.getElementById('resultCount').textContent = txt;
-}
-
-function updateResultCount() {
-  const cards = document.querySelectorAll('.p-card');
-  setCount(cards.length + ' result' + (cards.length !== 1 ? 's' : ''));
-}
-
-// No PIN — load immediately
-loadRecent();
-
-// Re-establish live listener when tab comes back into focus
-// (catches stale state after idle or after purge operations)
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && recentRef) loadRecent();
-});
-
-// Firebase connection status indicator
-const connDot = document.createElement('span');
-connDot.id = 'connDot';
-connDot.style.cssText = 'display:inline-block;width:8px;height:8px;border-radius:50%;background:#16A34A;margin-right:6px;vertical-align:middle;';
-const connLabel = document.createElement('span');
-connLabel.id = 'connLabel';
-connLabel.style.cssText = 'font-size:12px;color:var(--muted);';
-connLabel.textContent = 'Live';
-const connWrap = document.createElement('div');
-connWrap.style.cssText = 'display:flex;align-items:center;margin-left:auto;';
-connWrap.appendChild(connDot); connWrap.appendChild(connLabel);
-document.querySelector('.toolbar').appendChild(connWrap);
-
-db.ref('.info/connected').on('value', snap => {
-  const ok = snap.val();
-  connDot.style.background  = ok ? '#16A34A' : '#DC2626';
-  connLabel.textContent      = ok ? 'Live' : 'Reconnecting…';
-  if (ok && !recentRef) loadRecent(); // re-attach if listener dropped
-});
+// Init pin gate visible
+document.getElementById('pinGate').style.display = 'flex';
 </script>
-<script src="ananda-widget.js"></script>
 </body>
 </html>
