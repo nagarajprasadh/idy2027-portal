@@ -398,24 +398,27 @@ function rowFromFirebase(p, key) {
   };
 }
 
-async function loadAll() {
+/* ── Show spinner while initial data arrives ── */
+let _initialLoaded = false;
+(function initSpinner() {
   const body = document.getElementById('tableBody');
   body.innerHTML = '<tr><td colspan="6" class="tbl-msg"><span class="spinner-ring"></span> Loading…</td></tr>';
   document.getElementById('statsRow').style.display = 'none';
   document.getElementById('tblFooter').style.display = 'none';
+})();
 
-  try {
-    const snap = await db.ref('participants').once('value');
-    allRows = [];
-    snap.forEach(child => allRows.push(rowFromFirebase(child.val(), child.key)));
-    renderStats();
-    applyFilters();
-  } catch(e) {
-    body.innerHTML = `<tr><td colspan="6" class="tbl-msg" style="color:#b91c1c;">Error: ${e.message}</td></tr>`;
+/* ── child_added: fires for EVERY existing child on connect, then for new ones ── */
+db.ref('participants').on('child_added', snap => {
+  const p = snap.val();
+  if (!p) return;
+  const key = String(p.regNum || snap.key);
+  if (!allRows.find(x => x.regNum === key)) {
+    allRows.push(rowFromFirebase(p, key));
+    if (_initialLoaded) { renderStats(); applyFilters(); } // live: new registration arrived
   }
-}
+});
 
-/* ── Real-time sync: catch check-ins from QR scanner / other tabs ── */
+/* ── child_changed: in-place update when a participant's data changes ── */
 db.ref('participants').on('child_changed', snap => {
   const p = snap.val();
   if (!p) return;
@@ -426,21 +429,24 @@ db.ref('participants').on('child_changed', snap => {
   const wasDone = allRows[idx].checkInDone;
   allRows[idx] = updated;
   if (wasDone !== updated.checkInDone) {
-    updateRowUI(key);   // instant in-place DOM update
+    updateRowUI(key);
     renderStats();
   }
 });
 
-db.ref('participants').on('child_added', snap => {
-  const p = snap.val();
-  if (!p) return;
-  const key = String(p.regNum || snap.key);
-  if (!allRows.find(x => x.regNum === key)) {
-    allRows.push(rowFromFirebase(p, key));
-    renderStats();
-    applyFilters(); // rebuild table so newly-registered participants appear
-  }
+/* ── once('value') fires AFTER all initial child_added events are delivered.
+      Use it purely as "done loading" signal — no allRows reset. ── */
+db.ref('participants').once('value', () => {
+  _initialLoaded = true;
+  renderStats();
+  applyFilters();
 });
+
+function loadAll() {
+  // With live listeners, just re-render from in-memory state
+  renderStats();
+  applyFilters();
+}
 
 /* ═══════════════════════════════
    STATS
