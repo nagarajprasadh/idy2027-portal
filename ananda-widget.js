@@ -440,27 +440,40 @@
   const dot   = document.getElementById('_ananda_dot');
 
   /* ══════════════════════════════════════
-     LANGUAGE — global so onclick always works
+     LANGUAGE
   ══════════════════════════════════════ */
   function t() { return T[window._anLANG]; }
 
   function applyLang() {
     var L = window._anLANG;
-    document.getElementById('_an_status').textContent = t().status;
-    document.getElementById('_an_inp').placeholder    = t().ph;
-    document.getElementById('_an_seg_en').className   = 'an_lseg' + (L==='en'?' active':'');
-    document.getElementById('_an_seg_th').className   = 'an_lseg' + (L==='th'?' active':'');
+    var st = document.getElementById('_an_status');
+    var ip = document.getElementById('_an_inp');
+    var se = document.getElementById('_an_seg_en');
+    var st2= document.getElementById('_an_seg_th');
+    if (st)  st.textContent = t().status;
+    if (ip)  ip.placeholder = t().ph;
+    if (se)  se.className   = 'an_lseg' + (L==='en' ? ' active' : '');
+    if (st2) st2.className  = 'an_lseg' + (L==='th' ? ' active' : '');
     buildChips();
   }
 
-  // Global — onclick attributes call this directly
-  window._anSetLang = function(lang) {
+  function _anSwitchLang(lang) {
     window._anLANG = lang;
     applyLang();
     msgs.innerHTML = '';
     chips.style.display = 'flex';
     setTimeout(addGreet, 250);
-  };
+  }
+
+  // Method 1: onclick attribute (backup)
+  window._anSetLang = _anSwitchLang;
+
+  // Method 2: document-level event delegation (most reliable)
+  document.addEventListener('click', function(e) {
+    var el = e.target;
+    if (el.id === '_an_seg_en') { e.stopPropagation(); _anSwitchLang('en'); }
+    if (el.id === '_an_seg_th') { e.stopPropagation(); _anSwitchLang('th'); }
+  }, true); // useCapture=true catches clicks before any other handler
 
   /* ══════════════════════════════════════
      CHIP TOPICS
