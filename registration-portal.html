@@ -142,7 +142,15 @@
       padding: 5px 14px;
       border-radius: 100px;
       white-space: nowrap;
+      text-decoration: none;
     }
+    .hero-badge-faq {
+      background: rgba(255,153,51,0.22);
+      border-color: rgba(255,153,51,0.55);
+      color: #fff;
+      transition: background .2s;
+    }
+    .hero-badge-faq:hover { background: rgba(255,153,51,0.4); }
 
     /* ── Container ── */
     .container {
@@ -312,38 +320,39 @@
     }
     /* ── T-shirt size picker ── */
     .size-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
+      display: flex;
+      gap: 7px;
       margin-top: 2px;
     }
     .sz-btn {
-      padding: 15px 8px;
+      flex: 1;
+      padding: 10px 6px;
       border: 2px solid #e4e0d8;
-      border-radius: 14px;
+      border-radius: 10px;
       background: #faf8f4;
       color: var(--text);
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 700;
       font-family: inherit;
       cursor: pointer;
       text-align: center;
       transition: all .25s cubic-bezier(.34,1.4,.64,1);
-      box-shadow: 0 1px 4px rgba(0,0,0,.04);
+      box-shadow: 0 1px 3px rgba(0,0,0,.04);
       -webkit-user-select: none; user-select: none;
+      white-space: nowrap;
     }
     .sz-btn:hover:not(.sel) {
       border-color: var(--navy);
       color: var(--navy);
-      transform: translateY(-3px);
-      box-shadow: 0 5px 14px rgba(0,45,110,.12);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0,45,110,.1);
     }
     .sz-btn.sel {
       background: var(--navy);
       border-color: var(--navy);
       color: #fff;
-      box-shadow: 0 5px 18px rgba(0,45,110,.3);
-      transform: translateY(-2px) scale(1.04);
+      box-shadow: 0 4px 12px rgba(0,45,110,.28);
+      transform: translateY(-1px) scale(1.03);
     }
 
     .btn-remove {
@@ -681,6 +690,7 @@
     <div class="hero-badges">
       <span class="hero-badge">📅 20 June 2027</span>
       <span class="hero-badge">📍 Chulalongkorn University, Bangkok</span>
+      <a href="faq.html" target="_blank" class="hero-badge hero-badge-faq">📖 Yoga & IDY Guide</a>
     </div>
   </div>
 </header>
@@ -1894,6 +1904,6 @@ applyLang();
     Admin
   </a>
 </div>
-<script src="ananda-widget.js?v=20260628f"></script>
+<script src="ananda-widget.js?v=20260628g"></script>
 </body>
 </html>
