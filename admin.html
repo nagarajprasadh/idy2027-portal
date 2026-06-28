@@ -385,36 +385,61 @@ let sortDir  = 'desc';
 /* ═══════════════════════════════
    LOAD DATA
 ═══════════════════════════════ */
+function rowFromFirebase(p, key) {
+  return {
+    regNum:      String(p.regNum || key),   // always string
+    name:        p.name       || '—',
+    email:       p.email      || '',
+    tshirtSize:  p.tshirtSize || p.size || '—',
+    registeredAt: p.registeredAt || 0,
+    checkInDone: !!(p.checkIn && p.checkIn.done),
+    tshirtDone:  !!(p.tshirt  && p.tshirt.done),
+    status:      p.status || 'registered',
+  };
+}
+
 async function loadAll() {
   const body = document.getElementById('tableBody');
-  body.innerHTML = '<tr><td colspan="8" class="tbl-msg"><span class="spinner-ring"></span> Loading all participants…</td></tr>';
+  body.innerHTML = '<tr><td colspan="6" class="tbl-msg"><span class="spinner-ring"></span> Loading…</td></tr>';
   document.getElementById('statsRow').style.display = 'none';
   document.getElementById('tblFooter').style.display = 'none';
 
   try {
     const snap = await db.ref('participants').once('value');
     allRows = [];
-    snap.forEach(child => {
-      const p = child.val();
-      allRows.push({
-        regNum:      p.regNum      || child.key,
-        name:        p.name        || '—',
-        email:       p.email       || '',
-        tshirtSize:  p.tshirtSize  || p.size || '—',
-        registeredAt: p.registeredAt || 0,
-        checkInDone: !!(p.checkIn && p.checkIn.done),
-        checkInTs:   p.checkIn && p.checkIn.timestamp ? p.checkIn.timestamp : null,
-        tshirtDone:  !!(p.tshirt  && p.tshirt.done),
-        tshirtTs:    p.tshirt  && p.tshirt.timestamp ? p.tshirt.timestamp : null,
-        status:      p.status || 'registered',
-      });
-    });
+    snap.forEach(child => allRows.push(rowFromFirebase(child.val(), child.key)));
     renderStats();
     applyFilters();
   } catch(e) {
-    body.innerHTML = `<tr><td colspan="8" class="tbl-msg" style="color:#b91c1c;">Error loading data: ${e.message}</td></tr>`;
+    body.innerHTML = `<tr><td colspan="6" class="tbl-msg" style="color:#b91c1c;">Error: ${e.message}</td></tr>`;
   }
 }
+
+/* ── Real-time sync: catch check-ins from QR scanner / other tabs ── */
+db.ref('participants').on('child_changed', snap => {
+  const p = snap.val();
+  if (!p) return;
+  const key = String(p.regNum || snap.key);
+  const idx = allRows.findIndex(x => x.regNum === key);
+  if (idx === -1) return;
+  const updated = rowFromFirebase(p, key);
+  const wasDone = allRows[idx].checkInDone;
+  allRows[idx] = updated;
+  if (wasDone !== updated.checkInDone) {
+    updateRowUI(key);   // instant in-place DOM update
+    renderStats();
+  }
+});
+
+db.ref('participants').on('child_added', snap => {
+  const p = snap.val();
+  if (!p) return;
+  const key = String(p.regNum || snap.key);
+  if (!allRows.find(x => x.regNum === key)) {
+    allRows.push(rowFromFirebase(p, key));
+    renderStats();
+  }
+});
 
 /* ═══════════════════════════════
    STATS
@@ -529,40 +554,51 @@ function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+/* In-place row status update — no full table rebuild */
+function updateRowUI(regNum) {
+  const r   = allRows.find(x => x.regNum === String(regNum));
+  const row = document.getElementById('row-' + regNum);
+  if (!r || !row) return;
+  row.lastElementChild.innerHTML = r.checkInDone
+    ? `<button class="status-btn status-done"><span class="status-dot"></span>Checked In</button>
+       <button class="undo-link" onclick="doUncheck('${r.regNum}')">undo</button>`
+    : `<button class="status-btn status-pending" onclick="doCheckIn('${r.regNum}')"><span class="status-dot"></span>Check In</button>`;
+}
+
 /* ═══════════════════════════════
    ACTIONS
 ═══════════════════════════════ */
 function doCheckIn(regNum) {
-  const r = allRows.find(x => x.regNum === regNum);
+  const r = allRows.find(x => x.regNum === String(regNum));
   if (!r || r.checkInDone) return;
-  // Instant optimistic update
   r.checkInDone = true; r.tshirtDone = true;
-  applyFilters(); renderStats();
+  // Instant in-place DOM update — no table rebuild
+  const fil = document.getElementById('filterSel').value;
+  if (fil === 'not_in') applyFilters(); else { updateRowUI(r.regNum); renderStats(); }
   toast('✓ ' + r.name, 'ok');
-  // Background Firebase writes (no await = non-blocking)
+  // Non-blocking Firebase writes
   const ts = firebase.database.ServerValue.TIMESTAMP;
   db.ref(`participants/${regNum}`).update({
     'checkIn/done': true, 'checkIn/timestamp': ts, 'checkIn/volunteerId': 'admin',
-    'tshirt/done': true,  'tshirt/timestamp': ts,  'tshirt/volunteerId': 'admin',
+    'tshirt/done':  true, 'tshirt/timestamp':  ts, 'tshirt/volunteerId':  'admin',
     status: 'checked_in'
-  }).catch(e => { r.checkInDone = false; r.tshirtDone = false; applyFilters(); renderStats(); toast('Write failed: ' + e.message, 'err'); });
+  }).catch(e => { r.checkInDone = false; r.tshirtDone = false; updateRowUI(r.regNum); renderStats(); toast('Write failed: ' + e.message, 'err'); });
   db.ref('dashboard/summary/checkedIn').transaction(n => (n || 0) + 1);
   if (r.tshirtSize) db.ref(`dashboard/summary/sizes/${r.tshirtSize}/checkedIn`).transaction(n => (n || 0) + 1);
 }
 
 function doUncheck(regNum) {
-  const r = allRows.find(x => x.regNum === regNum);
+  const r = allRows.find(x => x.regNum === String(regNum));
   if (!r || !r.checkInDone) return;
-  // Instant optimistic update
   r.checkInDone = false; r.tshirtDone = false;
-  applyFilters(); renderStats();
+  const fil = document.getElementById('filterSel').value;
+  if (fil === 'checked_in') applyFilters(); else { updateRowUI(r.regNum); renderStats(); }
   toast('↩ Undone: ' + r.name, 'info');
-  // Background Firebase writes
   db.ref(`participants/${regNum}`).update({
     'checkIn/done': false, 'checkIn/timestamp': null, 'checkIn/volunteerId': null,
-    'tshirt/done': false,  'tshirt/timestamp': null,  'tshirt/volunteerId': null,
+    'tshirt/done':  false, 'tshirt/timestamp':  null, 'tshirt/volunteerId':  null,
     status: 'registered'
-  }).catch(e => { r.checkInDone = true; r.tshirtDone = true; applyFilters(); renderStats(); toast('Write failed: ' + e.message, 'err'); });
+  }).catch(e => { r.checkInDone = true; r.tshirtDone = true; updateRowUI(r.regNum); renderStats(); toast('Write failed: ' + e.message, 'err'); });
   db.ref('dashboard/summary/checkedIn').transaction(n => Math.max(0, (n || 0) - 1));
   if (r.tshirtSize) db.ref(`dashboard/summary/sizes/${r.tshirtSize}/checkedIn`).transaction(n => Math.max(0, (n || 0) - 1));
 }
