@@ -59,7 +59,7 @@
         email_lbl: 'Email used at registration',
         email_ph:  'your@email.com',
         yob_lbl:   'Year of Birth',
-        yob_ph:    'e.g. 1985  or  2528',
+        yob_ph:    'e.g. 1985 / 2528',
         submit:    'Find my pass →',
         loading:   'Searching…',
         err_email: 'Please enter a valid email address.',
@@ -320,7 +320,7 @@
     text-transform:uppercase; letter-spacing:.05em; margin-bottom:5px; }
   ._an_form_card ._an_fl { white-space:normal; overflow-wrap:break-word; }
   ._an_fi {
-    display:block; width:100%; padding:9px 12px !important;
+    display:block; width:100%; min-width:0; padding:9px 12px !important;
     border:1.5px solid #dde3f0; border-radius:9px;
     font-size:13.5px; font-family:inherit; color:#111827;
     outline:none; background:#f8f9fc; transition:border-color .18s, background .18s;
