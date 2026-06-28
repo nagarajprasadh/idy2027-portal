@@ -627,7 +627,7 @@
       <div class="form-group" style="margin-top:10px;">
         <label id="retLblYOB">Year of Birth <span style="font-weight:400;font-size:12px;color:var(--muted);" id="retHint">(if provided at registration)</span></label>
         <input type="text" id="rYOB" placeholder="e.g. 1985" maxlength="4" inputmode="numeric"
-               style="letter-spacing:4px;font-size:18px;font-weight:600;max-width:140px;"
+               style="letter-spacing:2px;font-size:18px;font-weight:600;max-width:180px;"
                onkeydown="if(event.key==='Enter') doRetrieve()">
       </div>
 
@@ -678,7 +678,7 @@
       <div class="form-group" style="margin-top:10px;">
         <label for="regYOB"><span id="lYOB">Year of Birth</span> <span style="font-weight:400;font-size:12px;color:var(--muted);" id="lYOBOpt">(optional — needed to retrieve your pass later)</span></label>
         <input type="text" id="regYOB" placeholder="e.g. 1985" maxlength="4" inputmode="numeric"
-               style="letter-spacing:4px;font-size:18px;font-weight:600;max-width:140px;">
+               style="letter-spacing:2px;font-size:18px;font-weight:600;max-width:180px;">
       </div>
       <button class="btn btn-navy btn-full" id="btnS1" onclick="go(2)" disabled>
         <span id="bS1">Continue</span> →
@@ -1011,6 +1011,7 @@ function token() {
 function toggleLang() {
   lang = lang === 'en' ? 'th' : 'en';
   applyLang();
+  if (typeof window._anSetLang === 'function') window._anSetLang(lang);
 }
 
 function applyLang() {
@@ -1027,7 +1028,10 @@ function applyLang() {
     'alreadyRegTxt','alreadyRegBtnLbl','backToRegLbl',
     'retTitle','retSub','retLblSearch','retLblYOB','retHint','retBtnLbl'
   ];
-  ids.forEach(id => setText(id, s(id)));
+  ids.forEach(id => {
+    if (id === 'hSub') { const e = el(id); if (e) e.innerHTML = s(id); }
+    else setText(id, s(id));
+  });
   setAttr('email',  'placeholder', s('emailPH'));
   setAttr('emailC', 'placeholder', s('emailPH'));
   // Year of birth placeholder — show BE equivalent in Thai
@@ -1795,6 +1799,6 @@ applyLang();
     Admin
   </a>
 </div>
-<script src="ananda-widget.js?v=20260628c"></script>
+<script src="ananda-widget.js?v=20260628d"></script>
 </body>
 </html>
