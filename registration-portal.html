@@ -310,6 +310,42 @@
       color: var(--navy);
       margin-bottom: 16px;
     }
+    /* ── T-shirt size picker ── */
+    .size-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 2px;
+    }
+    .sz-btn {
+      padding: 15px 8px;
+      border: 2px solid #e4e0d8;
+      border-radius: 14px;
+      background: #faf8f4;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      text-align: center;
+      transition: all .25s cubic-bezier(.34,1.4,.64,1);
+      box-shadow: 0 1px 4px rgba(0,0,0,.04);
+      -webkit-user-select: none; user-select: none;
+    }
+    .sz-btn:hover:not(.sel) {
+      border-color: var(--navy);
+      color: var(--navy);
+      transform: translateY(-3px);
+      box-shadow: 0 5px 14px rgba(0,45,110,.12);
+    }
+    .sz-btn.sel {
+      background: var(--navy);
+      border-color: var(--navy);
+      color: #fff;
+      box-shadow: 0 5px 18px rgba(0,45,110,.3);
+      transform: translateY(-2px) scale(1.04);
+    }
+
     .btn-remove {
       margin-left: auto;
       background: none;
@@ -1257,11 +1293,13 @@ function buildPForms(count, saved) {
                value="${prev_name}" oninput="chkParts()">
       </div>
       <div class="form-group">
-        <label for="ps_${i}">${s('lTshirt')} <span class="req">*</span></label>
-        <select id="ps_${i}" onchange="chkParts()">
-          <option value="">${s('selSize')}</option>
-          ${sizes.map(sz => `<option value="${sz}"${prev_size===sz?' selected':''}>${sz}</option>`).join('')}
-        </select>
+        <label>${s('lTshirt')} <span class="req">*</span></label>
+        <input type="hidden" id="ps_${i}" value="${prev_size}">
+        <div class="size-grid">
+          ${sizes.map(sz => `<button type="button" class="sz-btn${prev_size===sz?' sel':''}"
+            data-slot="${i}" data-sz="${sz}"
+            onclick="pickSize(${i},'${sz}')">${sz}</button>`).join('')}
+        </div>
       </div>
     </div>`;
   }
@@ -1293,6 +1331,14 @@ function chkParts() {
     if (!n?.value.trim() || !z?.value) { ok = false; break; }
   }
   el('btnS3').disabled = !ok;
+}
+
+function pickSize(slot, sz) {
+  el('ps_'+slot).value = sz;
+  document.querySelectorAll('.sz-btn[data-slot="'+slot+'"]').forEach(b => {
+    b.classList.toggle('sel', b.dataset.sz === sz);
+  });
+  chkParts();
 }
 
 function validateParts() {
@@ -1848,6 +1894,6 @@ applyLang();
     Admin
   </a>
 </div>
-<script src="ananda-widget.js?v=20260628e"></script>
+<script src="ananda-widget.js?v=20260628f"></script>
 </body>
 </html>
