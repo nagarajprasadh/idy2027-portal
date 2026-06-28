@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yoga & IDY Guide · 13th International Day of Yoga 2027</title>
+<style>
+  :root {
+    --navy:#001845; --navy2:#002D6E; --saffron:#FF9933;
+    --bg:#f5f6fa; --card:#fff; --text:#1a1a2e; --muted:#6b7280;
+    --radius:14px; --shadow:0 2px 12px rgba(0,0,0,.08);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Noto Sans Thai','Noto Sans',system-ui,sans-serif;
+    background:var(--bg); color:var(--text); min-height:100vh; }
+
+  /* Header */
+  .hero {
+    background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);
+    padding:40px 20px 32px; text-align:center; position:relative;
+  }
+  .hero-logo { height:52px; border-radius:10px; background:#fff;
+    padding:3px; box-shadow:0 2px 8px rgba(0,0,0,.25); margin-bottom:16px; }
+  .hero h1 { color:#fff; font-size:22px; font-weight:800; letter-spacing:-.02em; line-height:1.3; }
+  .hero p  { color:rgba(255,255,255,.7); font-size:13px; margin-top:6px; }
+  .lang-toggle {
+    position:absolute; top:16px; right:16px;
+    display:flex; border-radius:8px; overflow:hidden;
+    border:1.5px solid rgba(255,255,255,.3);
+  }
+  .lang-toggle button {
+    background:transparent; border:none; color:rgba(255,255,255,.55);
+    padding:5px 11px; font-size:12px; font-weight:700;
+    font-family:inherit; cursor:pointer; transition:all .18s;
+  }
+  .lang-toggle button:first-child { border-right:1px solid rgba(255,255,255,.3); }
+  .lang-toggle button.active { background:var(--saffron); color:#fff; }
+
+  /* Nav tabs */
+  .tabs { background:#fff; display:flex; overflow-x:auto; gap:0;
+    border-bottom:2px solid #eee; position:sticky; top:0; z-index:100;
+    box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .tab { flex-shrink:0; padding:14px 18px; font-size:13px; font-weight:600;
+    color:var(--muted); cursor:pointer; border-bottom:2px solid transparent;
+    margin-bottom:-2px; transition:all .2s; white-space:nowrap; background:none; border-top:none; border-left:none; border-right:none; font-family:inherit; }
+  .tab.active { color:var(--navy); border-bottom-color:var(--saffron); }
+  .tab:hover:not(.active) { color:var(--navy2); }
+
+  /* Content */
+  .content { max-width:720px; margin:0 auto; padding:24px 16px 60px; }
+  .section { display:none; }
+  .section.active { display:block; }
+
+  .card {
+    background:var(--card); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:22px 20px; margin-bottom:16px;
+  }
+  .card h2 { font-size:17px; font-weight:800; color:var(--navy); margin-bottom:10px;
+    display:flex; align-items:center; gap:8px; }
+  .card h3 { font-size:14px; font-weight:700; color:var(--navy2); margin:14px 0 6px; }
+  .card p  { font-size:14px; line-height:1.7; color:#374151; }
+  .card ul { padding-left:20px; }
+  .card li { font-size:14px; line-height:1.8; color:#374151; }
+
+  .tag { display:inline-block; padding:3px 10px; border-radius:6px; font-size:11px;
+    font-weight:700; letter-spacing:.04em; margin-bottom:12px; }
+  .tag.green  { background:#dcfce7; color:#166534; }
+  .tag.orange { background:#ffedd5; color:#9a3412; }
+  .tag.blue   { background:#dbeafe; color:#1e40af; }
+
+  .do-dont { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
+  .do, .dont { border-radius:10px; padding:14px; }
+  .do   { background:#f0fdf4; }
+  .dont { background:#fff1f2; }
+  .do h4   { color:#16a34a; font-size:12px; font-weight:800; margin-bottom:8px; letter-spacing:.06em; }
+  .dont h4 { color:#dc2626; font-size:12px; font-weight:800; margin-bottom:8px; letter-spacing:.06em; }
+  .do li, .dont li { font-size:13px; line-height:1.7; color:#374151; }
+
+  .highlight { background:linear-gradient(135deg,var(--navy),var(--navy2));
+    border-radius:var(--radius); padding:20px; color:#fff; margin-bottom:16px; }
+  .highlight h2 { color:#fff; }
+  .highlight p  { color:rgba(255,255,255,.8); margin-top:8px; font-size:14px; line-height:1.6; }
+  .badge { display:inline-flex; align-items:center; gap:6px;
+    background:rgba(255,255,255,.15); border-radius:8px; padding:6px 12px;
+    font-size:13px; color:#fff; font-weight:600; margin:6px 6px 0 0; }
+
+  .timeline { position:relative; padding-left:24px; margin-top:12px; }
+  .timeline::before { content:''; position:absolute; left:8px; top:4px;
+    bottom:4px; width:2px; background:#e5e7eb; }
+  .tl-item { position:relative; margin-bottom:16px; }
+  .tl-dot { position:absolute; left:-20px; top:4px; width:10px; height:10px;
+    border-radius:50%; background:var(--saffron); border:2px solid #fff;
+    box-shadow:0 0 0 2px var(--saffron); }
+  .tl-title { font-size:13px; font-weight:700; color:var(--navy); }
+  .tl-desc  { font-size:13px; color:var(--muted); margin-top:2px; line-height:1.5; }
+
+  .back-btn {
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--navy); color:#fff; border:none; border-radius:10px;
+    padding:10px 18px; font-size:14px; font-weight:700; cursor:pointer;
+    font-family:inherit; text-decoration:none; margin-bottom:20px;
+  }
+  .back-btn:hover { background:var(--navy2); }
+
+  @media (max-width:480px) {
+    .do-dont { grid-template-columns:1fr; }
+    .hero h1 { font-size:18px; }
+    .tabs { font-size:12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="lang-toggle">
+    <button class="active" id="fq_en" onclick="faqLang('en')">EN</button>
+    <button id="fq_th" onclick="faqLang('th')">TH</button>
+  </div>
+  <img src="idy-logo.png" alt="IDY Logo" class="hero-logo">
+  <h1 id="fq_title">Yoga & IDY Guide</h1>
+  <p id="fq_sub">13th International Day of Yoga 2027 · Pre-Registration Resource</p>
+</div>
+
+<!-- Tab bar -->
+<div class="tabs" id="fq_tabs">
+  <button class="tab active" onclick="showTab('about')"   id="tab_about">🌟 About IDY</button>
+  <button class="tab"        onclick="showTab('yoga')"    id="tab_yoga">🧘 Yoga Basics</button>
+  <button class="tab"        onclick="showTab('history')" id="tab_history">📜 History</button>
+  <button class="tab"        onclick="showTab('dosdont')" id="tab_dosdont">✅ Do's & Don'ts</button>
+  <button class="tab"        onclick="showTab('event')"   id="tab_event">📅 Event Day</button>
+</div>
+
+<div class="content">
+  <a class="back-btn" href="javascript:window.close()" id="fq_back">← Back</a>
+
+  <!-- ABOUT IDY -->
+  <div class="section active" id="sec_about">
+    <div class="highlight">
+      <h2>🌍 <span id="fq_idy_title">What is the International Day of Yoga?</span></h2>
+      <p id="fq_idy_body">The United Nations declared June 21st as the International Day of Yoga in December 2014, following a proposal by India's Prime Minister Narendra Modi. The first IDY was celebrated on June 21, 2015, with participation from over 190 countries — the world's largest yoga session.</p>
+      <div style="margin-top:12px;">
+        <span class="badge">🗓 Every 21 June</span>
+        <span class="badge">🌐 190+ countries</span>
+        <span class="badge">🇺🇳 UN declared</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🇮🇳 <span id="fq_india_title">India & the Yoga Tradition</span></h2>
+      <p id="fq_india_body">Yoga originated in ancient India over 5,000 years ago. It is one of India's greatest gifts to the world — a holistic practice that unites body, mind, and spirit. The word "yoga" comes from the Sanskrit root "yuj" meaning to yoke or unite.</p>
+      <h3 id="fq_theme_h">2027 Theme</h3>
+      <p id="fq_theme_b">The 13th IDY theme is <strong>"Yoga for Harmony and Peace"</strong> — reflecting yoga's power to bridge differences, foster inner calm, and build community across cultures.</p>
+    </div>
+
+    <div class="card">
+      <h2>🇹🇭 <span id="fq_thai_title">IDY in Thailand</span></h2>
+      <p id="fq_thai_body">Thailand has been an active participant in IDY since its inception. The Embassy of India in Bangkok, in collaboration with Thai institutions, has organized large-scale yoga sessions each year. The 13th IDY 2027 will be held at Chulalongkorn University — one of Thailand's most prestigious universities — welcoming participants from all backgrounds to experience the transformative power of yoga.</p>
+      <div style="margin-top:14px;">
+        <span class="badge" style="background:#FF9933;">📍 Chulalongkorn University</span>
+        <span class="badge" style="background:#FF9933;">🗓 20 June 2027</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- YOGA BASICS -->
+  <div class="section" id="sec_yoga">
+    <div class="card">
+      <h2>🧘 <span id="fq_ydef_title">What is Yoga?</span></h2>
+      <p id="fq_ydef_body">Yoga is a 5,000-year-old physical, mental, and spiritual practice that originated in India. It combines physical postures (asanas), breathing techniques (pranayama), and meditation (dhyana) to promote wellbeing, flexibility, strength, and inner peace.</p>
+      <p style="margin-top:10px;" id="fq_ydef_body2">Yoga is for everyone — regardless of age, fitness level, or experience. The IDY session is designed to be accessible for all participants, including beginners.</p>
+    </div>
+
+    <div class="card">
+      <h2>🌿 <span id="fq_ybranch_title">The 8 Limbs of Yoga (Ashtanga)</span></h2>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot"></div><div class="tl-title">1. Yama — Ethics</div><div class="tl-desc" id="fq_yama">Non-violence, truthfulness, non-stealing, continence, non-greed</div></div>
+        <div class="tl-item"><div class="tl-dot"></div><div class="tl-title">2. Niyama — Self-discipline</div><div class="tl-desc" id="fq_niyama">Purity, contentment, austerity, self-study, surrender to the divine</div></div>
+        <div class="tl-item"><div class="tl-dot"></div><div class="tl-title">3. Asana — Postures</div><div class="tl-desc" id="fq_asana">Physical poses that build strength, flexibility, and balance</div></div>
+        <div class="tl-item"><div class="tl-dot"></div><div class="tl-title">4. Pranayama — Breath Control</div><div class="tl-desc" id="fq_pranayama">Regulation of breath to influence the flow of prana (life force)</div></div>
+        <div class="tl-item"><div class="tl-dot"></div><div class="tl-title">5. Pratyahara — Sense Withdrawal</div><div class="tl-desc" id="fq_pratyahara">Turning attention inward, away from external distractions</div></div>
+        <div class="tl-item"><div class="tl-dot"></div><div class="tl-title">6. Dharana — Concentration</div><div class="tl-desc" id="fq_dharana">Focused attention on a single point or object</div></div>
+        <div class="tl-item"><div class="tl-dot"></div><div class="tl-title">7. Dhyana — Meditation</div><div class="tl-desc" id="fq_dhyana">Sustained, uninterrupted awareness</div></div>
+        <div class="tl-item"><div class="tl-dot"></div><div class="tl-title">8. Samadhi — Enlightenment</div><div class="tl-desc" id="fq_samadhi">State of blissful union with universal consciousness</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>💪 <span id="fq_benefit_title">Benefits of Yoga</span></h2>
+      <h3 id="fq_phys_h">Physical</h3>
+      <ul id="fq_phys_list">
+        <li>Improves flexibility and range of motion</li>
+        <li>Builds muscle strength and tones the body</li>
+        <li>Improves posture and body awareness</li>
+        <li>Boosts immunity and cardiovascular health</li>
+        <li>Aids digestion and detoxification</li>
+      </ul>
+      <h3 id="fq_mental_h">Mental & Emotional</h3>
+      <ul id="fq_mental_list">
+        <li>Reduces stress, anxiety, and depression</li>
+        <li>Improves focus, memory, and sleep quality</li>
+        <li>Cultivates mindfulness and emotional resilience</li>
+        <li>Promotes a sense of calm and inner peace</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="section" id="sec_history">
+    <div class="card">
+      <h2>📜 <span id="fq_hist_title">A Brief History of Yoga</span></h2>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot"></div>
+          <div class="tl-title" id="fq_h1t">~3000 BCE — Indus Valley Civilization</div>
+          <div class="tl-desc" id="fq_h1d">Earliest evidence of yoga practice found in seals and figurines from the Indus Valley, depicting figures in meditative poses</div>
+        </div>
+        <div class="tl-item"><div class="tl-dot"></div>
+          <div class="tl-title" id="fq_h2t">1500–500 BCE — Vedic Period</div>
+          <div class="tl-desc" id="fq_h2d">The Vedas (Rigveda, Upanishads) introduced early yogic concepts — sacrifices, rituals, and the connection between individual and universal consciousness</div>
+        </div>
+        <div class="tl-item"><div class="tl-dot"></div>
+          <div class="tl-title" id="fq_h3t">500 BCE — Bhagavad Gita</div>
+          <div class="tl-desc" id="fq_h3d">Lord Krishna's discourse to Arjuna established karma yoga, jnana yoga, and bhakti yoga as paths to liberation</div>
+        </div>
+        <div class="tl-item"><div class="tl-dot"></div>
+          <div class="tl-title" id="fq_h4t">~200 BCE — Patanjali's Yoga Sutras</div>
+          <div class="tl-desc" id="fq_h4d">Sage Patanjali codified yoga philosophy into 196 sutras — the definitive text on classical yoga and the eight-limbed path (Ashtanga)</div>
+        </div>
+        <div class="tl-item"><div class="tl-dot"></div>
+          <div class="tl-title" id="fq_h5t">Late 19th century — Yoga Reaches the West</div>
+          <div class="tl-desc" id="fq_h5d">Swami Vivekananda introduced yoga to the West at the Parliament of World Religions in Chicago (1893). Yogis like Krishnamacharya, Iyengar, and Pattabhi Jois later modernised asana practice</div>
+        </div>
+        <div class="tl-item"><div class="tl-dot"></div>
+          <div class="tl-title" id="fq_h6t">2014 — UN Resolution</div>
+          <div class="tl-desc" id="fq_h6d">The UN General Assembly declared June 21 as International Day of Yoga, with a record 177 co-sponsoring nations — the largest number for any UN resolution</div>
+        </div>
+        <div class="tl-item"><div class="tl-dot"></div>
+          <div class="tl-title" id="fq_h7t">2015–Present — Global Celebration</div>
+          <div class="tl-desc" id="fq_h7d">IDY is now celebrated in 190+ countries. India holds mass events at iconic landmarks. Bangkok has hosted thousands of participants each year</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DO'S & DON'TS -->
+  <div class="section" id="sec_dosdont">
+    <div class="card">
+      <h2>✅ <span id="fq_dd_title">Yoga Session Do's & Don'ts</span></h2>
+      <div class="do-dont">
+        <div class="do">
+          <h4 id="fq_do_h">✅ DO</h4>
+          <ul id="fq_do_list">
+            <li>Wear loose, comfortable clothing</li>
+            <li>Arrive at least 15 min early</li>
+            <li>Bring your QR code (phone or printed)</li>
+            <li>Bring a water bottle (min 500ml)</li>
+            <li>Practice on the provided mat</li>
+            <li>Listen to the instructor's guidance</li>
+            <li>Breathe naturally and stay hydrated</li>
+            <li>Inform marshals of any injuries</li>
+          </ul>
+        </div>
+        <div class="dont">
+          <h4 id="fq_dont_h">🚫 DON'T</h4>
+          <ul id="fq_dont_list">
+            <li>Eat a heavy meal within 2 hours before</li>
+            <li>Wear tight or restrictive clothes</li>
+            <li>Push through pain or discomfort</li>
+            <li>Bring valuables — limited storage</li>
+            <li>Use your phone during the session</li>
+            <li>Collect T-shirts on behalf of others</li>
+            <li>Leave mats after the session</li>
+            <li>Bring pets to the venue</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>👗 <span id="fq_dress_title">What to Wear</span></h2>
+      <p id="fq_dress_body">Wear your IDY T-shirt (collected at entry) or any light, breathable sportswear. Avoid jeans, belts, or restrictive clothing. Bare feet or yoga socks are recommended for the mat.</p>
+    </div>
+
+    <div class="card">
+      <h2>🍎 <span id="fq_food_title">Food & Hydration</span></h2>
+      <ul id="fq_food_list">
+        <li>Do not eat a heavy meal 1–2 hours before the session</li>
+        <li>Light snacks (fruit, nuts) are fine 30–60 minutes before</li>
+        <li>Stay well-hydrated throughout the day</li>
+        <li>Bring your own refillable water bottle — refill stations on site</li>
+        <li>Bangkok in June is hot and humid — drink water before, during, and after</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>🏥 <span id="fq_health_title">Health Precautions</span></h2>
+      <p id="fq_health_body">Yoga is suitable for all fitness levels. However, if you have any of the following conditions, please inform our on-site marshals:</p>
+      <ul style="margin-top:8px;" id="fq_health_list">
+        <li>Recent surgery or injury</li>
+        <li>Pregnancy (especially 2nd or 3rd trimester)</li>
+        <li>Severe back or joint conditions</li>
+        <li>High blood pressure or heart conditions</li>
+      </ul>
+      <p style="margin-top:10px;" id="fq_health_note">First aid will be available on site. You are not required to perform any pose you are uncomfortable with.</p>
+    </div>
+  </div>
+
+  <!-- EVENT DAY -->
+  <div class="section" id="sec_event">
+    <div class="highlight">
+      <h2>📅 <span id="fq_ev_title">Event Day — Quick Reference</span></h2>
+      <p id="fq_ev_body">Sunday, 20 June 2027 · Chulalongkorn University, Bangkok</p>
+      <div style="margin-top:10px;">
+        <span class="badge">📍 Chulalongkorn University</span>
+        <span class="badge">🚇 BTS Sala Daeng / MRT Sam Yan</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🕐 <span id="fq_sched_title">Schedule (Approximate)</span></h2>
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot"></div>
+          <div class="tl-title" id="fq_s1t">6:30 AM — Gates Open</div>
+          <div class="tl-desc" id="fq_s1d">Arrive early, check in at the gate with your QR code, collect your T-shirt</div>
+        </div>
+        <div class="tl-item"><div class="tl-dot"></div>
+          <div class="tl-title" id="fq_s2t">7:00 AM — Warm-Up Begins</div>
+          <div class="tl-desc" id="fq_s2d">Find your mat (pre-laid out), warm-up session led by instructors</div>
+        </div>
+        <div class="tl-item"><div class="tl-dot"></div>
+          <div class="tl-title" id="fq_s3t">7:15 AM — Opening Ceremony</div>
+          <div class="tl-desc" id="fq_s3d">Welcome addresses, lighting of the lamp, cultural moment</div>
+        </div>
+        <div class="tl-item"><div class="tl-dot"></div>
+          <div class="tl-title" id="fq_s4t">7:30 AM — Common Yoga Protocol</div>
+          <div class="tl-desc" id="fq_s4d">45-minute guided yoga session following the Common Yoga Protocol (CYP) developed by AYUSH Ministry</div>
+        </div>
+        <div class="tl-item"><div class="tl-dot"></div>
+          <div class="tl-title" id="fq_s5t">8:15 AM — Meditation & Cool Down</div>
+          <div class="tl-desc" id="fq_s5d">Guided breathing, Shavasana, and closing meditation</div>
+        </div>
+        <div class="tl-item"><div class="tl-dot"></div>
+          <div class="tl-title" id="fq_s6t">8:45 AM — Close</div>
+          <div class="tl-desc" id="fq_s6d">Vote of thanks, refreshments (if available), networking</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🚌 <span id="fq_travel_title">Getting There</span></h2>
+      <h3 id="fq_bts_h">BTS Skytrain</h3>
+      <p id="fq_bts_b">Sala Daeng Station (Silom Line) — 10 min walk to main campus</p>
+      <h3 id="fq_mrt_h">MRT Subway</h3>
+      <p id="fq_mrt_b">Sam Yan Station (Blue Line) — 5 min walk to campus</p>
+      <h3 id="fq_park_h">Parking</h3>
+      <p id="fq_park_b">Very limited on-campus parking. Public transport is strongly recommended. Grab/taxi drop-off at the main gate is available.</p>
+    </div>
+
+    <div class="card">
+      <h2>📋 <span id="fq_check_title">Check-In Process</span></h2>
+      <ol style="padding-left:18px;" id="fq_check_list">
+        <li style="margin-bottom:8px;line-height:1.6;">Show your <strong>QR code</strong> (on phone or printed) at the entry gate</li>
+        <li style="margin-bottom:8px;line-height:1.6;">Marshal scans your code and marks you as checked in</li>
+        <li style="margin-bottom:8px;line-height:1.6;">Proceed to the T-shirt counter — same QR code, 1 shirt per participant</li>
+        <li style="margin-bottom:8px;line-height:1.6;">Find your mat (all mats are pre-laid out — nothing to do)</li>
+        <li style="line-height:1.6;">Enjoy the session! 🙏</li>
+      </ol>
+      <p style="margin-top:12px;font-size:13px;color:var(--muted);" id="fq_qr_note">Don't have your QR code? Open the portal and use the "Retrieve My Pass" tab, or ask Ananda (the chatbot) to retrieve it for you.</p>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<script>
+var FQ_LANG = 'en';
+
+var FQ_TEXT = {
+  en: {
+    title:'Yoga & IDY Guide',
+    sub:'13th International Day of Yoga 2027 · Pre-Registration Resource',
+    back:'← Back',
+    tabs:['🌟 About IDY','🧘 Yoga Basics','📜 History','✅ Do\'s & Don\'ts','📅 Event Day'],
+    idy_title:'What is the International Day of Yoga?',
+    idy_body:'The United Nations declared June 21st as the International Day of Yoga in December 2014, following a proposal by India\'s Prime Minister Narendra Modi. The first IDY was celebrated on June 21, 2015, with participation from over 190 countries — the world\'s largest yoga session.',
+    india_title:'India & the Yoga Tradition',
+    india_body:'Yoga originated in ancient India over 5,000 years ago. It is one of India\'s greatest gifts to the world — a holistic practice that unites body, mind, and spirit. The word "yoga" comes from the Sanskrit root "yuj" meaning to yoke or unite.',
+    theme_h:'2027 Theme',
+    theme_b:'The 13th IDY theme is <strong>"Yoga for Harmony and Peace"</strong> — reflecting yoga\'s power to bridge differences, foster inner calm, and build community across cultures.',
+    thai_title:'IDY in Thailand',
+    thai_body:'Thailand has been an active participant in IDY since its inception. The 13th IDY 2027 will be held at Chulalongkorn University — one of Thailand\'s most prestigious universities — welcoming participants from all backgrounds to experience the transformative power of yoga.',
+    ydef_title:'What is Yoga?',
+    ydef_body:'Yoga is a 5,000-year-old physical, mental, and spiritual practice that originated in India. It combines physical postures (asanas), breathing techniques (pranayama), and meditation (dhyana) to promote wellbeing, flexibility, strength, and inner peace.',
+    ydef_body2:'Yoga is for everyone — regardless of age, fitness level, or experience. The IDY session is designed to be accessible for all participants, including beginners.',
+    ybranch_title:'The 8 Limbs of Yoga (Ashtanga)',
+    benefit_title:'Benefits of Yoga',
+    phys_h:'Physical',
+    mental_h:'Mental & Emotional',
+    hist_title:'A Brief History of Yoga',
+    dd_title:'Yoga Session Do\'s & Don\'ts',
+    do_h:'✅ DO', dont_h:'🚫 DON\'T',
+    dress_title:'What to Wear',
+    dress_body:'Wear your IDY T-shirt (collected at entry) or any light, breathable sportswear. Avoid jeans, belts, or restrictive clothing. Bare feet or yoga socks are recommended for the mat.',
+    food_title:'Food & Hydration',
+    health_title:'Health Precautions',
+    health_body:'Yoga is suitable for all fitness levels. However, if you have any of the following conditions, please inform our on-site marshals:',
+    health_note:'First aid will be available on site. You are not required to perform any pose you are uncomfortable with.',
+    ev_title:'Event Day — Quick Reference',
+    ev_body:'Sunday, 20 June 2027 · Chulalongkorn University, Bangkok',
+    sched_title:'Schedule (Approximate)',
+    travel_title:'Getting There',
+    bts_h:'BTS Skytrain', bts_b:'Sala Daeng Station (Silom Line) — 10 min walk to main campus',
+    mrt_h:'MRT Subway',  mrt_b:'Sam Yan Station (Blue Line) — 5 min walk to campus',
+    park_h:'Parking',    park_b:'Very limited on-campus parking. Public transport is strongly recommended.',
+    check_title:'Check-In Process',
+    qr_note:'Don\'t have your QR code? Open the portal and use the "Retrieve My Pass" tab, or ask Ananda (the chatbot).',
+  },
+  th: {
+    title:'คู่มือโยคะและ IDY',
+    sub:'วันโยคะสากลครั้งที่ 13 ปี 2027 · ข้อมูลก่อนลงทะเบียน',
+    back:'← กลับ',
+    tabs:['🌟 เกี่ยวกับ IDY','🧘 โยคะเบื้องต้น','📜 ประวัติศาสตร์','✅ ข้อควรปฏิบัติ','📅 วันงาน'],
+    idy_title:'วันโยคะสากล (IDY) คืออะไร?',
+    idy_body:'สหประชาชาติประกาศให้วันที่ 21 มิถุนายนเป็น "วันโยคะสากล" ในเดือนธันวาคม 2557 ตามข้อเสนอของนายกรัฐมนตรีอินเดีย นเรนทรา โมดี โดย IDY ครั้งแรกจัดขึ้นเมื่อวันที่ 21 มิถุนายน 2558 มีผู้เข้าร่วมจากกว่า 190 ประเทศ',
+    india_title:'อินเดียและประเพณีโยคะ',
+    india_body:'โยคะมีต้นกำเนิดในอินเดียโบราณเมื่อกว่า 5,000 ปีที่แล้ว เป็นของขวัญอันยิ่งใหญ่ที่อินเดียมอบให้โลก คำว่า "โยคะ" มาจากรากศัพท์สันสกฤต "ยุช" ที่หมายถึงการเชื่อมโยงหรือรวมเป็นหนึ่ง',
+    theme_h:'ธีมปี 2027',
+    theme_b:'ธีม IDY ครั้งที่ 13 คือ <strong>"โยคะเพื่อความสามัคคีและสันติภาพ"</strong> สะท้อนพลังของโยคะในการเชื่อมสัมพันธ์ผู้คนข้ามวัฒนธรรม',
+    thai_title:'IDY ในประเทศไทย',
+    thai_body:'ไทยเข้าร่วม IDY มาตั้งแต่เริ่มต้น IDY ครั้งที่ 13 ปี 2027 จะจัดขึ้นที่จุฬาลงกรณ์มหาวิทยาลัย เปิดรับผู้เข้าร่วมทุกระดับ',
+    ydef_title:'โยคะคืออะไร?',
+    ydef_body:'โยคะเป็นการปฏิบัติทางกาย จิต และจิตวิญญาณที่มีอายุกว่า 5,000 ปี ผสมผสานท่าฝึก (อาสนะ) การควบคุมลมหายใจ (ปราณายามะ) และการทำสมาธิ (ธยานะ)',
+    ydef_body2:'โยคะเหมาะกับทุกคน ไม่ว่าจะอายุเท่าไร ระดับสมรรถภาพใด หรือมีประสบการณ์มากแค่ไหน การฝึก IDY ออกแบบมาให้ผู้เริ่มต้นก็ทำได้',
+    ybranch_title:'8 องค์ประกอบของโยคะ (อัษฎางคโยคะ)',
+    benefit_title:'ประโยชน์ของโยคะ',
+    phys_h:'ด้านร่างกาย',
+    mental_h:'ด้านจิตใจและอารมณ์',
+    hist_title:'ประวัติโดยย่อของโยคะ',
+    dd_title:'ข้อควรปฏิบัติและข้อควรหลีกเลี่ยง',
+    do_h:'✅ ควรทำ', dont_h:'🚫 ไม่ควรทำ',
+    dress_title:'การแต่งกาย',
+    dress_body:'สวมเสื้อ IDY (รับที่ประตูทางเข้า) หรือชุดกีฬาสบายๆ หลีกเลี่ยงกางเกงยีนส์หรือเสื้อผ้าที่รัดแน่น แนะนำให้ใช้เท้าเปล่าหรือถุงเท้าโยคะบนเสื่อ',
+    food_title:'อาหารและน้ำดื่ม',
+    health_title:'ข้อควรระวังด้านสุขภาพ',
+    health_body:'โยคะเหมาะกับทุกระดับสมรรถภาพ แต่หากมีประวัติด้านสุขภาพต่อไปนี้ กรุณาแจ้งเจ้าหน้าที่:',
+    health_note:'มีหน่วยปฐมพยาบาลพร้อมให้บริการในงาน คุณไม่จำเป็นต้องทำท่าใดที่รู้สึกไม่สบาย',
+    ev_title:'สรุปข้อมูลวันงาน',
+    ev_body:'วันอาทิตย์ที่ 20 มิถุนายน 2570 · จุฬาลงกรณ์มหาวิทยาลัย กรุงเทพฯ',
+    sched_title:'กำหนดการ (โดยประมาณ)',
+    travel_title:'การเดินทาง',
+    bts_h:'รถไฟฟ้า BTS', bts_b:'สถานีศาลาแดง (สายสีลม) — เดิน 10 นาทีถึงจุฬาฯ',
+    mrt_h:'รถไฟใต้ดิน MRT',  mrt_b:'สถานีสามย่าน (สายสีน้ำเงิน) — เดิน 5 นาทีถึงจุฬาฯ',
+    park_h:'ที่จอดรถ',    park_b:'ที่จอดรถในมหาวิทยาลัยมีจำกัดมาก แนะนำให้ใช้ขนส่งสาธารณะ',
+    check_title:'ขั้นตอนการเช็คอิน',
+    qr_note:'ไม่มี QR code? เปิดพอร์ทัลและใช้แท็บ "ดึง QR code" หรือถามอานันดา (แชทบอท)',
+  }
+};
+
+function faqLang(l) {
+  FQ_LANG = l;
+  document.getElementById('fq_en').className = l==='en'?'active':'';
+  document.getElementById('fq_th').className = l==='th'?'active':'';
+  var tx = FQ_TEXT[l];
+  // Header
+  set('fq_title', tx.title); set('fq_sub', tx.sub); set('fq_back', tx.back);
+  // Tab labels
+  var tabIds = ['tab_about','tab_yoga','tab_history','tab_dosdont','tab_event'];
+  tabIds.forEach(function(id,i){ set(id, tx.tabs[i]); });
+  // About
+  set('fq_idy_title',tx.idy_title); setH('fq_idy_body',tx.idy_body);
+  set('fq_india_title',tx.india_title); set('fq_india_body',tx.india_body);
+  set('fq_theme_h',tx.theme_h); setH('fq_theme_b',tx.theme_b);
+  set('fq_thai_title',tx.thai_title); set('fq_thai_body',tx.thai_body);
+  // Yoga
+  set('fq_ydef_title',tx.ydef_title); set('fq_ydef_body',tx.ydef_body); set('fq_ydef_body2',tx.ydef_body2);
+  set('fq_ybranch_title',tx.ybranch_title); set('fq_benefit_title',tx.benefit_title);
+  set('fq_phys_h',tx.phys_h); set('fq_mental_h',tx.mental_h);
+  // History
+  set('fq_hist_title',tx.hist_title);
+  // Dos
+  set('fq_dd_title',tx.dd_title); set('fq_do_h',tx.do_h); set('fq_dont_h',tx.dont_h);
+  set('fq_dress_title',tx.dress_title); set('fq_dress_body',tx.dress_body);
+  set('fq_food_title',tx.food_title); set('fq_health_title',tx.health_title);
+  set('fq_health_body',tx.health_body); set('fq_health_note',tx.health_note);
+  // Event
+  set('fq_ev_title',tx.ev_title); set('fq_ev_body',tx.ev_body);
+  set('fq_sched_title',tx.sched_title); set('fq_travel_title',tx.travel_title);
+  set('fq_bts_h',tx.bts_h); set('fq_bts_b',tx.bts_b);
+  set('fq_mrt_h',tx.mrt_h); set('fq_mrt_b',tx.mrt_b);
+  set('fq_park_h',tx.park_h); set('fq_park_b',tx.park_b);
+  set('fq_check_title',tx.check_title); set('fq_qr_note',tx.qr_note);
+  // Lists
+  if(l==='th'){
+    setList('fq_phys_list',['ช่วยเพิ่มความยืดหยุ่นและช่วงการเคลื่อนไหว','เสริมสร้างกล้ามเนื้อและกระชับร่างกาย','ปรับปรุงท่าทางและความตระหนักรู้ในร่างกาย','เสริมภูมิคุ้มกันและสุขภาพหัวใจ','ช่วยการย่อยอาหารและกำจัดสารพิษ']);
+    setList('fq_mental_list',['ลดความเครียด วิตกกังวล และภาวะซึมเศร้า','เพิ่มสมาธิ ความจำ และคุณภาพการนอน','ฝึกสติและความยืดหยุ่นทางอารมณ์','ส่งเสริมความสงบและสันติภายใน']);
+    setList('fq_do_list',['สวมชุดสบาย ไม่รัดแน่น','มาถึงก่อนเวลาอย่างน้อย 15 นาที','นำ QR code มาด้วย (โทรศัพท์หรือพิมพ์)','นำขวดน้ำมา (อย่างน้อย 500 มล.)','ฝึกบนเสื่อที่จัดไว้ให้','ฟังคำแนะนำของผู้สอน','หายใจตามธรรมชาติและดื่มน้ำให้เพียงพอ','แจ้งเจ้าหน้าที่หากมีอาการบาดเจ็บ']);
+    setList('fq_dont_list',['ทานอาหารหนักก่อนฝึก 2 ชั่วโมง','สวมชุดรัดแน่น','ฝืนทำท่าที่เจ็บปวด','นำของมีค่ามาเพราะพื้นที่จัดเก็บมีจำกัด','ใช้โทรศัพท์ระหว่างฝึก','รับเสื้อแทนผู้อื่น','ทิ้งเสื่อไว้หลังจบกิจกรรม','นำสัตว์เลี้ยงเข้างาน']);
+    setList('fq_food_list',['อย่าทานอาหารหนัก 1–2 ชั่วโมงก่อนฝึก','ของว่างเบาๆ เช่น ผลไม้หรือถั่ว ทานได้ 30–60 นาทีก่อน','ดื่มน้ำให้เพียงพอตลอดวัน','นำขวดน้ำส่วนตัวมาเติมได้จากจุดเติมน้ำในงาน','กรุงเทพฯ เดือนมิถุนายนร้อนมาก — ดื่มน้ำก่อน ระหว่าง และหลังฝึก']);
+    setList('fq_health_list',['เพิ่งผ่าตัดหรือได้รับบาดเจ็บ','ตั้งครรภ์ (โดยเฉพาะไตรมาส 2–3)','มีปัญหาหลังหรือข้อรุนแรง','ความดันโลหิตสูงหรือโรคหัวใจ']);
+    setOL('fq_check_list',['แสดง <strong>QR code</strong> (โทรศัพท์หรือพิมพ์) ที่ประตูทางเข้า','เจ้าหน้าที่สแกน QR และบันทึกการเช็คอินของคุณ','ไปที่จุดรับเสื้อ — ใช้ QR code เดิม รับได้ 1 ตัว','หาเสื่อของคุณ (ปูไว้ให้ทุกคนแล้ว)','เพลิดเพลินกับการฝึก! 🙏']);
+  } else {
+    setList('fq_phys_list',['Improves flexibility and range of motion','Builds muscle strength and tones the body','Improves posture and body awareness','Boosts immunity and cardiovascular health','Aids digestion and detoxification']);
+    setList('fq_mental_list',['Reduces stress, anxiety, and depression','Improves focus, memory, and sleep quality','Cultivates mindfulness and emotional resilience','Promotes a sense of calm and inner peace']);
+    setList('fq_do_list',['Wear loose, comfortable clothing','Arrive at least 15 min early','Bring your QR code (phone or printed)','Bring a water bottle (min 500ml)','Practice on the provided mat','Listen to the instructor\'s guidance','Breathe naturally and stay hydrated','Inform marshals of any injuries']);
+    setList('fq_dont_list',['Eat a heavy meal within 2 hours before','Wear tight or restrictive clothes','Push through pain or discomfort','Bring valuables — limited storage','Use your phone during the session','Collect T-shirts on behalf of others','Leave mats after the session','Bring pets to the venue']);
+    setList('fq_food_list',['Do not eat a heavy meal 1–2 hours before the session','Light snacks (fruit, nuts) are fine 30–60 minutes before','Stay well-hydrated throughout the day','Bring your own refillable water bottle — refill stations on site','Bangkok in June is hot and humid — drink water before, during, and after']);
+    setList('fq_health_list',['Recent surgery or injury','Pregnancy (especially 2nd or 3rd trimester)','Severe back or joint conditions','High blood pressure or heart conditions']);
+    setOL('fq_check_list',['Show your <strong>QR code</strong> (on phone or printed) at the entry gate','Marshal scans your code and marks you as checked in','Proceed to the T-shirt counter — same QR code, 1 shirt per participant','Find your mat (all mats are pre-laid out — nothing to do)','Enjoy the session! 🙏']);
+  }
+  // Timeline items TH
+  if(l==='th'){
+    set('fq_yama','ไม่ใช้ความรุนแรง ซื่อสัตย์ ไม่ขโมย ความยับยั้งชั่งใจ ไม่โลภ');
+    set('fq_niyama','ความสะอาด ความพอใจ ความพากเพียร การศึกษาตนเอง การยอมรับพระเจ้า');
+    set('fq_asana','ท่าฝึกทางกายที่สร้างความแข็งแรง ยืดหยุ่น และสมดุล');
+    set('fq_pranayama','การควบคุมลมหายใจเพื่อปรับสมดุลพลังชีวิต (ปราณะ)');
+    set('fq_pratyahara','การดึงความสนใจเข้าข้างใน ออกจากสิ่งรบกวนภายนอก');
+    set('fq_dharana','การจดจ่อที่จุดหรือวัตถุเดียว');
+    set('fq_dhyana','การตระหนักรู้ที่ต่อเนื่องและไม่ขาดตอน');
+    set('fq_samadhi','สภาวะความสุขสูงสุดในการรวมเป็นหนึ่งกับจักรวาล');
+    set('fq_h1t','~3000 ปีก่อนคริสตกาล — อารยธรรมลุ่มแม่น้ำสินธุ');
+    set('fq_h1d','หลักฐานแรกของการฝึกโยคะพบในตราประทับจากอารยธรรมสินธุ');
+    set('fq_h2t','1500–500 ปีก่อนคริสตกาล — ยุคพระเวท');
+    set('fq_h2d','พระเวทและอุปนิษัทแนะนำแนวคิดโยคะยุคแรก ผ่านพิธีกรรมและการเชื่อมจิตวิญญาณส่วนตัวกับจักรวาล');
+    set('fq_h3t','500 ปีก่อนคริสตกาล — ภควัทคีตา');
+    set('fq_h3d','บทสนทนาของพระกฤษณะกับอรชุนได้ก่อตั้งกรรมโยคะ ชนาโยคะ และภักติโยคะ');
+    set('fq_h4t','~200 ปีก่อนคริสตกาล — โยคะสูตรของปตัญชลี');
+    set('fq_h4d','ฤๅษีปตัญชลีรวบรวมปรัชญาโยคะเป็น 196 สูตร ซึ่งเป็นตำราหลักของโยคะคลาสสิกและอัษฎางคมรรค');
+    set('fq_h5t','ปลายศตวรรษที่ 19 — โยคะสู่ตะวันตก');
+    set('fq_h5d','สวามีวิเวกานันทะแนะนำโยคะสู่ตะวันตกในการประชุมรัฐสภาศาสนาโลกที่ชิคาโก (2436)');
+    set('fq_h6t','2557 — มติสหประชาชาติ');
+    set('fq_h6d','สมัชชาใหญ่ UN ประกาศให้วันที่ 21 มิถุนายนเป็นวันโยคะสากล มีประเทศร่วมสนับสนุนสูงสุดเป็นประวัติการณ์ 177 ประเทศ');
+    set('fq_h7t','2558–ปัจจุบัน — การเฉลิมฉลองทั่วโลก');
+    set('fq_h7d','IDY ฉลองใน 190+ ประเทศ กรุงเทพฯ จัดกิจกรรมใหญ่ทุกปี');
+    set('fq_s1t','6:30 น. — เปิดประตู');
+    set('fq_s1d','มาแต่เนิ่นๆ เช็คอินที่ประตูด้วย QR code รับเสื้อ');
+    set('fq_s2t','7:00 น. — เริ่มวอร์มอัพ');
+    set('fq_s2d','หาเสื่อของคุณ (ปูไว้แล้ว) เริ่มวอร์มอัพกับผู้สอน');
+    set('fq_s3t','7:15 น. — พิธีเปิด');
+    set('fq_s3d','กล่าวต้อนรับ จุดประทีป ช่วงวัฒนธรรม');
+    set('fq_s4t','7:30 น. — Common Yoga Protocol');
+    set('fq_s4d','ฝึกโยคะนำโดยผู้สอน 45 นาที ตาม CYP ของกระทรวง AYUSH อินเดีย');
+    set('fq_s5t','8:15 น. — สมาธิและคูลดาวน์');
+    set('fq_s5d','การหายใจนำ ชวาสนะ และสมาธิปิดท้าย');
+    set('fq_s6t','8:45 น. — ปิดงาน');
+    set('fq_s6d','กล่าวขอบคุณ อาหารว่าง (ถ้ามี) และสังสรรค์');
+  }
+}
+
+function set(id, text) { var el=document.getElementById(id); if(el) el.textContent=text; }
+function setH(id, html) { var el=document.getElementById(id); if(el) el.innerHTML=html; }
+function setList(id, items) {
+  var el=document.getElementById(id); if(!el) return;
+  el.innerHTML = items.map(function(i){ return '<li>'+i+'</li>'; }).join('');
+}
+function setOL(id, items) {
+  var el=document.getElementById(id); if(!el) return;
+  el.innerHTML = items.map(function(i){ return '<li style="margin-bottom:8px;line-height:1.6;">'+i+'</li>'; }).join('');
+}
+
+var TABS = ['about','yoga','history','dosdont','event'];
+function showTab(name) {
+  TABS.forEach(function(t){
+    document.getElementById('sec_'+t).className = 'section' + (t===name?' active':'');
+    document.getElementById('tab_'+t).className = 'tab' + (t===name?' active':'');
+  });
+}
+</script>
+</body>
+</html>
