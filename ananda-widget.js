@@ -409,8 +409,8 @@
         </div>
         <div id="_an_hdr_right">
           <div id="_an_lang_wrap">
-            <button type="button" class="an_lseg" id="_an_seg_en" onclick="window._anSetLang('en')">EN</button>
-            <button type="button" class="an_lseg" id="_an_seg_th" onclick="window._anSetLang('th')">TH</button>
+            <button type="button" class="an_lseg" id="_an_seg_en">EN</button>
+            <button type="button" class="an_lseg" id="_an_seg_th">TH</button>
           </div>
           <button type="button" id="_an_close">✕</button>
         </div>
@@ -444,7 +444,7 @@
   ══════════════════════════════════════ */
   function t() { return T[window._anLANG]; }
 
-  function applyLang() {
+  function _anApplyLang() {
     var L = window._anLANG;
     var st = document.getElementById('_an_status');
     var ip = document.getElementById('_an_inp');
@@ -459,7 +459,7 @@
 
   function _anSwitchLang(lang) {
     window._anLANG = lang;
-    applyLang();
+    _anApplyLang();
     msgs.innerHTML = '';
     chips.style.display = 'flex';
     setTimeout(addGreet, 250);
@@ -759,7 +759,7 @@
   /* ══════════════════════════════════════
      INIT
   ══════════════════════════════════════ */
-  applyLang();
+  _anApplyLang();
   setTimeout(() => {
     if (!win.classList.contains('open')) {
       dot.style.display = 'flex'; dot.textContent = '1';
