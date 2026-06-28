@@ -271,33 +271,8 @@
 
 <div class="tricolor"><div class="tc-s"></div><div class="tc-w"></div><div class="tc-g"></div></div>
 
-<!-- ── PIN Gate ── -->
-<div id="pinGate">
-  <div class="pin-box">
-    <div class="pin-logo">🛡️</div>
-    <h2>Admin Portal</h2>
-    <p>13th International Day of Yoga 2027<br>Embassy of India, Bangkok</p>
-    <div id="pinDisplay">——</div>
-    <div class="keypad">
-      <button class="key" onclick="keyPress('1')">1</button>
-      <button class="key" onclick="keyPress('2')">2</button>
-      <button class="key" onclick="keyPress('3')">3</button>
-      <button class="key" onclick="keyPress('4')">4</button>
-      <button class="key" onclick="keyPress('5')">5</button>
-      <button class="key" onclick="keyPress('6')">6</button>
-      <button class="key" onclick="keyPress('7')">7</button>
-      <button class="key" onclick="keyPress('8')">8</button>
-      <button class="key" onclick="keyPress('9')">9</button>
-      <button class="key del" onclick="keyPress('del')">⌫</button>
-      <button class="key" onclick="keyPress('0')">0</button>
-      <button class="key go" onclick="keyPress('enter')">✓</button>
-    </div>
-    <div id="pinError"></div>
-  </div>
-</div>
-
 <!-- ── Main App ── -->
-<div id="mainApp" style="display:none;">
+<div id="mainApp">
 
   <header>
     <div class="hdr-left">
@@ -356,18 +331,6 @@
   </div>
 </div>
 
-<!-- Confirm modal -->
-<div id="confirmModal">
-  <div class="confirm-box">
-    <h3 id="confirmTitle"></h3>
-    <p id="confirmBody"></p>
-    <div class="confirm-btns">
-      <button onclick="closeConfirm()">Cancel</button>
-      <button id="confirmOkBtn" onclick="runConfirm()">Confirm</button>
-    </div>
-  </div>
-</div>
-
 <!-- Toast -->
 <div id="toast"></div>
 
@@ -379,7 +342,6 @@
 /* ═══════════════════════════════
    CONFIG
 ═══════════════════════════════ */
-const ADMIN_PIN = '2027';
 
 const firebaseConfig = {
   apiKey:            "AIzaSyCJ31EusilYxaGWaorwYjqffVgV5crSecM",
@@ -396,38 +358,11 @@ const db = firebase.database();
 /* ═══════════════════════════════
    STATE
 ═══════════════════════════════ */
-let allRows  = [];   // full dataset loaded from Firebase
-let viewRows = [];   // after filter+search
+let allRows  = [];
+let viewRows = [];
 let sortCol  = 'registeredAt';
 let sortDir  = 'desc';
-let confirmFn = null;
 
-/* ═══════════════════════════════
-   PIN GATE
-═══════════════════════════════ */
-let pinBuf = '';
-const pinDisplay = () => document.getElementById('pinDisplay');
-const pinError   = () => document.getElementById('pinError');
-
-function keyPress(k) {
-  if (k === 'del')   { pinBuf = pinBuf.slice(0,-1); }
-  else if (k === 'enter') { checkPin(); return; }
-  else if (pinBuf.length < 6) { pinBuf += k; }
-  pinDisplay().textContent = '●'.repeat(pinBuf.length) || '——';
-  pinError().textContent = '';
-}
-
-function checkPin() {
-  if (pinBuf === ADMIN_PIN) {
-    document.getElementById('pinGate').style.display = 'none';
-    document.getElementById('mainApp').style.display = 'block';
-    loadAll();
-  } else {
-    pinError().textContent = 'Incorrect PIN — try again';
-    pinBuf = '';
-    pinDisplay().textContent = '——';
-  }
-}
 
 /* ═══════════════════════════════
    LOAD DATA
@@ -586,67 +521,41 @@ function esc(s) {
 /* ═══════════════════════════════
    ACTIONS
 ═══════════════════════════════ */
-function doCheckIn(regNum) {
+async function doCheckIn(regNum) {
   const r = allRows.find(x => x.regNum === regNum);
   const name = r ? r.name : regNum;
   const sz   = r ? r.tshirtSize : null;
-  confirm2(
-    'Confirm Check-in',
-    `Check in <strong>${esc(name)}</strong> and hand over T-shirt?`,
-    async () => {
-      try {
-        const ts = firebase.database.ServerValue.TIMESTAMP;
-        await db.ref(`participants/${regNum}`).update({
-          'checkIn/done': true,
-          'checkIn/timestamp': ts,
-          'checkIn/volunteerId': 'admin',
-          'tshirt/done': true,
-          'tshirt/timestamp': ts,
-          'tshirt/volunteerId': 'admin',
-          status: 'checked_in'
-        });
-        // Sync dashboard summary counters
-        await db.ref('dashboard/summary/checkedIn').transaction(n => (n || 0) + 1);
-        if (sz) await db.ref(`dashboard/summary/sizes/${sz}/checkedIn`).transaction(n => (n || 0) + 1);
-
-        if (r) { r.checkInDone = true; r.tshirtDone = true; }
-        applyFilters();
-        renderStats();
-        toast('✓ Checked in: ' + name, 'ok');
-      } catch(e) { toast('Error: ' + e.message, 'err'); }
-    }
-  );
+  try {
+    const ts = firebase.database.ServerValue.TIMESTAMP;
+    await db.ref(`participants/${regNum}`).update({
+      'checkIn/done': true, 'checkIn/timestamp': ts, 'checkIn/volunteerId': 'admin',
+      'tshirt/done': true,  'tshirt/timestamp': ts,  'tshirt/volunteerId': 'admin',
+      status: 'checked_in'
+    });
+    await db.ref('dashboard/summary/checkedIn').transaction(n => (n || 0) + 1);
+    if (sz) await db.ref(`dashboard/summary/sizes/${sz}/checkedIn`).transaction(n => (n || 0) + 1);
+    if (r) { r.checkInDone = true; r.tshirtDone = true; }
+    applyFilters(); renderStats();
+    toast('✓ ' + name, 'ok');
+  } catch(e) { toast('Error: ' + e.message, 'err'); }
 }
 
-function doUncheck(regNum) {
+async function doUncheck(regNum) {
   const r = allRows.find(x => x.regNum === regNum);
   const name = r ? r.name : regNum;
   const sz   = r ? r.tshirtSize : null;
-  confirm2(
-    'Undo Check-in',
-    `Reverse check-in for <strong>${esc(name)}</strong>?`,
-    async () => {
-      try {
-        await db.ref(`participants/${regNum}`).update({
-          'checkIn/done': false,
-          'checkIn/timestamp': null,
-          'checkIn/volunteerId': null,
-          'tshirt/done': false,
-          'tshirt/timestamp': null,
-          'tshirt/volunteerId': null,
-          status: 'registered'
-        });
-        // Sync dashboard summary counters
-        await db.ref('dashboard/summary/checkedIn').transaction(n => Math.max(0, (n || 0) - 1));
-        if (sz) await db.ref(`dashboard/summary/sizes/${sz}/checkedIn`).transaction(n => Math.max(0, (n || 0) - 1));
-
-        if (r) { r.checkInDone = false; r.tshirtDone = false; }
-        applyFilters();
-        renderStats();
-        toast('↩ Check-in reversed: ' + name, 'info');
-      } catch(e) { toast('Error: ' + e.message, 'err'); }
-    }
-  );
+  try {
+    await db.ref(`participants/${regNum}`).update({
+      'checkIn/done': false, 'checkIn/timestamp': null, 'checkIn/volunteerId': null,
+      'tshirt/done': false,  'tshirt/timestamp': null,  'tshirt/volunteerId': null,
+      status: 'registered'
+    });
+    await db.ref('dashboard/summary/checkedIn').transaction(n => Math.max(0, (n || 0) - 1));
+    if (sz) await db.ref(`dashboard/summary/sizes/${sz}/checkedIn`).transaction(n => Math.max(0, (n || 0) - 1));
+    if (r) { r.checkInDone = false; r.tshirtDone = false; }
+    applyFilters(); renderStats();
+    toast('↩ Undone: ' + name, 'info');
+  } catch(e) { toast('Error: ' + e.message, 'err'); }
 }
 
 /* ═══════════════════════════════
@@ -670,25 +579,6 @@ function exportCSV() {
 }
 
 /* ═══════════════════════════════
-   CONFIRM MODAL
-═══════════════════════════════ */
-function confirm2(title, body, fn) {
-  document.getElementById('confirmTitle').textContent = title;
-  document.getElementById('confirmBody').innerHTML = body;
-  document.getElementById('confirmModal').style.display = 'flex';
-  confirmFn = fn;
-}
-function closeConfirm() {
-  document.getElementById('confirmModal').style.display = 'none';
-  confirmFn = null;
-}
-function runConfirm() {
-  const fn = confirmFn;
-  closeConfirm();
-  if (fn) fn();
-}
-
-/* ═══════════════════════════════
    TOAST
 ═══════════════════════════════ */
 let _toastTmr;
@@ -700,8 +590,8 @@ function toast(msg, type='info') {
   _toastTmr = setTimeout(() => { el.className = ''; }, 3000);
 }
 
-// Init pin gate visible
-document.getElementById('pinGate').style.display = 'flex';
+// Load on page open
+loadAll();
 </script>
 </body>
 </html>
