@@ -310,15 +310,17 @@
   }
   ._an_form_spacer { width:28px; flex-shrink:0; }
   ._an_form_card {
-    flex:1; background:#fff; border:1.5px solid #e0e5f0;
+    flex:1; min-width:0; max-width:100%; overflow:hidden;
+    background:#fff; border:1.5px solid #e0e5f0;
     border-radius:4px 16px 16px 16px;
     padding:14px; box-shadow:0 1px 3px rgba(0,0,0,.07), 0 2px 8px rgba(0,45,110,.05);
     min-width:0;
   }
   ._an_fl { display:block; font-size:11px; font-weight:700; color:#6b7280;
     text-transform:uppercase; letter-spacing:.05em; margin-bottom:5px; }
+  ._an_form_card ._an_fl { white-space:normal; overflow-wrap:break-word; }
   ._an_fi {
-    display:block; width:100%; padding:9px 12px;
+    display:block; width:100%; padding:9px 12px !important;
     border:1.5px solid #dde3f0; border-radius:9px;
     font-size:13.5px; font-family:inherit; color:#111827;
     outline:none; background:#f8f9fc; transition:border-color .18s, background .18s;
