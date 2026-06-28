@@ -681,8 +681,9 @@ function closeConfirm() {
   confirmFn = null;
 }
 function runConfirm() {
+  const fn = confirmFn;
   closeConfirm();
-  if (confirmFn) confirmFn();
+  if (fn) fn();
 }
 
 /* ═══════════════════════════════
