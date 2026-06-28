@@ -995,14 +995,32 @@ function startCountdown(elId, seconds, callback) {
       if (e.key >= '0' && e.key <= '9') {
         e.preventDefault();
         kbPress(e.key);
-      } else if (e.key === 'Backspace' || e.key === 'Delete') {
+        return;
+      }
+      if (e.key === 'Backspace' || e.key === 'Delete') {
         e.preventDefault();
         kbPress('⌫');
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        kbPress('↵'); // Enter = search
+        return;
       }
-      return; // don't fall through to USB scanner logic
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (buf.length > 0) tryProcess(); // scanner was mid-stream
+        else kbPress('↵');               // manual entry submit
+        return;
+      }
+      // Non-digit char (e.g. '|' from a scanner): flush kbBuf → scanner buffer
+      if (e.key.length === 1) {
+        if (kbBuf.length > 0) {
+          buf = kbBuf; // carry over digits already typed
+          kbBuf = '';
+          updateKbDisplay();
+        }
+        buf += e.key;
+        clearTimeout(timer);
+        timer = setTimeout(tryProcess, 150);
+        return;
+      }
+      return;
     }
 
     // ── USB / Bluetooth scanner: rapid burst of chars then Enter ──
