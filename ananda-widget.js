@@ -1,9 +1,11 @@
 /* ════════════════════════════════════════
    Ananda · IDY 2027 · Chat Assistant
-   v4 — clean UI, working EN/TH, no overflow
+   v5 — global lang state, EN/TH segmented toggle
 ════════════════════════════════════════ */
 (function () {
   if (document.getElementById('_ananda')) return;
+  // Global lang state — survives any closure issue
+  if (!window._anLANG) window._anLANG = 'en';
 
   /* ── script loader ── */
   const _load = (src, id) => new Promise(res => {
@@ -23,7 +25,6 @@
   /* ══════════════════════════════════════
      TRANSLATIONS
   ══════════════════════════════════════ */
-  let LANG = 'en';
   const T = {
     en: {
       status:    'IDY 2027 · Always here to help',
@@ -37,6 +38,7 @@
         { id:'mat',    icon:'🧘', text:'Yoga mats'            },
         { id:'water',  icon:'💧', text:'Hydration'            },
         { id:'event',  icon:'📅', text:'Event details'        },
+        { id:'faq',    icon:'📖', text:'Yoga & IDY Guide'      },
       ],
       answers: {
         qr:    { title: 'Retrieve your QR code', body: 'No confirmation email is sent. Your QR was displayed on screen right after registration.\n\nEnter your details below and I\'ll pull it up for you now.' },
@@ -49,6 +51,7 @@
         lost:  { title: 'QR code missing?', body: 'No email is sent — your QR was only shown on screen at registration.\n\nTap "Get my QR code" above and I\'ll retrieve it right now.' },
         checkin:{ title: 'Check-in on the day ✅', body: '1. Go to the check-in counter at Chulalongkorn University\n2. Show your QR code (phone or printed)\n3. Collect your T-shirt at the same counter with the same QR\n\n💡 Have your QR ready before joining the queue!' },
         travel: { title: 'Getting there 🚌', body: 'BTS — Sala Daeng or National Stadium\nMRT — Sam Yan (short walk to campus)\n\nLimited parking on campus. Public transport strongly recommended.' },
+        faq:    { title: 'Yoga & IDY Guide 📖', body: 'Opening the full pre-registration guide…' },
         thanks: { title: '', body: 'You\'re welcome! 🙏\n\nSee you on 20 June 2027 at Chulalongkorn University! 🪷' },
         hello:  { title: '', body: 'Namaste! 🙏 I\'m Ananda. Choose a topic below or ask me anything!' },
       },
@@ -80,6 +83,7 @@
         { id:'mat',    icon:'🧘', text:'เสื่อโยคะ'             },
         { id:'water',  icon:'💧', text:'น้ำดื่ม'               },
         { id:'event',  icon:'📅', text:'รายละเอียดงาน'        },
+        { id:'faq',    icon:'📖', text:'คู่มือโยคะและ IDY'     },
       ],
       answers: {
         qr:    { title: 'ดึง QR code ของคุณ', body: 'ไม่มีการส่งอีเมลยืนยัน QR code จะแสดงบนหน้าจอทันทีหลังลงทะเบียน\n\nกรอกข้อมูลด้านล่างแล้วฉันจะดึง QR code ให้ทันทีเลยค่ะ' },
@@ -92,6 +96,7 @@
         lost:  { title: 'QR code หาย?', body: 'ไม่มีการส่งอีเมล — QR code จะแสดงบนหน้าจอตอนลงทะเบียนเท่านั้น\n\nกด "ดู QR code ของฉัน" แล้วฉันจะดึงให้ทันที' },
         checkin:{ title: 'การเช็คอินในวันงาน ✅', body: '1. ไปที่จุดเช็คอินที่จุฬาลงกรณ์มหาวิทยาลัย\n2. แสดง QR code (โทรศัพท์หรือพิมพ์)\n3. รับเสื้อที่จุดรับเสื้อด้วย QR code เดิม\n\n💡 เตรียม QR ให้พร้อมก่อนต่อคิว!' },
         travel: { title: 'การเดินทาง 🚌', body: 'BTS — สาลาแดง หรือ สนามกีฬาแห่งชาติ\nMRT — สามย่าน (เดินเข้าจุฬาฯ)\n\nที่จอดรถมีจำกัด แนะนำให้ใช้ขนส่งสาธารณะ' },
+        faq:    { title: 'คู่มือโยคะและ IDY 📖', body: 'กำลังเปิดคู่มือก่อนลงทะเบียน…' },
         thanks: { title: '', body: 'ด้วยความยินดีค่ะ! 🙏\n\nเจอกันวันที่ 20 มิถุนายน 2570 ที่จุฬาลงกรณ์มหาวิทยาลัย! 🪷' },
         hello:  { title: '', body: 'นมัสเต! 🙏 ฉันคืออานันดา เลือกหัวข้อด้านล่างหรือถามได้เลยค่ะ!' },
       },
@@ -435,21 +440,20 @@
   /* ══════════════════════════════════════
      LANGUAGE — global so onclick always works
   ══════════════════════════════════════ */
-  function t() { return T[LANG]; }
+  function t() { return T[window._anLANG]; }
 
   function applyLang() {
+    var L = window._anLANG;
     document.getElementById('_an_status').textContent = t().status;
     document.getElementById('_an_inp').placeholder    = t().ph;
-    // Segmented toggle: highlight active segment
-    document.getElementById('_an_seg_en').className = 'an_lseg' + (LANG==='en'?' active':'');
-    document.getElementById('_an_seg_th').className = 'an_lseg' + (LANG==='th'?' active':'');
+    document.getElementById('_an_seg_en').className   = 'an_lseg' + (L==='en'?' active':'');
+    document.getElementById('_an_seg_th').className   = 'an_lseg' + (L==='th'?' active':'');
     buildChips();
   }
 
-  // Exposed globally — onclick attributes are most reliable cross-browser
+  // Global — onclick attributes call this directly
   window._anSetLang = function(lang) {
-    if (LANG === lang) return;
-    LANG = lang;
+    window._anLANG = lang;
     applyLang();
     msgs.innerHTML = '';
     chips.style.display = 'flex';
@@ -535,7 +539,7 @@
     const card = document.createElement('div');
     card.className = '_an_greet';
     const gt = document.createElement('div'); gt.className = '_an_gt';
-    gt.textContent = LANG === 'en' ? 'Hi! I\'m Ananda 🙏' : 'สวัสดีค่ะ! ฉันคืออานันดา 🙏';
+    gt.textContent = window._anLANG === 'en' ? 'Hi! I\'m Ananda 🙏' : 'สวัสดีค่ะ! ฉันคืออานันดา 🙏';
     const gb = document.createElement('div'); gb.className = '_an_gb';
     gb.innerHTML = t().greet;
     card.appendChild(gt); card.appendChild(gb);
@@ -550,6 +554,11 @@
     const ans = t().answers[id];
     if (!ans) { botMsg(t().fallback, true); return; }
 
+    if (id === 'faq') {
+      botMsg((ans.title ? ans.title + '\n\n' : '') + ans.body, true);
+      setTimeout(() => window.open('faq.html', '_blank'), 400);
+      return;
+    }
     if (id === 'qr' || id === 'reg') {
       // Show intro then form as separate card
       botMsg((ans.title ? `<b>${ans.title}</b>\n\n` : '') + ans.body, true);
