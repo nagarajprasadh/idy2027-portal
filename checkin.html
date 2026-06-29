@@ -54,13 +54,19 @@
       padding: 3px 10px;
       border-radius: 20px;
     }
-    .session-info {
-      display: none;
-      text-align: right;
+    .table-badge {
+      background: #fff;
+      color: var(--navy);
+      font-size: 12px;
+      font-weight: 800;
+      padding: 4px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      transition: background .15s;
     }
-    .session-info.show { display: block; }
-    .session-info .vol-name { color: #fff; font-size: 13px; font-weight: 700; }
-    .session-info .counter  { color: var(--saffron); font-size: 11px; margin-top: 1px; }
+    .table-badge:hover { background: #e8ecf5; }
 
     /* ── Container ── */
     .container {
@@ -80,75 +86,34 @@
     .card-title    { font-size: 20px; font-weight: 700; color: var(--navy); margin-bottom: 5px; }
     .card-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 24px; line-height: 1.5; }
 
-    /* ── Form ── */
-    .form-group { margin-bottom: 18px; }
-    label {
-      display: block;
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--navy);
-      margin-bottom: 6px;
-    }
-    input[type="text"], input[type="password"], select {
-      width: 100%;
-      padding: 13px 14px;
-      border: 1.5px solid var(--border);
-      border-radius: 8px;
-      font-size: 16px;
-      font-family: inherit;
-      color: var(--text);
-      background: var(--white);
-      transition: border-color .18s;
-      -webkit-appearance: none;
-    }
-    input:focus, select:focus {
-      outline: none;
-      border-color: var(--navy);
-      box-shadow: 0 0 0 3px rgba(0,45,110,0.09);
-    }
-
-    /* ── PIN pad ── */
-    .pin-display {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-    .pin-dot {
-      width: 18px; height: 18px;
-      border-radius: 50%;
-      border: 2px solid var(--border);
-      background: transparent;
-      transition: all .2s;
-    }
-    .pin-dot.filled { background: var(--navy); border-color: var(--navy); }
-
-    .pin-pad {
+    /* ── Table selection ── */
+    .table-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       gap: 10px;
-      max-width: 280px;
-      margin: 0 auto 20px;
     }
-    .pin-key {
+    .table-btn {
       aspect-ratio: 1;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      border: 2px solid var(--border);
+      border-radius: 14px;
       background: var(--bg);
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      font-size: 22px;
-      font-weight: 700;
+      color: var(--text);
+      font-family: inherit;
       cursor: pointer;
       transition: all .15s;
-      user-select: none;
+      gap: 2px;
+      padding: 4px;
     }
-    .pin-key:active { background: var(--navy); color: #fff; border-color: var(--navy); }
-    .pin-key.del { font-size: 18px; color: var(--muted); }
-    .pin-key.zero { grid-column: 2; }
-    .pin-error { color: var(--error); font-size: 13px; text-align: center; margin-top: -10px; margin-bottom: 10px; display: none; }
-    .pin-error.show { display: block; }
+    .table-btn:hover  { border-color: var(--navy); color: var(--navy); background: #eef2ff; }
+    .table-btn:active { background: var(--navy); color: #fff; border-color: var(--navy); }
+    .table-num  { font-size: 30px; font-weight: 800; line-height: 1; }
+    .table-lbl  { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+    .table-btn:hover .table-lbl,
+    .table-btn:active .table-lbl { color: inherit; }
 
     /* ── Buttons ── */
     .btn {
@@ -185,35 +150,6 @@
     .kp-del  { font-size:22px; color:var(--error); }
     .kp-enter { background:var(--navy); color:#fff; border-color:var(--navy); font-size:22px; }
     .kp-enter:active { background:#001a45; }
-    .btn-danger { background: var(--error); color: #fff; }
-    .btn-sm { padding: 10px; font-size: 14px; }
-
-    /* ── Counter grid ── */
-    .counter-grid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 8px;
-      margin-bottom: 20px;
-    }
-    .counter-opt {
-      aspect-ratio: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 1.5px solid var(--border);
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      background: var(--white);
-      color: var(--text);
-      transition: all .15s;
-      user-select: none;
-      text-align: center;
-      line-height: 1.2;
-    }
-    .counter-opt:hover { border-color: var(--navy); color: var(--navy); }
-    .counter-opt.selected { background: var(--navy); border-color: var(--navy); color: #fff; }
 
     /* ── Scanner screen ── */
     .scanner-wrap {
@@ -223,19 +159,11 @@
       overflow: hidden;
       margin-bottom: 16px;
     }
-    #qr-reader {
-      width: 100%;
-    }
-    #qr-reader video {
-      width: 100% !important;
-      border-radius: 14px;
-    }
+    #qr-reader { width: 100%; }
+    #qr-reader video { width: 100% !important; border-radius: 14px; }
     .scan-overlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
       pointer-events: none;
     }
     .scan-frame {
@@ -251,6 +179,21 @@
       margin-bottom: 12px;
     }
 
+    /* ── Status bar ── */
+    .status-bar {
+      background: #EEF2FF;
+      border: 1px solid #C7D2F0;
+      border-radius: 10px;
+      padding: 10px 16px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+    }
+    .status-bar .sb-table { font-weight: 800; color: var(--navy); }
+    .status-bar .sb-event { color: var(--muted); font-size: 12px; }
+
     /* ── Result screens ── */
     .result-screen {
       border-radius: 14px;
@@ -265,9 +208,7 @@
     .result-icon {
       width: 72px; height: 72px;
       border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
       margin: 0 auto 16px;
       font-size: 36px;
     }
@@ -299,11 +240,7 @@
     .tsize { background: var(--saffron); color: #fff; font-weight: 700; padding: 2px 12px; border-radius: 20px; font-size: 13px; }
 
     /* ── Countdown ── */
-    .countdown {
-      font-size: 13px;
-      color: var(--muted);
-      margin-top: 12px;
-    }
+    .countdown { font-size: 13px; color: var(--muted); margin-top: 12px; }
 
     /* ── Spinner ── */
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -318,39 +255,11 @@
       margin-right: 6px;
     }
 
-    /* ── Session status bar ── */
-    .status-bar {
-      background: #EEF2FF;
-      border: 1px solid #C7D2F0;
-      border-radius: 10px;
-      padding: 12px 16px;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 13px;
-    }
-    .status-bar .vol  { font-weight: 700; color: var(--navy); }
-    .status-bar .ctr  { color: var(--saffron); font-weight: 700; }
-    .end-session-btn {
-      background: none;
-      border: 1.5px solid var(--border);
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 700;
-      padding: 5px 12px;
-      border-radius: 20px;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all .15s;
-    }
-    .end-session-btn:hover { border-color: var(--error); color: var(--error); }
-
     .hidden { display: none !important; }
 
     @media (max-width: 400px) {
-      .counter-grid { grid-template-columns: repeat(5, 1fr); gap: 6px; }
-      .counter-opt  { font-size: 11px; }
+      .table-num { font-size: 24px; }
+      .table-lbl { font-size: 9px; }
     }
   </style>
 </head>
@@ -365,78 +274,40 @@
       <p>Embassy of India, Bangkok</p>
     </div>
   </div>
-  <div class="session-info" id="sessionInfo">
-    <div class="vol-name" id="hdrVolName"></div>
-    <div class="counter" id="hdrCounter"></div>
+  <div>
+    <span class="badge" id="hdrBadge">VOLUNTEER</span>
+    <button class="table-badge hidden" id="hdrTableBadge" onclick="changeTable()" title="Tap to change table"></button>
   </div>
-  <div id="hdrBadge"><span class="badge">VOLUNTEER</span></div>
 </header>
 
 <div class="container">
 
-  <!-- ════ SCREEN 1: PIN ════ -->
-  <div id="screenPin">
+  <!-- ════ SCREEN 1: TABLE SELECT ════ -->
+  <div id="screenTable">
     <div class="card">
-      <div class="card-title">Volunteer Login</div>
-      <div class="card-subtitle">Enter your 4-digit PIN to begin your check-in session.</div>
-
-      <div class="pin-display">
-        <div class="pin-dot" id="pd1"></div>
-        <div class="pin-dot" id="pd2"></div>
-        <div class="pin-dot" id="pd3"></div>
-        <div class="pin-dot" id="pd4"></div>
-      </div>
-
-      <div class="pin-error" id="pinError">Incorrect PIN. Please try again.</div>
-
-      <div class="pin-pad">
-        <div class="pin-key" onclick="pinKey('1')">1</div>
-        <div class="pin-key" onclick="pinKey('2')">2</div>
-        <div class="pin-key" onclick="pinKey('3')">3</div>
-        <div class="pin-key" onclick="pinKey('4')">4</div>
-        <div class="pin-key" onclick="pinKey('5')">5</div>
-        <div class="pin-key" onclick="pinKey('6')">6</div>
-        <div class="pin-key" onclick="pinKey('7')">7</div>
-        <div class="pin-key" onclick="pinKey('8')">8</div>
-        <div class="pin-key" onclick="pinKey('9')">9</div>
-        <div class="pin-key del" onclick="pinDel()">⌫</div>
-        <div class="pin-key zero" onclick="pinKey('0')">0</div>
+      <div class="card-title">Select Your Table</div>
+      <div class="card-subtitle">Tap your table number to start checking in participants.</div>
+      <div class="table-grid">
+        <button class="table-btn" onclick="selectTable(1)"><span class="table-num">1</span><span class="table-lbl">Table</span></button>
+        <button class="table-btn" onclick="selectTable(2)"><span class="table-num">2</span><span class="table-lbl">Table</span></button>
+        <button class="table-btn" onclick="selectTable(3)"><span class="table-num">3</span><span class="table-lbl">Table</span></button>
+        <button class="table-btn" onclick="selectTable(4)"><span class="table-num">4</span><span class="table-lbl">Table</span></button>
+        <button class="table-btn" onclick="selectTable(5)"><span class="table-num">5</span><span class="table-lbl">Table</span></button>
       </div>
     </div>
   </div>
 
-  <!-- ════ SCREEN 2: NAME + COUNTER ════ -->
-  <div id="screenSetup" class="hidden">
-    <div class="card">
-      <div class="card-title">Session Setup</div>
-      <div class="card-subtitle">Enter your name and select your check-in counter.</div>
-
-      <div class="form-group">
-        <label for="volName">Your Name</label>
-        <input type="text" id="volName" placeholder="Enter your name" oninput="chkSetup()">
-      </div>
-
-      <div class="form-group">
-        <label>Check-in Counter</label>
-        <div class="counter-grid" id="counterGrid"></div>
-      </div>
-
-      <button class="btn btn-navy" id="btnBegin" onclick="beginSession()" disabled>
-        Begin Session →
-      </button>
-    </div>
-  </div>
-
-  <!-- ════ SCREEN 3: SCANNER ════ -->
+  <!-- ════ SCREEN 2: SCANNER ════ -->
   <div id="screenScan" class="hidden">
     <div class="status-bar">
-      <div>IDY 2027 · Check-in &amp; T-Shirt Desk</div>
+      <span class="sb-event">IDY 2027 · Check-in &amp; T-Shirt Desk</span>
+      <span class="sb-table" id="sbTable"></span>
     </div>
 
     <!-- Mode toggle -->
     <div style="display:flex;gap:10px;margin-bottom:16px;">
-      <button id="modeQR"  class="mode-btn mode-active" onclick="setMode('qr')">📷 QR Camera</button>
-      <button id="modeKB"  class="mode-btn"             onclick="setMode('kb')">🔢 Keyboard</button>
+      <button id="modeQR" class="mode-btn mode-active" onclick="setMode('qr')">📷 QR Camera</button>
+      <button id="modeKB" class="mode-btn"             onclick="setMode('kb')">🔢 Keyboard</button>
     </div>
 
     <!-- QR panel -->
@@ -476,7 +347,7 @@
     </div>
   </div>
 
-  <!-- ════ SCREEN 4a: GREEN — Ready to check in ════ -->
+  <!-- ════ SCREEN 3a: GREEN — Checked in ════ -->
   <div id="screenGreen" class="hidden">
     <div class="result-screen green">
       <div class="result-icon">✓</div>
@@ -488,13 +359,14 @@
       </div>
       <div class="detail-grid">
         <div class="detail-row"><span class="d-lbl">Registration #</span> <span class="d-val" id="gRegNum"></span></div>
+        <div class="detail-row"><span class="d-lbl">Table</span>          <span class="d-val" id="gTable"></span></div>
       </div>
       <div class="countdown" id="greenCountdown"></div>
     </div>
     <button class="btn btn-ghost" onclick="cancelResult()" style="margin-top:8px;">Cancel — Scan Next</button>
   </div>
 
-  <!-- ════ SCREEN 4b: RED — Already checked in ════ -->
+  <!-- ════ SCREEN 3b: RED — Already checked in ════ -->
   <div id="screenRed" class="hidden">
     <div class="result-screen red">
       <div class="result-icon" style="background:var(--error);">✗</div>
@@ -503,17 +375,16 @@
       <div class="result-reg"  id="rReg"></div>
       <div class="detail-grid">
         <div class="detail-row"><span class="d-lbl">Registration #</span> <span class="d-val" id="rRegNum"></span></div>
-        <div class="detail-row"><span class="d-lbl">T-Shirt</span>        <span class="d-val" id="rShirtStatus"></span></div>
+        <div class="detail-row"><span class="d-lbl">T-Shirt Size</span>   <span class="d-val" id="rShirtStatus"></span></div>
         <div class="detail-row"><span class="d-lbl">Checked In At</span>  <span class="d-val" id="rTime"></span></div>
-        <div class="detail-row"><span class="d-lbl">Counter</span>        <span class="d-val" id="rCounter"></span></div>
-        <div class="detail-row"><span class="d-lbl">Volunteer</span>      <span class="d-val" id="rVol"></span></div>
+        <div class="detail-row"><span class="d-lbl">Table</span>          <span class="d-val" id="rCounter"></span></div>
       </div>
       <div class="countdown" id="redCountdown"></div>
     </div>
     <button class="btn btn-ghost" onclick="cancelResult()">Scan Next</button>
   </div>
 
-  <!-- ════ SCREEN 4c: WARN — Invalid QR ════ -->
+  <!-- ════ SCREEN 3c: WARN — Invalid QR ════ -->
   <div id="screenWarn" class="hidden">
     <div class="result-screen warn">
       <div class="result-icon" style="background:#CA8A04;">!</div>
@@ -533,11 +404,8 @@
 
 <script>
 /* ═══════════════════════════════════════════════════════
-   CONFIG  —  admin: change CHECKIN_PIN before event day
+   FIREBASE CONFIG
 ═══════════════════════════════════════════════════════ */
-const CHECKIN_PIN    = '2027';          // 4-digit PIN for all check-in volunteers
-const COUNTER_COUNT  = 10;             // number of check-in counters
-
 const firebaseConfig = {
   apiKey:            "AIzaSyCJ31EusilYxaGWaorwYjqffVgV5crSecM",
   authDomain:        "idy2027-dba28.firebaseapp.com",
@@ -553,168 +421,67 @@ const db = firebase.database();
 /* ═══════════════════════════════════════════════════════
    STATE
 ═══════════════════════════════════════════════════════ */
-let pinBuffer       = '';
-let volunteerName   = '';
-let selectedCounter = '';
-let qrScanner       = null;
+let selectedCounter    = '';
+let qrScanner          = null;
 let currentParticipant = null;
-let countdownTimer  = null;
-let sessionTimeout      = null;
-let sessionWarnTimeout  = null;
-const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
-const SESSION_WARN_MS    = 28 * 60 * 1000; // warn 2 minutes before
+let countdownTimer     = null;
 
 /* ═══════════════════════════════════════════════════════
    UTILITIES
 ═══════════════════════════════════════════════════════ */
 const el = id => document.getElementById(id);
 function show(id)   { el(id).classList.remove('hidden'); }
-function hide(id)   { el(id).classList.add('hidden');    }
+function hide(id)   { el(id).classList.add('hidden'); }
 function showOnly(id) {
-  ['screenPin','screenSetup','screenScan','screenGreen','screenRed','screenWarn']
-    .forEach(s => hide(s));
+  ['screenTable','screenScan','screenGreen','screenRed','screenWarn'].forEach(s => hide(s));
   show(id);
 }
 
 function fmtTime(ts) {
   if (!ts) return '—';
-  const d = new Date(ts);
-  return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  return new Date(ts).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
 /* ═══════════════════════════════════════════════════════
-   BUILD COUNTERS
+   TABLE SELECTION
 ═══════════════════════════════════════════════════════ */
-(function buildCounters() {
-  const grid = el('counterGrid');
-  for (let i = 1; i <= COUNTER_COUNT; i++) {
-    const d = document.createElement('div');
-    d.className = 'counter-opt';
-    d.textContent = 'CI-' + i;
-    d.onclick = () => pickCounter('CI-' + i, d);
-    grid.appendChild(d);
-  }
-})();
-
-function pickCounter(val, btn) {
-  selectedCounter = val;
-  document.querySelectorAll('.counter-opt').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  chkSetup();
-}
-
-/* ═══════════════════════════════════════════════════════
-   PIN SCREEN
-═══════════════════════════════════════════════════════ */
-function pinKey(digit) {
-  if (pinBuffer.length >= 4) return;
-  pinBuffer += digit;
-  updatePinDots();
-  el('pinError').classList.remove('show');
-  if (pinBuffer.length === 4) validatePin();
-}
-
-function pinDel() {
-  pinBuffer = pinBuffer.slice(0, -1);
-  updatePinDots();
-  el('pinError').classList.remove('show');
-}
-
-function updatePinDots() {
-  for (let i = 1; i <= 4; i++) {
-    el('pd' + i).classList.toggle('filled', i <= pinBuffer.length);
-  }
-}
-
-function validatePin() {
-  setTimeout(() => {
-    if (pinBuffer === CHECKIN_PIN) {
-      showOnly('screenSetup');
-      pinBuffer = '';
-      updatePinDots();
-    } else {
-      el('pinError').classList.add('show');
-      pinBuffer = '';
-      updatePinDots();
-    }
-  }, 200);
-}
-
-/* ═══════════════════════════════════════════════════════
-   SETUP SCREEN
-═══════════════════════════════════════════════════════ */
-function chkSetup() {
-  const nameOk = el('volName').value.trim().length > 1;
-  const ctrOk  = selectedCounter !== '';
-  el('btnBegin').disabled = !(nameOk && ctrOk);
-}
-
-function beginSession() {
-  volunteerName = el('volName').value.trim();
-  el('sbVolName').textContent  = volunteerName;
-  el('sbCounter').textContent  = selectedCounter;
-  el('hdrVolName').textContent = volunteerName;
-  el('hdrCounter').textContent = selectedCounter;
-  el('sessionInfo').classList.add('show');
+function selectTable(n) {
+  selectedCounter = 'Table ' + n;
+  el('sbTable').textContent        = selectedCounter;
+  el('hdrTableBadge').textContent  = selectedCounter + ' ▾';
   el('hdrBadge').classList.add('hidden');
+  el('hdrTableBadge').classList.remove('hidden');
   showOnly('screenScan');
-  startScanner();
-  resetSessionTimeout();
+  setMode('qr');
 }
 
-function endSession() {
-  clearTimeout(sessionTimeout);
-  clearTimeout(sessionWarnTimeout);
-  clearTimeout(countdownTimer);
-  currentParticipant = null;
-  showOnly('screenScan');
-  resumeScanner();
+function changeTable() {
+  stopScanner();
+  el('hdrTableBadge').classList.add('hidden');
+  el('hdrBadge').classList.remove('hidden');
+  showOnly('screenTable');
 }
-
-/* ═══════════════════════════════════════════════════════
-   SESSION TIMEOUT
-═══════════════════════════════════════════════════════ */
-function resetSessionTimeout() {
-  clearTimeout(sessionTimeout);
-  clearTimeout(sessionWarnTimeout);
-  // Warn 2 minutes before logout
-  sessionWarnTimeout = setTimeout(() => {
-    if (volunteerName) {
-      const stay = confirm('⚠️ Session will expire in 2 minutes due to inactivity.\n\nClick OK to stay logged in, or Cancel to log out now.');
-      if (stay) resetSessionTimeout();
-    }
-  }, SESSION_WARN_MS);
-  sessionTimeout = setTimeout(() => {
-    alert('Session timed out due to inactivity. Please log in again.');
-    endSession();
-  }, SESSION_TIMEOUT_MS);
-}
-
-document.addEventListener('touchstart', resetSessionTimeout);
-document.addEventListener('click', resetSessionTimeout);
 
 /* ═══════════════════════════════════════════════════════
    QR SCANNER
 ═══════════════════════════════════════════════════════ */
 function startScanner() {
+  stopScanner(); // ensure no stale instance before starting fresh
   qrScanner = new Html5Qrcode('qr-reader');
   qrScanner.start(
     { facingMode: 'environment' },
     { fps: 12, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 },
     onQrSuccess,
-    () => {} // silent failure
-  ).catch(err => {
+    () => {}
+  ).catch(() => {
     el('qr-reader').innerHTML =
       '<div style="padding:40px;text-align:center;color:#6B7280;font-size:14px;">' +
-      '📷 Camera not available.<br>Use manual entry below.</div>';
+      '📷 Camera not available.<br>Use Keyboard mode instead.</div>';
   });
 }
 
 function stopScanner() {
-  if (qrScanner) {
-    qrScanner.stop().catch(() => {});
-    qrScanner = null;
-  }
+  if (qrScanner) { qrScanner.stop().catch(() => {}); qrScanner = null; }
 }
 
 function pauseScanner()  { if (qrScanner) qrScanner.pause(true); }
@@ -723,8 +490,8 @@ function resumeScanner() { if (qrScanner) qrScanner.resume(); }
 /* ═══════════════════════════════════════════════════════
    MODE TOGGLE — QR Camera vs Keyboard
 ═══════════════════════════════════════════════════════ */
-let scanMode = 'qr'; // 'qr' | 'kb'
-let kbBuf = '';
+let scanMode = 'qr';
+let kbBuf    = '';
 
 function setMode(mode) {
   scanMode = mode;
@@ -744,14 +511,11 @@ function setMode(mode) {
   }
 }
 
-let kbAutoTimer = null;
-
 function updateKbDisplay() {
   el('kbDisplay').textContent = kbBuf.length > 0 ? kbBuf : '—';
 }
 
 function kbSubmit() {
-  clearTimeout(kbAutoTimer);
   if (kbBuf.length < 3) return;
   const num = kbBuf;
   kbBuf = '';
@@ -761,38 +525,26 @@ function kbSubmit() {
 
 function kbPress(key) {
   if (key === '⌫') {
-    clearTimeout(kbAutoTimer);
     kbBuf = kbBuf.slice(0, -1);
     updateKbDisplay();
   } else if (key === '↵') {
     kbSubmit();
   } else {
-    if (kbBuf.length >= 6) return; // cap at 6 digits
+    if (kbBuf.length >= 6) return;
     kbBuf += key;
     updateKbDisplay();
-    // No auto-submit — user must press ↵ / Enter explicitly
   }
 }
 
 /* ═══════════════════════════════════════════════════════
-   QR SCAN RESULT
+   QR SCAN
 ═══════════════════════════════════════════════════════ */
 async function onQrSuccess(qrText) {
   pauseScanner();
   await processQR(qrText);
 }
 
-async function manualLookup() {
-  const regNum = el('manualReg').value.trim();
-  if (!regNum) return;
-  pauseScanner();
-  // For manual entry, we skip token validation
-  await processQR(regNum + '|MANUAL', true);
-  el('manualReg').value = '';
-}
-
 async function processQR(qrText, isManual = false) {
-  // Some scanners strip the '|' separator — handle both "1007|A3F9" and "1007A3F9"
   let rawReg, token;
   if (qrText.includes('|')) {
     const parts = qrText.split('|');
@@ -820,7 +572,6 @@ async function processQR(qrText, isManual = false) {
 
     const p = snap.val();
 
-    // Token check (skip for manual entry)
     if (!isManual && p.qrToken && p.qrToken !== token) {
       showWarn('Invalid QR Code', 'QR token does not match. This QR may have been tampered with.');
       return;
@@ -829,7 +580,7 @@ async function processQR(qrText, isManual = false) {
     currentParticipant = p;
 
     if (p.status === 'registered') {
-      confirmCheckin(); // auto-confirm immediately — no button press needed
+      confirmCheckin();
     } else {
       showRed(p);
     }
@@ -844,22 +595,22 @@ async function processQR(qrText, isManual = false) {
    RESULT SCREENS
 ═══════════════════════════════════════════════════════ */
 function showGreen(p) {
-  el('gName').textContent    = p.name;
-  el('gReg').textContent     = '✓ Checked In &amp; T-Shirt Issued';
-  el('gRegNum').textContent  = p.regNum;
-  el('gSize').textContent    = p.tshirtSize;
+  el('gName').textContent   = p.name;
+  el('gReg').innerHTML      = '✓ Checked In &amp; T-Shirt Issued';
+  el('gRegNum').textContent = p.regNum;
+  el('gSize').textContent   = p.tshirtSize;
+  el('gTable').textContent  = selectedCounter;
   showOnly('screenGreen');
-  startCountdown('greenCountdown', 2, cancelResult);
+  startCountdown('greenCountdown', 3, cancelResult);
 }
 
 function showRed(p) {
-  el('rName').textContent       = p.name;
-  el('rReg').textContent        = 'Registration #' + p.regNum;
-  el('rRegNum').textContent     = p.regNum;
+  el('rName').textContent        = p.name;
+  el('rReg').textContent         = 'Registration #' + p.regNum;
+  el('rRegNum').textContent      = p.regNum;
   el('rShirtStatus').textContent = p.tshirtSize || '—';
-  el('rTime').textContent       = p.checkIn?.timestamp ? fmtTime(p.checkIn.timestamp) : '—';
-  el('rCounter').textContent    = p.checkIn?.counter    || '—';
-  el('rVol').textContent        = p.checkIn?.volunteerId || '—';
+  el('rTime').textContent        = p.checkIn?.timestamp ? fmtTime(p.checkIn.timestamp) : '—';
+  el('rCounter').textContent     = p.checkIn?.counter || '—';
   showOnly('screenRed');
   startCountdown('redCountdown', 6, cancelResult);
 }
@@ -891,44 +642,39 @@ async function confirmCheckin() {
   const p = currentParticipant;
 
   try {
-    // Atomic transaction — prevents duplicate check-in even under concurrent scans
     const txResult = await db.ref('participants/' + p.regNum).transaction(data => {
       if (!data) return data;
       if (data.status !== 'registered') return; // abort — already checked in
-      data.status = 'checked_in';
+      data.status  = 'checked_in';
       data.checkIn = {
-        done:        true,
-        timestamp:   Date.now(),
-        volunteerId: volunteerName,
-        counter:     selectedCounter
+        done:      true,
+        timestamp: Date.now(),
+        counter:   selectedCounter
       };
       return data;
     });
 
     if (!txResult.committed) {
-      // Another device just checked in this person
-      const latest = txResult.snapshot.val();
-      showRed(latest);
+      showRed(txResult.snapshot.val());
       return;
     }
 
-    // Write audit log
+    // Audit log
     db.ref('audit').push({
-      timestamp:   Date.now(),
-      action:      'check_in',
-      regNum:      p.regNum,
-      volunteerId: volunteerName,
-      counter:     selectedCounter,
-      device:      navigator.userAgent.substring(0, 80)
+      timestamp: Date.now(),
+      action:    'check_in',
+      regNum:    p.regNum,
+      counter:   selectedCounter,
+      device:    navigator.userAgent.substring(0, 80)
     });
 
-    // Increment dashboard counters
+    // Dashboard counters
     const today = new Date().toLocaleDateString('en-CA');
     db.ref('dashboard/summary/checkedIn').transaction(n => (n || 0) + 1);
     db.ref(`dashboard/summary/sizes/${p.tshirtSize}/checkedIn`).transaction(n => (n || 0) + 1);
     db.ref(`dashboard/daily/${today}/checkedIn`).transaction(n => (n || 0) + 1);
 
-    // Push to recent check-ins feed, trim to 10
+    // Recent check-ins feed (trim to 10)
     const ciRef = db.ref('dashboard/recentCheckIns');
     ciRef.push({ regNum: p.regNum, name: p.name, tshirtSize: p.tshirtSize, checkedInAt: Date.now(), counter: selectedCounter });
     ciRef.once('value').then(snap => {
@@ -936,7 +682,6 @@ async function confirmCheckin() {
       if (keys.length > 10) keys.slice(0, keys.length - 10).forEach(k => ciRef.child(k).remove());
     });
 
-    // Show green screen with t-shirt size — auto-return in 2s
     showGreen(p);
 
   } catch (err) {
@@ -951,12 +696,9 @@ async function confirmCheckin() {
 function startCountdown(elId, seconds, callback) {
   clearTimeout(countdownTimer);
   let remaining = seconds;
-
   function tick() {
-    if (elId) {
-      const el2 = el(elId);
-      if (el2) el2.textContent = `Returning to scanner in ${remaining}s…`;
-    }
+    const e = el(elId);
+    if (e) e.textContent = `Returning to scanner in ${remaining}s…`;
     if (remaining <= 0) { callback(); return; }
     remaining--;
     countdownTimer = setTimeout(tick, 1000);
@@ -965,24 +707,21 @@ function startCountdown(elId, seconds, callback) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   KEYBOARD + SCANNER HANDLER
-   Strategy: use TIMING to distinguish scanner from manual.
-   - Scanner burst: chars arrive < BURST_MS apart → all go to scanBuf
-   - Manual typing:  chars arrive > BURST_MS apart → go to kbPress (KB mode)
-   - First character is held for BURST_MS before deciding which path.
+   KEYBOARD / USB SCANNER HANDLER
+   Timing-based: scanner bursts arrive < 80ms apart.
+   Manual typing arrives > 80ms apart (KB mode only).
 ═══════════════════════════════════════════════════════ */
 (function initKeyboardHandler() {
-  const BURST_MS = 80;   // gap smaller than this = scanner burst
-  const IDLE_MS  = 350;  // silence after last scanner char = scan complete
+  const BURST_MS = 80;
+  const IDLE_MS  = 350;
 
   let scanBuf      = '';
   let idleTimer    = null;
   let lastKeyAt    = 0;
-  let pending      = null; // first char held briefly while we decide
+  let pending      = null;
   let pendingTimer = null;
 
   function dispatchPending() {
-    /* Timer fired with no second char — it was a manual keypress */
     const c = pending; pending = null;
     if (!c) return;
     if (scanMode === 'kb' && !el('screenScan').classList.contains('hidden')) {
@@ -1001,7 +740,6 @@ function startCountdown(elId, seconds, callback) {
     if (onResult) { clearTimeout(countdownTimer); currentParticipant = null; }
     if (!onResult && el('screenScan').classList.contains('hidden')) return;
 
-    // Clear any leftover manual input so it doesn't confuse next entry
     kbBuf = ''; updateKbDisplay();
     pauseScanner();
     processQR(data);
@@ -1010,38 +748,27 @@ function startCountdown(elId, seconds, callback) {
   document.addEventListener('keydown', e => {
     if (e.ctrlKey || e.altKey || e.metaKey) return;
 
-    const now   = Date.now();
-    const gap   = now - lastKeyAt;
-    lastKeyAt   = now;
+    const now  = Date.now();
+    const gap  = now - lastKeyAt;
+    lastKeyAt  = now;
 
-    const onScan = !el('screenScan').classList.contains('hidden');
-    const inKB   = scanMode === 'kb' && onScan;
+    const onScan  = !el('screenScan').classList.contains('hidden');
+    const inKB    = scanMode === 'kb' && onScan;
     const inBurst = scanBuf.length > 0 || gap < BURST_MS;
 
-    /* ── Printable character ─────────────────────────────── */
     if (e.key.length === 1) {
       e.preventDefault();
-
       if (inBurst) {
-        /* Scanner burst in progress — rescue any pending char then accumulate */
-        if (pending !== null) {
-          clearTimeout(pendingTimer);
-          scanBuf = pending;   // first char was actually the start of this burst
-          pending = null;
-        }
+        if (pending !== null) { clearTimeout(pendingTimer); scanBuf = pending; pending = null; }
         scanBuf += e.key;
         clearTimeout(idleTimer);
         idleTimer = setTimeout(completeScan, IDLE_MS);
-
       } else if (inKB) {
-        /* First char after a long gap in KB mode: hold to see if burst follows */
         if (pending !== null) dispatchPending();
         pending = e.key;
         clearTimeout(pendingTimer);
         pendingTimer = setTimeout(dispatchPending, BURST_MS + 10);
-
       } else {
-        /* QR mode: any keyboard input must be from a scanner */
         scanBuf += e.key;
         clearTimeout(idleTimer);
         idleTimer = setTimeout(completeScan, IDLE_MS);
@@ -1049,7 +776,6 @@ function startCountdown(elId, seconds, callback) {
       return;
     }
 
-    /* ── Enter ───────────────────────────────────────────── */
     if (e.key === 'Enter') {
       e.preventDefault();
       if (pending !== null) { clearTimeout(pendingTimer); dispatchPending(); }
@@ -1058,7 +784,6 @@ function startCountdown(elId, seconds, callback) {
       return;
     }
 
-    /* ── Backspace / Delete ──────────────────────────────── */
     if (e.key === 'Backspace' || e.key === 'Delete') {
       e.preventDefault();
       if (pending !== null) { clearTimeout(pendingTimer); pending = null; return; }
@@ -1069,13 +794,9 @@ function startCountdown(elId, seconds, callback) {
 })();
 
 /* ═══════════════════════════════════════════════════════
-   INIT — no PIN, no setup, go straight to scanner
+   INIT — show table selection screen on load
 ═══════════════════════════════════════════════════════ */
-volunteerName   = 'Staff';
-selectedCounter = 'CI-1';
-showOnly('screenScan');
-setMode('qr'); // default to QR camera mode
-resetSessionTimeout();
+showOnly('screenTable');
 </script>
 <script src="ananda-widget.js"></script>
 </body>
