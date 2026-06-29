@@ -188,6 +188,23 @@
     .sz-total strong { color: var(--teal-dk); }
 
 
+    /* ── By-Table counts ── */
+    .table-count-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 400px) { .table-count-grid { grid-template-columns: repeat(3, 1fr); } }
+    .tc-box {
+      background: #edf7f3;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 8px;
+      text-align: center;
+    }
+    .tc-lbl { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+    .tc-num { font-size: 32px; font-weight: 800; color: var(--teal); line-height: 1; }
+
     /* ── Loading state ── */
     .loading { text-align: center; color: var(--muted); padding: 40px; font-size: 14px; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -291,6 +308,14 @@
     </div>
   </div>
 
+  <!-- ── BY TABLE ── -->
+  <div class="section-lbl">Check-ins by Table</div>
+  <div class="card">
+    <div class="table-count-grid" id="tableCountGrid">
+      <div class="loading"><span class="spinner-sm"></span>Loading…</div>
+    </div>
+  </div>
+
   <!-- ── T-SHIRT SIZES ── -->
   <div class="section-lbl">T-Shirt Sizes</div>
   <div class="card" id="sizeGrid">
@@ -360,6 +385,12 @@ db.ref('dashboard/summary').on('value', snap => {
   updateSummary(s);
   updateSizeGrid(s.sizes || {});
   el('updatedTime').textContent = 'Updated ' + new Date().toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+});
+
+// Registered Today — live from daily node
+db.ref('dashboard/daily/' + today()).on('value', snap => {
+  const d = snap.val() || {};
+  el('statToday').textContent = fmt(d.registered || 0);
 });
 
 function updateSummary(s) {
@@ -482,13 +513,34 @@ function recomputeCI() {
   const ci = all.filter(p => p.checkIn && p.checkIn.done).length;
   const pending = total - ci;
   const p = total > 0 ? Math.round(ci / total * 100) : 0;
-  el('statCI').textContent      = ci;
-  el('statCIPct').textContent   = p + '% of registered';
-  el('statPending').textContent = pending;
-  el('ciBar').style.width       = p + '%';
-  el('ciBarLabel').textContent  = p + '%';
+  el('statCI').textContent       = ci;
+  el('statCIPct').textContent    = p + '% of registered';
+  el('statPending').textContent  = pending;
+  el('ciBar').style.width        = p + '%';
+  el('ciBarLabel').textContent   = p + '%';
   el('ciCheckedSub').textContent = ci;
   el('ciPendingSub').textContent = pending;
+  renderTableCounts();
+}
+
+function renderTableCounts() {
+  // Tally check-ins per table from participant data
+  const counts = { 'Table 1': 0, 'Table 2': 0, 'Table 3': 0, 'Table 4': 0, 'Table 5': 0 };
+  Object.values(ptMap).forEach(p => {
+    if (p.checkIn && p.checkIn.done && p.checkIn.counter && counts[p.checkIn.counter] !== undefined) {
+      counts[p.checkIn.counter]++;
+    }
+  });
+  const grid = el('tableCountGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  for (let i = 1; i <= 5; i++) {
+    const key = 'Table ' + i;
+    const div = document.createElement('div');
+    div.className = 'tc-box';
+    div.innerHTML = `<div class="tc-lbl">Table ${i}</div><div class="tc-num">${counts[key]}</div>`;
+    grid.appendChild(div);
+  }
 }
 
 function ptChanged(p) {
