@@ -354,6 +354,7 @@
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
 <script>
@@ -454,7 +455,14 @@ function attachListeners() {
   });
 }
 
-attachListeners();
+let _listenersAttached = false;
+firebase.auth().onAuthStateChanged(u => {
+  if (u && !_listenersAttached) { _listenersAttached = true; attachListeners(); }
+});
+firebase.auth().signInAnonymously().catch(e => {
+  document.getElementById('tableBody').innerHTML =
+    '<tr><td colspan="6" class="tbl-msg">Sign-in failed — check that Anonymous auth is enabled in Firebase. (' + e.message + ')</td></tr>';
+});
 
 function loadAll() {
   // With live listeners, just re-render from in-memory state

@@ -350,6 +350,7 @@
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
 <script>
@@ -584,7 +585,14 @@ function escHtml(s) {
 
 } /* end attachDashboardListeners */
 
-attachDashboardListeners();
+/* Anonymous auth bootstrap — rules require a signed-in session */
+let _dashListenersAttached = false;
+firebase.auth().onAuthStateChanged(u => {
+  if (u && !_dashListenersAttached) { _dashListenersAttached = true; attachDashboardListeners(); }
+});
+firebase.auth().signInAnonymously().catch(e => {
+  el('updatedTime').textContent = 'Sign-in failed — enable Anonymous auth in Firebase (' + e.message + ')';
+});
 
 /* ═══════════════════════════════════════════════════════
    REFRESH / RECONNECT

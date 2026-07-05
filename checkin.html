@@ -399,6 +399,7 @@
 
 <!-- Firebase + html5-qrcode -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
@@ -418,8 +419,11 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-/* Auth layer not enabled — no-op placeholder so DB calls can await it. */
-const authReady = Promise.resolve();
+/* Anonymous auth — database rules require a signed-in session */
+const authReady = new Promise(resolve => {
+  firebase.auth().onAuthStateChanged(u => { if (u) resolve(u); });
+});
+firebase.auth().signInAnonymously().catch(e => console.error('Auth failed:', e));
 
 /* ═══════════════════════════════════════════════════════
    STATE

@@ -683,13 +683,21 @@
   async function showForm() {
     await Promise.all([
       _load('https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js',      '_an_fb_app'),
+      _load('https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js',     '_an_fb_auth'),
       _load('https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js', '_an_fb_db'),
       _load('https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',  '_an_qrlib'),
     ]);
     try {
       if (!window._anFbApp) window._anFbApp = firebase.initializeApp(FB_CFG, 'ananda');
       window._anDb = firebase.app('ananda').database();
-    } catch(e) { try { window._anDb = firebase.database(); } catch(_){} }
+      // DB rules require a signed-in session — anonymous auth on our app instance
+      if (!window._anAuthP) window._anAuthP = firebase.app('ananda').auth().signInAnonymously().catch(()=>{});
+    } catch(e) {
+      try {
+        window._anDb = firebase.database();
+        if (!window._anAuthP) window._anAuthP = firebase.auth().signInAnonymously().catch(()=>{});
+      } catch(_){}
+    }
 
     const uid = Date.now();
     const tx  = t().form;

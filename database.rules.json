@@ -8,16 +8,16 @@
 
     "counters": {
       "lastRegistrationNumber": {
-        ".read": true,
-        ".write": true,
+        ".read": "auth != null",
+        ".write": "auth != null",
         ".validate": "newData.isNumber() && newData.val() <= 7500 && ((!data.exists() && newData.val() === 1001) || newData.val() === data.val() + 1)"
       }
     },
 
     "registrations": {
       "$emailKey": {
-        ".read": true,
-        ".write": "newData.exists()",
+        ".read": "auth != null",
+        ".write": "auth != null && newData.exists()",
         "email":            { ".validate": "newData.isString() && newData.val().length <= 254" },
         "registeredAt":     { ".validate": "newData.isNumber()" },
         "yearOfBirth":      { ".validate": "newData.isNumber() && newData.val() >= 1900 && newData.val() <= 2030 && (!data.exists() || newData.val() === data.val())" },
@@ -27,10 +27,10 @@
     },
 
     "participants": {
-      ".read": true,
+      ".read": "auth != null",
       ".indexOn": ["checkIn/timestamp"],
       "$regNum": {
-        ".write": "newData.exists()",
+        ".write": "auth != null && newData.exists()",
         ".validate": "newData.hasChildren(['name','tshirtSize','status','regNum','registeredAt'])",
         "name":         { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100 && (!data.exists() || newData.val() === data.val())" },
         "email":        { ".validate": "newData.isString() && (!data.exists() || newData.val() === data.val())" },
@@ -43,14 +43,14 @@
     },
 
     "dashboard": {
-      ".read": true,
-      ".write": true
+      ".read": "auth != null",
+      ".write": "auth != null"
     },
 
     "audit": {
       ".read": false,
       "$id": {
-        ".write": "!data.exists() && newData.exists()"
+        ".write": "auth != null && !data.exists() && newData.exists()"
       }
     },
 
