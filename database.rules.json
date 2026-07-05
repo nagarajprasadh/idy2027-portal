@@ -1,17 +1,28 @@
 {
   "rules": {
 
+    "config": {
+      ".read": true,
+      ".write": "!data.exists()"
+    },
+
     "counters": {
       "lastRegistrationNumber": {
         ".read": true,
-        ".write": true
+        ".write": true,
+        ".validate": "newData.isNumber() && newData.val() <= 7500 && ((!data.exists() && newData.val() === 1001) || newData.val() === data.val() + 1)"
       }
     },
 
     "registrations": {
       "$emailKey": {
         ".read": true,
-        ".write": "!data.exists() || data.child('participantCount').val() < 5"
+        ".write": "newData.exists()",
+        "email":            { ".validate": "newData.isString() && newData.val().length <= 254" },
+        "registeredAt":     { ".validate": "newData.isNumber()" },
+        "yearOfBirth":      { ".validate": "newData.isNumber() && newData.val() >= 1900 && newData.val() <= 2030 && (!data.exists() || newData.val() === data.val())" },
+        "participantCount": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5" },
+        "participantIds":   { "$rn": { ".validate": "newData.val() === true || newData.isNumber()" } }
       }
     },
 
@@ -19,23 +30,28 @@
       ".read": true,
       ".indexOn": ["checkIn/timestamp"],
       "$regNum": {
-        ".write": true,
-        ".validate": "!newData.exists() || newData.hasChildren(['name','tshirtSize','status','regNum','registeredAt'])"
+        ".write": "newData.exists()",
+        ".validate": "newData.hasChildren(['name','tshirtSize','status','regNum','registeredAt'])",
+        "name":         { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100 && (!data.exists() || newData.val() === data.val())" },
+        "email":        { ".validate": "newData.isString() && (!data.exists() || newData.val() === data.val())" },
+        "qrToken":      { ".validate": "newData.isString() && (!data.exists() || newData.val() === data.val())" },
+        "regNum":       { ".validate": "newData.isNumber() && (!data.exists() || newData.val() === data.val())" },
+        "registeredAt": { ".validate": "!data.exists() || newData.val() === data.val()" },
+        "tshirtSize":   { ".validate": "newData.isString() && (!data.exists() || newData.val() === data.val())" },
+        "status":       { ".validate": "newData.val() === 'registered' || newData.val() === 'checked_in'" }
       }
     },
 
     "dashboard": {
       ".read": true,
-      ".write": true,
-      "recentRegistrations": {
-        ".read": true,
-        ".write": true
-      }
+      ".write": true
     },
 
     "audit": {
       ".read": false,
-      ".write": true
+      "$id": {
+        ".write": "!data.exists() && newData.exists()"
+      }
     },
 
     "volunteers": {

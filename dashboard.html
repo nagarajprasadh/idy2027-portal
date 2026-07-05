@@ -378,8 +378,11 @@ function today()     { return new Date().toLocaleDateString('en-CA'); }
 function pct(a, b) { return b > 0 ? Math.round((a / b) * 100) : 0; }
 
 /* ═══════════════════════════════════════════════════════
-   REAL-TIME LISTENER — SUMMARY
+   REAL-TIME LISTENERS — attached after anonymous sign-in
+   (database rules require an authenticated session)
 ═══════════════════════════════════════════════════════ */
+function attachDashboardListeners() {
+
 db.ref('dashboard/summary').on('value', snap => {
   const s = snap.val() || {};
   updateSummary(s);
@@ -462,10 +465,11 @@ function renderFeed() {
   });
 }
 
-// Step 1: REST fetch for guaranteed complete initial load
-fetch(`${DB_REST}/dashboard/recentRegistrations.json`)
-  .then(r => r.json())
-  .then(data => {
+// Step 1: SDK read for guaranteed complete initial load
+// (was a REST fetch — REST has no auth session, blocked by the new rules)
+db.ref('dashboard/recentRegistrations').once('value')
+  .then(snap => {
+    const data = snap.val();
     if (data && typeof data === 'object') {
       Object.entries(data).forEach(([k, v]) => { feedCache[k] = v; });
     }
@@ -553,9 +557,10 @@ function ptChanged(p) {
 }
 
 // Load all participants once for accurate counts + feed
-fetch(`${DB_REST}/participants.json`)
-  .then(r => r.json())
-  .then(data => {
+// (was a REST fetch — REST has no auth session, blocked by the new rules)
+db.ref('participants').once('value')
+  .then(snap => {
+    const data = snap.val();
     if (data && typeof data === 'object') {
       Object.values(data).forEach(p => { if (p) ptChanged(p); });
     }
@@ -577,6 +582,9 @@ function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+} /* end attachDashboardListeners */
+
+attachDashboardListeners();
 
 /* ═══════════════════════════════════════════════════════
    REFRESH / RECONNECT

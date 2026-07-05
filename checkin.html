@@ -418,10 +418,14 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+/* Auth layer not enabled — no-op placeholder so DB calls can await it. */
+const authReady = Promise.resolve();
+
 /* ═══════════════════════════════════════════════════════
    STATE
 ═══════════════════════════════════════════════════════ */
 let selectedCounter    = '';
+let volunteerName      = localStorage.getItem('idyVolunteerName') || '';
 let qrScanner          = null;
 let currentParticipant = null;
 let countdownTimer     = null;
@@ -446,6 +450,10 @@ function fmtTime(ts) {
    TABLE SELECTION
 ═══════════════════════════════════════════════════════ */
 function selectTable(n) {
+  if (!volunteerName) {
+    volunteerName = (prompt('Your name (recorded in the check-in log):') || '').trim().slice(0, 40) || 'volunteer';
+    localStorage.setItem('idyVolunteerName', volunteerName);
+  }
   selectedCounter = 'Table ' + n;
   el('sbTable').textContent        = selectedCounter;
   el('hdrTableBadge').textContent  = selectedCounter + ' ▾';
@@ -545,44 +553,60 @@ async function onQrSuccess(qrText) {
 }
 
 async function processQR(qrText, isManual = false) {
-  let rawReg, token;
+  /* Build candidate (regNum, token) interpretations.
+     Some USB scanners strip the "|" separator; hex tokens can START with a
+     digit, so a fixed 4-or-5-digit greedy match misreads most scans.
+     Instead try both the 4-digit and 5-digit splits and accept the one
+     whose stored qrToken matches. */
+  let candidates = [];
+  qrText = String(qrText).trim();
+
   if (qrText.includes('|')) {
     const parts = qrText.split('|');
-    rawReg = parts[0];
-    token  = parts[1] || '';
+    candidates = [{ reg: parseInt(parts[0]), token: parts[1] || '' }];
+  } else if (/^\d{3,5}$/.test(qrText)) {
+    // Pure short number — manual entry of a registration number
+    candidates = [{ reg: parseInt(qrText), token: '' }];
   } else {
-    const m = qrText.match(/^(\d{4,5})(.*)/);
-    rawReg = m ? m[1] : qrText;
-    token  = m ? m[2] : '';
+    const m4 = qrText.match(/^(\d{4})(.+)$/);
+    const m5 = qrText.match(/^(\d{5})(.+)$/);
+    candidates = [m4, m5].filter(Boolean).map(m => ({ reg: parseInt(m[1]), token: m[2] }));
   }
-  const regNum = parseInt(rawReg);
 
-  if (!regNum || regNum < 1000) {
+  candidates = candidates.filter(c => c.reg && c.reg >= 1000);
+  if (candidates.length === 0) {
     showWarn('Invalid QR Code', 'This QR code format is not recognised.');
     return;
   }
 
   try {
-    const snap = await db.ref('participants/' + regNum).once('value');
+    await authReady;
+    let found = null;        // candidate whose participant exists + token matches
+    let foundMismatch = null; // participant exists but token differs
 
-    if (!snap.exists()) {
-      showWarn('Not Found', 'Registration #' + regNum + ' was not found in the system.');
+    for (const c of candidates) {
+      const snap = await db.ref('participants/' + c.reg).once('value');
+      if (!snap.exists()) continue;
+      const p = snap.val();
+      if (isManual || !p.qrToken || p.qrToken === c.token) { found = p; break; }
+      foundMismatch = p;
+    }
+
+    if (!found) {
+      if (foundMismatch && !isManual) {
+        showWarn('Invalid QR Code', 'QR token does not match. This QR may have been tampered with.');
+      } else {
+        showWarn('Not Found', 'Registration #' + candidates[0].reg + ' was not found in the system.');
+      }
       return;
     }
 
-    const p = snap.val();
+    currentParticipant = found;
 
-    if (!isManual && p.qrToken && p.qrToken !== token) {
-      showWarn('Invalid QR Code', 'QR token does not match. This QR may have been tampered with.');
-      return;
-    }
-
-    currentParticipant = p;
-
-    if (p.status === 'registered') {
+    if (found.status === 'registered') {
       confirmCheckin();
     } else {
-      showRed(p);
+      showRed(found);
     }
 
   } catch (err) {
@@ -645,11 +669,20 @@ async function confirmCheckin() {
     const txResult = await db.ref('participants/' + p.regNum).transaction(data => {
       if (!data) return data;
       if (data.status !== 'registered') return; // abort — already checked in
+      const ts = Date.now();
       data.status  = 'checked_in';
       data.checkIn = {
-        done:      true,
-        timestamp: Date.now(),
-        counter:   selectedCounter
+        done:        true,
+        timestamp:   ts,
+        volunteerId: volunteerName || 'volunteer',
+        counter:     selectedCounter
+      };
+      // Check-in means T-shirt issued — keep both flags in sync
+      data.tshirt = {
+        done:        true,
+        timestamp:   ts,
+        volunteerId: volunteerName || 'volunteer',
+        counter:     selectedCounter
       };
       return data;
     });
@@ -661,22 +694,26 @@ async function confirmCheckin() {
 
     // Audit log
     db.ref('audit').push({
-      timestamp: Date.now(),
-      action:    'check_in',
-      regNum:    p.regNum,
-      counter:   selectedCounter,
-      device:    navigator.userAgent.substring(0, 80)
+      timestamp:   Date.now(),
+      action:      'check_in',
+      regNum:      p.regNum,
+      counter:     selectedCounter,
+      volunteerId: volunteerName || 'volunteer',
+      device:      navigator.userAgent.substring(0, 80)
     });
 
     // Dashboard counters
     const today = new Date().toLocaleDateString('en-CA');
     db.ref('dashboard/summary/checkedIn').transaction(n => (n || 0) + 1);
+    db.ref('dashboard/summary/tshirtIssued').transaction(n => (n || 0) + 1);
     db.ref(`dashboard/summary/sizes/${p.tshirtSize}/checkedIn`).transaction(n => (n || 0) + 1);
+    db.ref(`dashboard/summary/sizes/${p.tshirtSize}/issued`).transaction(n => (n || 0) + 1);
     db.ref(`dashboard/daily/${today}/checkedIn`).transaction(n => (n || 0) + 1);
 
-    // Recent check-ins feed (trim to 10)
+    // Recent check-ins feed (trim to 10) — masked name, feed is public
+    const mask = n => { const t = String(n||'').trim().split(/\s+/); return t[0] + (t[1] ? ' ' + t[1][0] + '.' : ''); };
     const ciRef = db.ref('dashboard/recentCheckIns');
-    ciRef.push({ regNum: p.regNum, name: p.name, tshirtSize: p.tshirtSize, checkedInAt: Date.now(), counter: selectedCounter });
+    ciRef.push({ regNum: p.regNum, name: mask(p.name), tshirtSize: p.tshirtSize, checkedInAt: Date.now(), counter: selectedCounter });
     ciRef.once('value').then(snap => {
       const keys = Object.keys(snap.val() || {});
       if (keys.length > 10) keys.slice(0, keys.length - 10).forEach(k => ciRef.child(k).remove());

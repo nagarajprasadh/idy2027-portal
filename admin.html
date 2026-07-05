@@ -367,8 +367,8 @@ const firebaseConfig = {
   databaseURL:       "https://idy2027-dba28-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId:         "idy2027-dba28",
   storageBucket:     "idy2027-dba28.firebasestorage.app",
-  messagingSenderId: "1028981681741",
-  appId:             "1:1028981681741:web:c97fbbf0b92e86d7d01bea"
+  messagingSenderId: "29018221908",
+  appId:             "1:29018221908:web:9d2871f91ed3f441e82cc1"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
@@ -377,6 +377,15 @@ const db = firebase.database();
    STATE
 ═══════════════════════════════ */
 let allRows  = [];
+let volunteerName = localStorage.getItem('idyVolunteerName') || '';
+
+function getVolunteer() {
+  if (!volunteerName) {
+    volunteerName = (prompt('Your name (recorded in the check-in log):') || '').trim().slice(0, 40) || 'admin';
+    localStorage.setItem('idyVolunteerName', volunteerName);
+  }
+  return volunteerName;
+}
 let viewRows = [];
 let sortCol  = 'registeredAt';
 let sortDir  = 'desc';
@@ -407,40 +416,45 @@ let _initialLoaded = false;
   document.getElementById('tblFooter').style.display = 'none';
 })();
 
-/* ── child_added: fires for EVERY existing child on connect, then for new ones ── */
-db.ref('participants').on('child_added', snap => {
-  const p = snap.val();
-  if (!p) return;
-  const key = String(p.regNum || snap.key);
-  if (!allRows.find(x => x.regNum === key)) {
-    allRows.push(rowFromFirebase(p, key));
-    if (_initialLoaded) { renderStats(); applyFilters(); } // live: new registration arrived
-  }
-});
+/* ── Data listeners attach only after anonymous sign-in (rules require auth) ── */
+function attachListeners() {
+  /* child_added: fires for EVERY existing child on connect, then for new ones */
+  db.ref('participants').on('child_added', snap => {
+    const p = snap.val();
+    if (!p) return;
+    const key = String(p.regNum || snap.key);
+    if (!allRows.find(x => x.regNum === key)) {
+      allRows.push(rowFromFirebase(p, key));
+      if (_initialLoaded) { renderStats(); applyFilters(); } // live: new registration arrived
+    }
+  });
 
-/* ── child_changed: in-place update when a participant's data changes ── */
-db.ref('participants').on('child_changed', snap => {
-  const p = snap.val();
-  if (!p) return;
-  const key = String(p.regNum || snap.key);
-  const idx = allRows.findIndex(x => x.regNum === key);
-  if (idx === -1) return;
-  const updated = rowFromFirebase(p, key);
-  const wasDone = allRows[idx].checkInDone;
-  allRows[idx] = updated;
-  if (wasDone !== updated.checkInDone) {
-    updateRowUI(key);
+  /* child_changed: in-place update when a participant's data changes */
+  db.ref('participants').on('child_changed', snap => {
+    const p = snap.val();
+    if (!p) return;
+    const key = String(p.regNum || snap.key);
+    const idx = allRows.findIndex(x => x.regNum === key);
+    if (idx === -1) return;
+    const updated = rowFromFirebase(p, key);
+    const wasDone = allRows[idx].checkInDone;
+    allRows[idx] = updated;
+    if (wasDone !== updated.checkInDone) {
+      updateRowUI(key);
+      renderStats();
+    }
+  });
+
+  /* once('value') fires AFTER all initial child_added events are delivered.
+     Use it purely as "done loading" signal — no allRows reset. */
+  db.ref('participants').once('value', () => {
+    _initialLoaded = true;
     renderStats();
-  }
-});
+    applyFilters();
+  });
+}
 
-/* ── once('value') fires AFTER all initial child_added events are delivered.
-      Use it purely as "done loading" signal — no allRows reset. ── */
-db.ref('participants').once('value', () => {
-  _initialLoaded = true;
-  renderStats();
-  applyFilters();
-});
+attachListeners();
 
 function loadAll() {
   // With live listeners, just re-render from in-memory state
@@ -578,36 +592,67 @@ function updateRowUI(regNum) {
 function doCheckIn(regNum) {
   const r = allRows.find(x => x.regNum === String(regNum));
   if (!r || r.checkInDone) return;
+  const vol = getVolunteer();
   r.checkInDone = true; r.tshirtDone = true;
   // Instant in-place DOM update — no table rebuild
   const fil = document.getElementById('filterSel').value;
   if (fil === 'not_in') applyFilters(); else { updateRowUI(r.regNum); renderStats(); }
   toast('✓ ' + r.name, 'ok');
-  // Non-blocking Firebase writes
-  const ts = firebase.database.ServerValue.TIMESTAMP;
-  db.ref(`participants/${regNum}`).update({
-    'checkIn/done': true, 'checkIn/timestamp': ts, 'checkIn/volunteerId': 'admin',
-    'tshirt/done':  true, 'tshirt/timestamp':  ts, 'tshirt/volunteerId':  'admin',
-    status: 'checked_in'
-  }).catch(e => { r.checkInDone = false; r.tshirtDone = false; updateRowUI(r.regNum); renderStats(); toast('Write failed: ' + e.message, 'err'); });
-  db.ref('dashboard/summary/checkedIn').transaction(n => (n || 0) + 1);
-  if (r.tshirtSize) db.ref(`dashboard/summary/sizes/${r.tshirtSize}/checkedIn`).transaction(n => (n || 0) + 1);
+  // Transaction: prevents two volunteers double-checking the same person
+  // (and double-incrementing the dashboard counters)
+  db.ref(`participants/${regNum}`).transaction(data => {
+    if (!data) return data;
+    if (data.status === 'checked_in') return; // abort — someone else got there first
+    const ts = Date.now();
+    data.status  = 'checked_in';
+    data.checkIn = { done: true, timestamp: ts, volunteerId: vol, counter: 'admin' };
+    data.tshirt  = { done: true, timestamp: ts, volunteerId: vol, counter: 'admin' };
+    return data;
+  }).then(res => {
+    if (!res.committed) return; // already checked in elsewhere — UI is already correct
+    db.ref('audit').push({ timestamp: Date.now(), action: 'check_in', regNum: Number(regNum) || regNum, volunteerId: vol, source: 'admin' });
+    db.ref('dashboard/summary/checkedIn').transaction(n => (n || 0) + 1);
+    db.ref('dashboard/summary/tshirtIssued').transaction(n => (n || 0) + 1);
+    if (r.tshirtSize) {
+      db.ref(`dashboard/summary/sizes/${r.tshirtSize}/checkedIn`).transaction(n => (n || 0) + 1);
+      db.ref(`dashboard/summary/sizes/${r.tshirtSize}/issued`).transaction(n => (n || 0) + 1);
+    }
+  }).catch(e => {
+    r.checkInDone = false; r.tshirtDone = false;
+    updateRowUI(r.regNum); renderStats();
+    toast('Write failed: ' + e.message, 'err');
+  });
 }
 
 function doUncheck(regNum) {
   const r = allRows.find(x => x.regNum === String(regNum));
   if (!r || !r.checkInDone) return;
+  const vol = getVolunteer();
   r.checkInDone = false; r.tshirtDone = false;
   const fil = document.getElementById('filterSel').value;
   if (fil === 'checked_in') applyFilters(); else { updateRowUI(r.regNum); renderStats(); }
   toast('↩ Undone: ' + r.name, 'info');
-  db.ref(`participants/${regNum}`).update({
-    'checkIn/done': false, 'checkIn/timestamp': null, 'checkIn/volunteerId': null,
-    'tshirt/done':  false, 'tshirt/timestamp':  null, 'tshirt/volunteerId':  null,
-    status: 'registered'
-  }).catch(e => { r.checkInDone = true; r.tshirtDone = true; updateRowUI(r.regNum); renderStats(); toast('Write failed: ' + e.message, 'err'); });
-  db.ref('dashboard/summary/checkedIn').transaction(n => Math.max(0, (n || 0) - 1));
-  if (r.tshirtSize) db.ref(`dashboard/summary/sizes/${r.tshirtSize}/checkedIn`).transaction(n => Math.max(0, (n || 0) - 1));
+  db.ref(`participants/${regNum}`).transaction(data => {
+    if (!data) return data;
+    if (data.status !== 'checked_in') return; // abort — already undone
+    data.status  = 'registered';
+    data.checkIn = { done: false, timestamp: null, volunteerId: null, counter: null };
+    data.tshirt  = { done: false, timestamp: null, volunteerId: null, counter: null };
+    return data;
+  }).then(res => {
+    if (!res.committed) return;
+    db.ref('audit').push({ timestamp: Date.now(), action: 'undo_check_in', regNum: Number(regNum) || regNum, volunteerId: vol, source: 'admin' });
+    db.ref('dashboard/summary/checkedIn').transaction(n => Math.max(0, (n || 0) - 1));
+    db.ref('dashboard/summary/tshirtIssued').transaction(n => Math.max(0, (n || 0) - 1));
+    if (r.tshirtSize) {
+      db.ref(`dashboard/summary/sizes/${r.tshirtSize}/checkedIn`).transaction(n => Math.max(0, (n || 0) - 1));
+      db.ref(`dashboard/summary/sizes/${r.tshirtSize}/issued`).transaction(n => Math.max(0, (n || 0) - 1));
+    }
+  }).catch(e => {
+    r.checkInDone = true; r.tshirtDone = true;
+    updateRowUI(r.regNum); renderStats();
+    toast('Write failed: ' + e.message, 'err');
+  });
 }
 
 /* ═══════════════════════════════
@@ -621,7 +666,9 @@ function exportCSV() {
     let v = r[c];
     if (c === 'registeredAt') v = v ? new Date(v).toISOString() : '';
     if (typeof v === 'boolean') v = v ? 'Yes' : 'No';
-    return `"${String(v||'').replace(/"/g,'""')}"`;
+    v = String(v || '');
+    if (/^[=+\-@\t]/.test(v)) v = "'" + v; // guard against spreadsheet formula injection
+    return `"${v.replace(/"/g,'""')}"`;
   }).join(','));
   const csv = [hdrs.join(','), ...rows].join('\n');
   const url = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));

@@ -769,9 +769,11 @@
         <div class="field-err" id="emailCErr"></div>
       </div>
       <div class="form-group" style="margin-top:10px;">
-        <label for="regYOB"><span id="lYOB">Year of Birth</span> <span style="font-weight:400;font-size:12px;color:var(--muted);" id="lYOBOpt">(optional — needed to retrieve your pass later)</span></label>
+        <label for="regYOB"><span id="lYOB">Year of Birth</span> <span class="req">*</span> <span style="font-weight:400;font-size:12px;color:var(--muted);" id="lYOBOpt">(required — needed to retrieve your pass later)</span></label>
         <input type="text" id="regYOB" placeholder="e.g. 1985" maxlength="4" inputmode="numeric"
-               style="letter-spacing:2px;font-size:18px;font-weight:600;max-width:180px;">
+               style="letter-spacing:2px;font-size:18px;font-weight:600;max-width:180px;"
+               oninput="chkEmail()">
+        <div class="field-err" id="yobErr"></div>
       </div>
       <button class="btn btn-navy btn-full" id="btnS1" onclick="go(2)" disabled>
         <span id="bS1">Continue</span> →
@@ -881,10 +883,10 @@
    EVENT CONFIGURATION — UPDATE BEFORE GOING LIVE
 ══════════════════════════════════════════════════════════ */
 const CFG = {
-  dateEN:        '21 June 2027',
-  dateTH:        '21 มิถุนายน 2570',
-  venueEN:       'Lumpini Park, Bangkok',
-  venueTH:       'สวนลุมพินี กรุงเทพฯ',
+  dateEN:        '20 June 2027',
+  dateTH:        '20 มิถุนายน 2570',
+  venueEN:       'Chulalongkorn University, Bangkok',
+  venueTH:       'จุฬาลงกรณ์มหาวิทยาลัย กรุงเทพฯ',
   timeEN:        'Reporting Time: 06:30',
   timeTH:        'เวลารายงานตัว: 06:30 น.',
   maxReg:        6500,           // set 0 for unlimited
@@ -905,7 +907,8 @@ const STR = {
     lEmailC:     'Confirm Email Address',
     emailPH:     'your@email.com',
     lYOB:        'Year of Birth',
-    lYOBOpt:     '(optional — needed to retrieve your pass later)',
+    lYOBOpt:     '(required — needed to retrieve your pass later)',
+    errYOB:      'Please enter a valid year of birth (e.g. 1985).',
     alreadyRegTxt:    'Already registered?',
     alreadyRegBtnLbl: 'Retrieve your pass →',
     backToRegLbl:     'Back to Registration',
@@ -913,7 +916,7 @@ const STR = {
     retSub:      'Enter your email address and year of birth to retrieve your pass.',
     retLblSearch: 'Email Address used at registration',
     retLblYOB:    'Year of Birth',
-    retHint:      '(if provided at registration)',
+    retHint:      '(as provided at registration)',
     retBtnLbl:    'Find My Pass',
     errInvalid:  'Please enter a valid email address.',
     errMismatch: 'Email addresses do not match.',
@@ -931,12 +934,12 @@ const STR = {
     bS3:         'Continue',
     s4Title:     'Declaration & Confirmation',
     s4Sub:       'Review your registration and accept the declaration to proceed.',
-    decl:        'I understand that every participant must be physically present for check-in. T-shirts will only be issued after successful individual check-in. T-shirts cannot be collected on behalf of absent participants.',
+    decl:        'I understand that every participant must be physically present for check-in. T-shirts will only be issued after successful individual check-in. T-shirts cannot be collected on behalf of absent participants. I consent to the collection of the name, email address, year of birth and T-shirt size provided here, to be used solely for managing this event and deleted after the event concludes.',
     lDeclAccept: 'I understand and accept the above declaration.',
     bSubmit:     'Complete Registration',
     okTitle:     'Registration Successful!',
     okSub:       'Your registration pass is ready. Download or print it now.',
-    okAlert:     '⚠  Important: No email confirmation will be sent. Save or print this pass now. You will need this QR code on event day for entry and T-shirt collection. If you lose this pass, use the "Retrieve My Pass" tab on this page with your email address or mobile number to get it back.',
+    okAlert:     '⚠  Important: No email confirmation will be sent. Save or print this pass now. You will need this QR code on event day for entry and T-shirt collection. If you lose this pass, use the "Retrieve My Pass" tab on this page with your email address and year of birth to get it back.',
     actTitle:    'Download & Share',
     bJPEG:       'Download All Passes (JPEG)',
     bPrint:      'Print Pass',
@@ -987,7 +990,8 @@ const STR = {
     lEmailC:     'ยืนยันที่อยู่อีเมล',
     emailPH:     'อีเมลของท่าน@example.com',
     lYOB:        'ปีเกิด',
-    lYOBOpt:     '(ไม่บังคับ — จำเป็นสำหรับการค้นหาบัตรในภายหลัง)',
+    lYOBOpt:     '(จำเป็น — ใช้สำหรับการค้นหาบัตรในภายหลัง)',
+    errYOB:      'กรุณากรอกปีเกิดที่ถูกต้อง (เช่น 2528)',
     alreadyRegTxt:    'ลงทะเบียนแล้ว?',
     alreadyRegBtnLbl: 'ค้นหาบัตรของท่าน →',
     backToRegLbl:     'กลับไปหน้าลงทะเบียน',
@@ -995,7 +999,7 @@ const STR = {
     retSub:       'กรอกอีเมลที่ใช้ลงทะเบียนและปีเกิดเพื่อค้นหาบัตรของท่าน',
     retLblSearch: 'ที่อยู่อีเมลที่ใช้ลงทะเบียน',
     retLblYOB:    'ปีเกิด',
-    retHint:      '(หากระบุไว้ตอนลงทะเบียน)',
+    retHint:      '(ตามที่ระบุไว้ตอนลงทะเบียน)',
     retBtnLbl:    'ค้นหาบัตรของฉัน',
     errInvalid:  'กรุณากรอกที่อยู่อีเมลที่ถูกต้อง',
     errMismatch: 'ที่อยู่อีเมลไม่ตรงกัน',
@@ -1013,7 +1017,7 @@ const STR = {
     bS3:         'ถัดไป',
     s4Title:     'การรับรองและยืนยัน',
     s4Sub:       'ตรวจสอบข้อมูลและยอมรับเงื่อนไขก่อนดำเนินการ',
-    decl:        'ข้าพเจ้าเข้าใจว่าผู้เข้าร่วมทุกคนต้องมาแสดงตัวด้วยตนเองในวันงาน เสื้อยืดจะแจกจ่ายหลังจากการเช็คอินของแต่ละบุคคลเท่านั้น ไม่สามารถรับเสื้อยืดแทนผู้ที่ไม่ได้มาได้',
+    decl:        'ข้าพเจ้าเข้าใจว่าผู้เข้าร่วมทุกคนต้องมาแสดงตัวด้วยตนเองในวันงาน เสื้อยืดจะแจกจ่ายหลังจากการเช็คอินของแต่ละบุคคลเท่านั้น ไม่สามารถรับเสื้อยืดแทนผู้ที่ไม่ได้มาได้ ข้าพเจ้ายินยอมให้เก็บรวบรวมชื่อ อีเมล ปีเกิด และขนาดเสื้อที่ระบุไว้ เพื่อใช้ในการจัดงานนี้เท่านั้น และข้อมูลจะถูกลบหลังจบงาน',
     lDeclAccept: 'ข้าพเจ้าเข้าใจและยอมรับการรับรองข้างต้น',
     bSubmit:     'ยืนยันการลงทะเบียน',
     okTitle:     'ลงทะเบียนสำเร็จ!',
@@ -1078,6 +1082,10 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+/* Auth layer not enabled — no-op placeholder so DB calls can await it.
+   (If Anonymous auth is enabled later, restore signInAnonymously here.) */
+const authReady = Promise.resolve();
+
 /* ═══════════════════════════════════════════════════════
    STATE
 ═══════════════════════════════════════════════════════ */
@@ -1096,6 +1104,33 @@ function setAttr(id, attr, val) { const e = el(id); if (e) e[attr] = val; }
 
 function token() {
   return Array.from({length: 10}, () => '0123456789ABCDEF'[Math.floor(Math.random()*16)]).join('');
+}
+
+/* Escape for safe insertion into HTML (element + attribute contexts) */
+function esc(v) {
+  return String(v ?? '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* Clean a participant name for storage: strip angle brackets, cap length */
+function cleanName(v) {
+  return String(v || '').replace(/[<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 100);
+}
+
+/* Privacy: mask name for public dashboard feeds — "Somchai P." */
+function maskName(n) {
+  const parts = String(n || '').trim().split(/\s+/);
+  return parts[0] + (parts[1] ? ' ' + parts[1][0] + '.' : '');
+}
+
+/* Registration index: participantIds may be legacy array [1007,1008]
+   or new map {"1007":true}. Return array of regNum strings. */
+function regIdsOf(reg) {
+  const ids = reg && reg.participantIds;
+  if (!ids) return [];
+  if (Array.isArray(ids)) return ids.filter(x => x != null).map(String);
+  return Object.keys(ids);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -1266,7 +1301,27 @@ function chkEmail() {
       el('emailC').classList.add('good');
     }
   }
-  el('btnS1').disabled = !(ev && cv && RE.test(ev) && ev === cv && !emailStructureError(ev) && !suggestDomain(ev));
+
+  // Year of birth — required
+  const yobRaw = el('regYOB').value.trim();
+  const yobOk  = validYOB(yobRaw);
+  el('yobErr').classList.remove('show');
+  el('regYOB').classList.remove('err','good');
+  if (yobRaw.length > 0) {
+    if (yobOk) { el('regYOB').classList.add('good'); }
+    else if (yobRaw.length >= 4) {
+      el('yobErr').textContent = s('errYOB');
+      el('yobErr').classList.add('show');
+      el('regYOB').classList.add('err');
+    }
+  }
+
+  el('btnS1').disabled = !(ev && cv && RE.test(ev) && ev === cv && !emailStructureError(ev) && !suggestDomain(ev) && yobOk);
+}
+
+function validYOB(raw) {
+  const y = normalizeYOB(raw);
+  return !!(y && y >= 1900 && y <= new Date().getFullYear());
 }
 
 function applyEmailSuggestion(corrected) {
@@ -1304,8 +1359,8 @@ function buildPForms(count, saved) {
       </div>
       <div class="form-group">
         <label for="pn_${i}">${s('lFullName')} <span class="req">*</span></label>
-        <input type="text" id="pn_${i}" placeholder="${s('namePH')}"
-               value="${prev_name}" oninput="chkParts()">
+        <input type="text" id="pn_${i}" placeholder="${s('namePH')}" maxlength="100"
+               value="${esc(prev_name)}" oninput="chkParts()">
       </div>
       <div class="form-group">
         <label>${s('lTshirt')} <span class="req">*</span></label>
@@ -1371,15 +1426,15 @@ function buildConfirm() {
   let rows = '';
   for (let i = 1; i <= pCount; i++) {
     rows += `<div class="summary-row">
-      <span class="s-name">${el('pn_'+i).value.trim()}</span>
-      <span class="size-badge">${el('ps_'+i).value}</span>
+      <span class="s-name">${esc(el('pn_'+i).value.trim())}</span>
+      <span class="size-badge">${esc(el('ps_'+i).value)}</span>
     </div>`;
   }
   el('confSummary').innerHTML = `
     <div class="summary-box">
       <div class="summary-box-title">${s('summTitle')}</div>
       <div style="font-size:12.5px;color:var(--muted);margin-bottom:8px;text-align:center;">
-        ${s('forEmail')}: <strong style="color:var(--text)">${email}</strong>
+        ${s('forEmail')}: <strong style="color:var(--text)">${esc(email)}</strong>
         &nbsp;·&nbsp; ${s('forCount')}: <strong style="color:var(--text)">${pCount}</strong>
       </div>
       ${rows}
@@ -1434,19 +1489,35 @@ async function submit() {
   btnLabel.innerHTML = '<span class="spinner"></span>Registering…';
 
   try {
+    await authReady;
+
     // ── 0. Check registration is open and cap not reached ──────────
-    if (!CFG.regOpen) {
+    // Live config from DB (regOpen / maxReg), falling back to baked-in CFG
+    let regOpen = CFG.regOpen, maxReg = CFG.maxReg;
+    try {
+      const cfgSnap = await db.ref('config').once('value');
+      const rc = cfgSnap.val();
+      if (rc) {
+        if (typeof rc.regOpen === 'boolean') regOpen = rc.regOpen;
+        if (typeof rc.maxReg  === 'number')  maxReg  = rc.maxReg;
+      }
+    } catch (_) { /* config unreadable — use CFG defaults */ }
+
+    if (!regOpen) {
       alert(lang === 'th'
         ? 'ขณะนี้การลงทะเบียนปิดแล้ว ขอบคุณสำหรับความสนใจของท่าน'
         : 'Registrations are now closed. Thank you for your interest.');
       btn.disabled = false; btnLabel.textContent = s('bSubmit'); return;
     }
-    if (CFG.maxReg > 0) {
-      const capSnap = await db.ref('dashboard/summary/totalParticipants').once('value');
-      if ((capSnap.val() || 0) + pCount > CFG.maxReg) {
+    if (maxReg > 0) {
+      // Cap is measured against the registration-number counter (tamper-proof
+      // via DB rules), not the display-only dashboard summary.
+      const cSnap = await db.ref('counters/lastRegistrationNumber').once('value');
+      const claimed = Math.max(0, (cSnap.val() || 1000) - 1000);
+      if (claimed + pCount > maxReg) {
         alert(lang === 'th'
-          ? `ขออภัย การลงทะเบียนเต็มแล้ว (${CFG.maxReg.toLocaleString()} คน)`
-          : `Registrations are full (${CFG.maxReg.toLocaleString()} participants). No further slots available.`);
+          ? `ขออภัย การลงทะเบียนเต็มแล้ว (${maxReg.toLocaleString()} คน)`
+          : `Registrations are full (${maxReg.toLocaleString()} participants). No further slots available.`);
         btn.disabled = false; btnLabel.textContent = s('bSubmit'); return;
       }
     }
@@ -1454,7 +1525,19 @@ async function submit() {
     // ── 1. Check existing registrations for this email ──────────────
     const existingSnap = await db.ref('registrations/' + emailKey).once('value');
     const existingData = existingSnap.exists() ? existingSnap.val() : null;
-    const existingCount = existingData ? (existingData.participantCount || 0) : 0;
+    const existingIdList = regIdsOf(existingData);
+    const existingCount = existingData
+      ? Math.max(existingData.participantCount || 0, existingIdList.length)
+      : 0;
+
+    // Year of birth must match earlier registration under the same email
+    const yearOfBirth = normalizeYOB(el('regYOB').value);
+    if (existingData && existingData.yearOfBirth && yearOfBirth !== existingData.yearOfBirth) {
+      alert(lang === 'th'
+        ? 'ปีเกิดไม่ตรงกับการลงทะเบียนครั้งก่อนของอีเมลนี้ กรุณาตรวจสอบ'
+        : 'Year of birth does not match the earlier registration for this email. Please check.');
+      btn.disabled = false; btnLabel.textContent = s('bSubmit'); return;
+    }
 
     if (existingCount + pCount > 5) {
       alert(
@@ -1468,14 +1551,24 @@ async function submit() {
     }
 
     // ── 2. Claim sequential registration numbers (atomic) ──────────
+    // DB rules enforce increment-by-1 and the hard cap; a rejected claim
+    // here means the event is full.
     const participants = [];
     for (let i = 1; i <= pCount; i++) {
-      const rn = await claimRegNumber();
+      let rn;
+      try {
+        rn = await claimRegNumber();
+      } catch (capErr) {
+        alert(lang === 'th'
+          ? 'ขออภัย การลงทะเบียนเต็มแล้ว'
+          : 'Registrations are full. No further slots available.');
+        btn.disabled = false; btnLabel.textContent = s('bSubmit'); return;
+      }
       const tk = token();
       participants.push({
         idx:    i,
         regNum: rn,
-        name:   el('pn_'+i).value.trim(),
+        name:   cleanName(el('pn_'+i).value),
         size:   el('ps_'+i).value,
         qrData: `${rn}|${tk}`,
         token:  tk
@@ -1500,21 +1593,15 @@ async function submit() {
       };
     });
 
-    // Update registration index
-    const existingIds = existingData ? (existingData.participantIds || []) : [];
-    const yearOfBirth = normalizeYOB(el('regYOB').value);
-    writes[`registrations/${emailKey}`] = {
-      email,
-      registeredAt:     existingData ? existingData.registeredAt : now,
-      participantCount: existingCount + pCount,
-      participantIds:   [...existingIds, ...participants.map(p => p.regNum)],
-      ...(yearOfBirth ? { yearOfBirth } : {})
-    };
-
-    // Update dashboard size tallies
+    // Update registration index — subpath writes + map-style participantIds
+    // so concurrent registrations under the same email merge instead of
+    // overwriting each other.
+    writes[`registrations/${emailKey}/email`] = email;
+    if (!existingData) writes[`registrations/${emailKey}/registeredAt`] = now;
+    writes[`registrations/${emailKey}/participantCount`] = Math.min(existingCount + pCount, 5);
+    if (yearOfBirth) writes[`registrations/${emailKey}/yearOfBirth`] = yearOfBirth;
     participants.forEach(p => {
-      const sizePath = `dashboard/summary/sizes/${p.size}/registered`;
-      // We'll increment via transaction after the main write
+      writes[`registrations/${emailKey}/participantIds/${p.regNum}`] = true;
     });
 
     // ── 4. Atomic write all participants + registration record ─────
@@ -1536,10 +1623,11 @@ async function submit() {
     });
 
     // ── 6. Write to recent registrations feed (last 10 shown on dashboard) ──
+    // Names are masked ("Somchai P.") — the feed is publicly visible.
     participants.forEach(p => {
       db.ref('dashboard/recentRegistrations').push({
         regNum:      p.regNum,
-        name:        p.name,
+        name:        maskName(p.name),
         tshirtSize:  p.size,
         registeredAt: Date.now()
       });
@@ -1598,13 +1686,13 @@ function renderPasses() {
           <div class="pass-regnum">#${p.regNum}</div>
         </div>
         <div>
-          <div class="pass-pname">${p.name}</div>
+          <div class="pass-pname">${esc(p.name)}</div>
           <div class="pass-event">${s('evtName')}</div>
         </div>
       </div>
       <div class="pass-body">
         <div class="pass-info">
-          <div class="info-row"><span class="info-lbl">${s('lName')}</span>  <span class="info-val">${p.name}</span></div>
+          <div class="info-row"><span class="info-lbl">${s('lName')}</span>  <span class="info-val">${esc(p.name)}</span></div>
           <div class="info-row"><span class="info-lbl">${s('lRegNo')}</span> <span class="info-val" style="font-family:monospace;font-size:15px;">${p.regNum}</span></div>
           <div class="info-row"><span class="info-lbl">${s('lSize')}</span>  <span class="size-badge">${p.size}</span></div>
           <div class="info-row"><span class="info-lbl">${s('lDate')}</span>  <span class="info-val" style="font-size:12.5px;">${s('evtDate')}</span></div>
@@ -1738,23 +1826,6 @@ async function dlJPEGBlob(regNum) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   DRAW CHAKRA SPOKES
-═══════════════════════════════════════════════════════ */
-(function drawSpokes() {
-  const g = document.getElementById('spokes');
-  const cx=50, cy=50, r1=14, r2=44;
-  for (let i=0; i<24; i++) {
-    const a = (i * 15 - 90) * Math.PI / 180;
-    const l = document.createElementNS('http://www.w3.org/2000/svg','line');
-    l.setAttribute('x1', cx + r1*Math.cos(a));
-    l.setAttribute('y1', cy + r1*Math.sin(a));
-    l.setAttribute('x2', cx + r2*Math.cos(a));
-    l.setAttribute('y2', cy + r2*Math.sin(a));
-    g.appendChild(l);
-  }
-})();
-
-/* ═══════════════════════════════════════════════════════
    TAB TOGGLE — Register vs Retrieve My Pass
 ═══════════════════════════════════════════════════════ */
 function showTab(tab) {
@@ -1792,11 +1863,17 @@ async function doRetrieve() {
     err.classList.add('show');
     return;
   }
+  if (!normalizeYOB(yobInput)) {
+    err.textContent = lang === 'th' ? 'กรุณากรอกปีเกิด' : 'Please enter your year of birth.';
+    err.classList.add('show');
+    return;
+  }
 
   btn.disabled = true;
   res.innerHTML = '<p style="text-align:center;color:var(--muted);padding:20px">Searching…</p>';
 
   try {
+    await authReady;
     const snap = await db.ref('registrations/' + emailToKey(emailRaw)).once('value');
 
     if (!snap.exists()) {
@@ -1825,7 +1902,7 @@ async function doRetrieve() {
       }
     }
 
-    const participantIds = reg.participantIds || [];
+    const participantIds = regIdsOf(reg);
     const passes = (await Promise.all(
       participantIds.map(id => db.ref('participants/' + id).once('value').then(s => s.val()))
     )).filter(Boolean);
@@ -1909,6 +1986,6 @@ applyLang();
     Admin
   </a>
 </div>
-<script src="ananda-widget.js?v=20260628h"></script>
+<script src="ananda-widget.js?v=20260705a"></script>
 </body>
 </html>

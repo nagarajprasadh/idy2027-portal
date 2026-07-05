@@ -737,12 +737,17 @@
     if (!email || !email.includes('@')) {
       errEl.textContent = tx.err_email; errEl.style.display = 'block'; return;
     }
-    btnEl.disabled = true; btnEl.textContent = tx.loading;
 
     const eKey = e => e.replace(/\./g,',').replace(/@/g,'_at_');
     const normY = v => { const y=parseInt((v||'').trim()); if(!y||y<1900) return null; return y>2400?y-543:y; };
 
+    if (!normY(yob)) {
+      errEl.textContent = tx.err_yob; errEl.style.display = 'block'; return;
+    }
+    btnEl.disabled = true; btnEl.textContent = tx.loading;
+
     try {
+      if (window._anAuthP) await window._anAuthP;
       const snap = await window._anDb.ref('registrations/'+eKey(email)).once('value');
       if (!snap.exists()) {
         errEl.textContent = tx.err_none; errEl.style.display = 'block';
@@ -756,8 +761,13 @@
           btnEl.disabled=false; btnEl.textContent=tx.submit; return;
         }
       }
+      const _ids = reg.participantIds
+        ? (Array.isArray(reg.participantIds)
+            ? reg.participantIds.filter(x=>x!=null).map(String)
+            : Object.keys(reg.participantIds))
+        : [];
       const passes = (await Promise.all(
-        (reg.participantIds||[]).map(id=>window._anDb.ref('participants/'+id).once('value').then(s=>s.val()))
+        _ids.map(id=>window._anDb.ref('participants/'+id).once('value').then(s=>s.val()))
       )).filter(Boolean);
 
       // Hide the form row
@@ -774,9 +784,10 @@
         const sp = document.createElement('div'); sp.className = '_an_form_spacer';
         const card = document.createElement('div'); card.className = '_an_pass';
         const qrDiv = document.createElement('div'); qrDiv.className = '_an_pqr'; qrDiv.id = `_anqr_${uid}_${i}`;
+        const _esc = v => String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         card.innerHTML = `
-          <div class="_an_pname">${p.name||''}</div>
-          <div class="_an_pmeta">Reg # ${p.regNum} · ${p.tshirtSize||''} T-Shirt</div>
+          <div class="_an_pname">${_esc(p.name)}</div>
+          <div class="_an_pmeta">Reg # ${_esc(p.regNum)} · ${_esc(p.tshirtSize||'')} T-Shirt</div>
           <span class="${p.status==='checked_in'?'_an_pci':'_an_preg'}">${p.status==='checked_in'?'✓ Checked In':'✓ Registered'}</span>`;
         card.appendChild(qrDiv);
         card.innerHTML += `<div class="_an_pnote">${tx.pass_note}</div>`;

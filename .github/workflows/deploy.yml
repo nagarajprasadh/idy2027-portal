@@ -18,7 +18,7 @@ jobs:
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: |
-          npx firebase-tools@latest deploy --only hosting \
+          npx firebase-tools@latest deploy --only hosting,database \
             --project idy2027-dba28 --non-interactive 2>&1 | tee /tmp/deploy_out.txt
           EXIT=${PIPESTATUS[0]}
           if [ $EXIT -ne 0 ]; then
