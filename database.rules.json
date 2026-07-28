@@ -1,84 +1,64 @@
 {
   "rules": {
+
     "config": {
       ".read": true,
       ".write": "!data.exists()"
     },
+
     "counters": {
       "lastRegistrationNumber": {
         ".read": "auth != null",
         ".write": "auth != null",
-        ".validate": "newData.isNumber() && newData.val() <= 7500"
+        ".validate": "newData.isNumber() && newData.val() <= 7500 && ((!data.exists() && newData.val() === 1001) || newData.val() === data.val() + 1)"
       }
     },
+
     "registrations": {
       "$emailKey": {
         ".read": "auth != null",
-        ".write": "auth != null",
-        "email": {
-          ".validate": "newData.isString() && newData.val().length <= 254"
-        },
-        "registeredAt": {
-          ".validate": "newData.isNumber()"
-        },
-        "yearOfBirth": {
-          ".validate": "newData.isNumber() && newData.val() >= 1900 && newData.val() <= 2030 && (!data.exists() || newData.val() === data.val())"
-        },
-        "participantCount": {
-          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5"
-        },
-        "participantIds": {
-          "$rn": {
-            ".validate": "newData.val() === true || newData.isNumber()"
-          }
-        }
+        ".write": "auth != null && newData.exists()",
+        "email":            { ".validate": "newData.isString() && newData.val().length <= 254" },
+        "registeredAt":     { ".validate": "newData.isNumber()" },
+        "yearOfBirth":      { ".validate": "newData.isNumber() && newData.val() >= 1900 && newData.val() <= 2030 && (!data.exists() || newData.val() === data.val())" },
+        "participantCount": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5" },
+        "participantIds":   { "$rn": { ".validate": "newData.val() === true || newData.isNumber()" } }
       }
     },
+
     "participants": {
       ".read": "auth != null",
-      ".indexOn": [
-        "checkIn/timestamp"
-      ],
+      ".indexOn": ["checkIn/timestamp"],
       "$regNum": {
-        ".write": "auth != null",
+        ".write": "auth != null && newData.exists()",
         ".validate": "newData.hasChildren(['name','tshirtSize','status','regNum','registeredAt'])",
-        "name": {
-          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100 && (!data.exists() || newData.val() === data.val())"
-        },
-        "email": {
-          ".validate": "newData.isString() && (!data.exists() || newData.val() === data.val())"
-        },
-        "qrToken": {
-          ".validate": "newData.isString() && (!data.exists() || newData.val() === data.val())"
-        },
-        "regNum": {
-          ".validate": "newData.isNumber() && (!data.exists() || newData.val() === data.val())"
-        },
-        "registeredAt": {
-          ".validate": "!data.exists() || newData.val() === data.val()"
-        },
-        "tshirtSize": {
-          ".validate": "newData.isString() && (!data.exists() || newData.val() === data.val())"
-        },
-        "status": {
-          ".validate": "newData.val() === 'registered' || newData.val() === 'checked_in'"
-        }
+        "name":         { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 100 && (!data.exists() || newData.val() === data.val())" },
+        "email":        { ".validate": "newData.isString() && (!data.exists() || newData.val() === data.val())" },
+        "qrToken":      { ".validate": "newData.isString() && (!data.exists() || newData.val() === data.val())" },
+        "regNum":       { ".validate": "newData.isNumber() && (!data.exists() || newData.val() === data.val())" },
+        "registeredAt": { ".validate": "!data.exists() || newData.val() === data.val()" },
+        "tshirtSize":   { ".validate": "newData.isString() && (!data.exists() || newData.val() === data.val())" },
+        "status":       { ".validate": "newData.val() === 'registered' || newData.val() === 'checked_in'" }
       }
     },
+
     "dashboard": {
       ".read": "auth != null",
       ".write": "auth != null"
     },
+
     "audit": {
       ".read": false,
       "$id": {
         ".write": "auth != null && !data.exists() && newData.exists()"
       }
     },
+
     "volunteers": {
       ".read": false,
       ".write": false
     },
+
     "incidents": {
       ".read": false,
       ".write": false
